@@ -1,228 +1,194 @@
 # Skills for Microsoft Fabric
 
-AI coding assistant skills for Microsoft Fabric developers and consumers. Optimized for GitHub Copilot CLI, with cross-compatibility for Claude Code, VS Code Copilot, Cursor, and other AI coding tools.
+AI coding assistant skills to build, explore, and operate **Microsoft Fabric** using natural language from modern AI coding tools.
 
+Skills for Microsoft Fabric provides AI‑native building blocks that let developers and data consumers interact with Fabric workloads across **Spark, SQL, Power BI, and Eventhouse** from tools like **GitHub Copilot CLI**, **VS Code Copilot**, **Claude Code**, and **Cursor**.
 
-## How you can use Fabric Skills (CLI/Claude Code/VSCode prompts)
-###  INTERNAL Microsoft -- a document with details is available here [Fabric SKills - Internal User Guide](https://microsoft-my.sharepoint.com/:w:/p/bocrivat/IQBxe55loRJmSa4S7vnDD_SUAWkvuTW7vwP4pd3k9FMGNek?e=My5R8c)
+This repository is optimized for:
+- Product announcements
+- Demo and keynote videos
+- Tutorials and hands‑on labs
+- Real production‑ready workflows
 
+---
 
-- **[Analytics PDF report](prompt_examples/NYC_AnalyzeExistingDataCreatePDF.txt)** — Analyzes Fabric data and produces a PDF report
-- **[Document My Workspace](prompt_examples/DocumentMyWorkspace.txt)** — Analyzes Fabric data and produces a PDF report
-- **[NYC Taxi - Fabric Medallion Project](prompt_examples/NYCTaxi_MedallionArchitecture.txt)** — Downloads a public dataset, prepares it in Spark and creates T-SQL 
-views for consumption
-- **[Dashboard App](prompt_examples/DashboardApp.txt)** — Generates an interactive dashboard which connects to Fabric data
+## Why Skills for Microsoft Fabric
 
+Microsoft Fabric brings together data engineering, analytics, and BI—but real workflows span multiple engines and tools.
 
+Skills for Microsoft Fabric closes that gap by enabling:
+- Natural‑language interaction with Fabric workloads
+- Cross‑engine workflows (Spark, SQL, KQL, Power BI)
+- Zero‑setup exploration for consumers (no SDKs or drivers)
+- Automation‑ready authoring for developers and CI/CD
+- A consistent AI experience across popular coding assistants
+
+Build faster. Explore deeper. Operate Fabric safely and predictably.
+
+---
+
+## What You Can Do
+
+### Analyze Data
+- Query Lakehouse tables using Spark or SQL
+- Explore Fabric data conversationally
+- Generate insights, summaries, and analytics‑ready outputs
+
+### Build Real Workloads
+- Create and manage Lakehouses and Warehouses
+- Author Spark‑based data engineering workflows
+- Execute KQL management and query operations on Eventhouse
+- Create and manage Power BI semantic models
+
+### Demo‑Ready Scenarios
+
+Perfect for demos, tutorials, and announcement videos:
+
+- **NYC Taxi Medallion Project**  
+  Download a public dataset, build Bronze/Silver layers in Fabric, and expose SQL views for analytics and BI.
+
+- **Analytics Report Generation**  
+  Analyze Fabric data and generate a PDF analytics report.
+
+- **Dashboard Creation**  
+  Generate interactive dashboards connected directly to Fabric data.
+
+- **Workspace Exploration**  
+  Inspect workspaces, items, schemas, and metadata conversationally.
+
+---
 
 ## Installation
 
-### GitHub Copilot CLI (Recommended)
+### Recommended: GitHub Copilot CLI
 
-**ALWAYS START WITH THIS: connect to the Fabric Skills Marketplace:**
-```bash
-/plugin marketplace add gim-home/s
-```
-
-**Full bundle (all skills):**
-```bash
-/plugin install fabric-skills@fabric-skills-marketplace 
-```
-
-**Install by persona:**
-```bash
-# Developers only - SDKs, APIs, automation, CI/CD
-/plugin install fabric-authoring@fabric-skills-marketplace 
-
-# Consumers only - interactive queries, exploration, monitoring
-/plugin install fabric-consumption@fabric-skills-marketplace 
-```
-
-**Filter by endpoint/engine (within any plugin):**
-```bash
-/plugin install fabric-skills@fabric-skills-marketplace  --filter "sqldw-*"
-/plugin install fabric-skills@fabric-skills-marketplace  --filter "spark-*"
-/plugin install fabric-skills@fabric-skills-marketplace  --filter "eventhouse-*"
-```
-
-### npm (Alternative) _ NOT YET TESTED
+Connect to the Fabric Skills marketplace and install the full skills bundle:
 
 ```bash
-npm install -g @gim-home/fabric-skills
-cd $(npm root -g)/@gim-home/fabric-skills
-
-# Windows
-.\install.ps1
-
-# macOS/Linux
-./install.sh
+plugin marketplace add gim/FabricSkills
+plugin install fabric
 ```
 
-### Manual Installation
+### Install by Persona
 
-1. Clone this repository
-2. Run the installer for your platform:
-   - Windows: `.\install.ps1`
-   - macOS/Linux: `./install.sh`
+- **Developers (Authoring, Automation, CI/CD)**
+- **Consumers (Querying, Exploration, Monitoring)**
 
-
-
-
-## Skills Overview
-
-### Authentication
-
-All Fabric operations require Azure AD authentication:
+Filter skills by engine or workload:
 
 ```bash
-az login
-az account get-access-token --resource https://api.fabric.microsoft.com
+plugin install fabric --filter spark
+plugin install fabric --filter powerbi
+plugin install fabric --filter eventhouse
 ```
 
+---
 
-### Developer Skills (`-authoring-`)
+## Authentication
 
-For developers writing code - uses REST APIs for management, protocol-specific connections for data access.
+All Fabric operations use **Azure Active Directory authentication**.
 
-| Skill | Pattern |
-|-------|---------|
-| `sqldw-authoring-cli` | Author Warehouses, Lakehouse SQL Endpoints, and Mirrored Databases from CLI environments |
-| `spark-authoring-cli` | Develop Microsoft Fabric Spark/data engineering workflows with intelligent routing to specialized resources |
-| `eventhouse-authoring-cli` | Execute KQL management commands (table management, ingestion, policies, materialized views, functions) against Fabric Eventhouse and KQL Databases via `az rest` |
-| `powerbi-authoring-cli` | Create, manage, and deploy Power BI semantic models via `az rest` CLI against Fabric and Power BI REST APIs |
+- No secrets required
+- No embedded credentials
+- Access tokens scoped to:
 
-### Consumer Skills (`-consumption-`)
-
-For interactive operations via MCP servers - no SDK/driver setup needed.
-
-| Skill | Description |
-|-------|-------------|
-| `sqldw-consumption-cli` | Query Warehouses, Lakehouse SQL Endpoints, and Mirrored Databases from CLI environments |
-| `spark-consumption-cli` | Query and analyze Microsoft Fabric Lakehouse tables  |
-| `powerbi-consumption-cli` | Query semantic model metadata and run DAX against Power BI models |
-| `eventhouse-consumption-cli` | Run read-only KQL queries against Fabric Eventhouse and KQL Databases via `az rest` |
-
-### Utility Skills
-
-| Skill | Description |
-|-------|-------------|
-| `check-updates` | Automatically checks for marketplace updates at session start |
-
-### Agents
-
-For cross-workload orchestration, Skills for Microsoft Fabric now includes agent definitions:
-
-| Agent | Purpose |
-|-------|---------|
-| `FabricDataEngineer` | Orchestrate medallion architecture, ETL/ELT, migration, and data quality workflows across Spark, SQL, and KQL skills |
-| `FabricAdmin` | Manage capacity planning, governance, security, cost optimization, and observability across the Fabric tenant |
-
-Agents and their resources live in `agents/`. See [Architecture Overview](docs/architecture-overview.md) for the skill-vs-agent decision framework.
-
-## Automatic Update Checking
-
-Skills for Microsoft Fabric includes automatic update checking. At the start of each session, the first skill invoked will:
-
-1. Check the [GitHub releases](https://github.com/gim-home/Skills for Microsoft Fabric/releases) for the latest version
-2. Compare against your installed version (from `package.json`)
-3. If an update is available, display the changelog and provide update commands
-
-This check runs **once per session** and is non-blocking—you can continue using skills even if you choose not to update.
-
-To manually check for updates:
-```bash
-# GitHub Copilot CLI
-/fabric-skills:check-updates
+```
+https://api.fabric.microsoft.com
 ```
 
-## Cross-Tool Compatibility
+---
 
-These skills work with multiple AI coding tools:
+## Skill Categories
 
-| Tool | Configuration |
-|------|---------------|
-| GitHub Copilot CLI | Automatic via plugin system |
-| VS Code Copilot | Automatic via `.github/skills/` |
-| Claude Code | Copy `compatibility/CLAUDE.md` to project root |
-| Cursor | Copy `compatibility/.cursorrules` to project root |
-| Codex/Jules | Copy `compatibility/AGENTS.md` to project root |
-| Windsurf | Copy `compatibility/.windsurfrules` to project root |
+### Developer Skills (Authoring)
+For engineers building and managing Fabric workloads:
 
-The install scripts automate this setup.
+- **spark‑authoring** – Build Spark data engineering workflows
+- **sqldw‑authoring** – Manage Warehouses, SQL Endpoints, Mirrored Databases
+- **eventhouse‑authoring** – Manage KQL databases and Eventhouse resources
+- **powerbi‑authoring** – Create and manage Power BI semantic models
+- Automation scripting and CI/CD support
 
-## MCP Server Registration
+### Consumer Skills (Consumption)
+For interactive exploration without drivers or SDKs:
 
-If you have Fabric MCP servers (built separately), use the scripts in `mcp-setup/` to register them:
+- **spark‑consumption** – Query and analyze Lakehouse tables
+- **sql‑consumption** – Query Warehouses and SQL Endpoints
+- **eventhouse‑consumption** – Run read‑only KQL queries
+- **powerbi‑consumption** – Run DAX and inspect model metadata
 
-```bash
-# Windows
-.\mcp-setup\register-fabric-mcp.ps1
+---
 
-# macOS/Linux
-./mcp-setup/register-fabric-mcp.sh
-```
+## Tool Compatibility
 
-See [mcp-setup/README.md](mcp-setup/README.md) for details.
+Skills for Microsoft Fabric works across multiple AI coding tools:
+
+- **GitHub Copilot CLI** (plugin‑based, automatic updates)
+- **VS Code Copilot**
+- **Claude Code** (see `CLAUDE.md`)
+- **Cursor** (see `.cursorrules`)
+- **OpenAI Codex** (see `AGENTS.md`)
+
+Install scripts are included to automate setup.
+
+---
+
+## Agents (Preview)
+
+This repository includes higher‑level agent definitions that orchestrate multiple skills end‑to‑end:
+
+### FabricDataEngineer
+- Medallion architecture workflows
+- ETL / ELT pipelines
+- Data quality and transformation workflows
+
+### FabricAdmin
+- Capacity planning
+- Governance and security
+- Cost optimization
+- Observability and operations
+
+Agents compose multiple skills to execute complete Fabric workflows.
+
+---
 
 ## Security & Responsible AI
 
-### Security
+Skills for Microsoft Fabric is built with security and Responsible AI principles:
 
-Skills for Microsoft Fabric implements focused security controls:
-
-- ✅ **Secret Scanning**: TruffleHog + Gitleaks detect credentials
-- ✅ **Prompt Injection Protection**: Automated scanning for dangerous patterns
-
-**Report security vulnerabilities**: See [SECURITY.md](SECURITY.md)
-
-**Optional Advanced Checks** (disabled by default, available as `.disabled` files):
-- CodeQL SAST scanning
-- Dependency review and Dependabot
-- Python/Markdown/YAML linting
-- CI test automation
-- OpenSSF Scorecard
-
-### Data Handling
-
-- Skills process data locally or through authenticated Fabric APIs
+- No arbitrary code execution
+- Clear separation of system instructions and user input
+- Secret redaction in outputs
+- Azure AD–based authentication
+- Prompt‑injection resistance
 - No data sent to third parties
-- Credentials managed through Azure AD / GitHub Secrets
-- Audit logging for tool executions
 
+See `SECURITY.md` for vulnerability reporting.
 
-> **Note**: Use your Microsoft EMU GitHub account and do not include secrets or tokens in issue reports. For security vulnerabilities, report privately via [SECURITY.md](SECURITY.md).
+---
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Development setup
-- Security requirements
-- Pull request process
-- Coding standards
+Contributions are welcome.
 
-**Key requirements**:
-- ✅ All tests pass
-- ✅ Security scans pass
-- ✅ Code owner approval
-- ✅ No hardcoded secrets
-- ✅ Prompt injection resistance
+- Follow guidelines in `CONTRIBUTING.md`
+- Pull requests must pass security and quality checks
+- Adhere to Responsible AI requirements
+- Report security issues via `SECURITY.md`
 
-## Documentation
+---
 
-### For Users
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [SECURITY.md](SECURITY.md) - Security policy and reporting
-- [SUPPORT.md](SUPPORT.md) - Getting help
+## Learn More
 
-### For Maintainers
-- [docs/compliance/RAI_THREAT_MODEL.md](docs/compliance/RAI_THREAT_MODEL.md) - AI security threats and mitigations
-- [docs/compliance/SECURITY_BASELINE.md](docs/compliance/SECURITY_BASELINE.md) - Supply chain security
-- [docs/compliance/REPO_GUARDRAILS.md](docs/compliance/REPO_GUARDRAILS.md) - Repository configuration guide
+- Microsoft Fabric Documentation
+- Fabric REST APIs
 
-### Reference
-- [Fabric REST APIs](https://learn.microsoft.com/en-us/rest/api/fabric/articles/)
-- [Microsoft Fabric Documentation](https://learn.microsoft.com/en-us/fabric/)
+---
 
 ## License
 
-MIT
+MIT License
+
+---
+
+**Skills for Microsoft Fabric** — AI‑native building blocks for the modern Fabric developer.
