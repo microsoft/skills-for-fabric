@@ -1,12 +1,12 @@
 # Skills for Microsoft Fabric
 
-## AI‑native skills to build, explore, and operate Microsoft Fabric — live on stage
+## AI‑native skills to build, explore, and operate Microsoft Fabric
 
 **Skills for Microsoft Fabric** is the AI skills layer that connects modern AI coding assistants directly to **Microsoft Fabric**.
 
 From a single natural‑language interface, developers and data consumers can build Spark pipelines, query Warehouses, run KQL on Eventhouse, and inspect Power BI semantic models — securely, predictably, and in real time.
 
-Built for **keynotes, demos, and real production workflows**, Skills for Microsoft Fabric delivers one consistent AI experience across Fabric engines.
+Built for Github Copilot, Visual Studio Code, Claude Code and other Agentic CLI and Extensions. Skills for Microsoft Fabric delivers one consistent AI experience across Fabric engines.
 
 > One AI experience. Multiple engines. Enterprise‑ready.
 
@@ -27,7 +27,7 @@ With Skills, AI assistants translate intent into secure Fabric operations using 
 
 ---
 
-## What You Can Do (On Stage)
+## What You Can Do
 
 ### Analyze Data
 - Query Lakehouse tables using Spark or SQL
@@ -65,9 +65,9 @@ Designed to land clearly in a live keynote or recorded demo:
 
 ---
 
-## Skills at a Glance (Visual Overview)
+## Skills at a Glance
 
-### Developer Skills — Authoring & Automation
+### Developer Skills — Authoring
 For engineers building and operating Fabric workloads:
 
 - **Spark** – Data engineering pipelines, medallion architectures
@@ -76,8 +76,8 @@ For engineers building and operating Fabric workloads:
 - **Power BI** – Semantic models, metadata, deployments
 - **Automation** – CI/CD, scripted Fabric operations
 
-### Consumer Skills — Query & Explore
-For analysts, demo users, and data consumers (no SDKs or drivers):
+### Consumer Skills — Consumption
+For analysts, demo users, and data consumers:
 
 | Engine | What You Can Do |
 |------|----------------|
@@ -92,7 +92,7 @@ For analysts, demo users, and data consumers (no SDKs or drivers):
 
 One skills layer. Multiple AI assistants.
 
-- **GitHub Copilot CLI** (recommended for demos and automation)
+- **GitHub Copilot CLI**
 - **VS Code Copilot**
 - **Claude Code**
 - **Cursor**
