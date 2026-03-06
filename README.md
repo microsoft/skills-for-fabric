@@ -1,4 +1,4 @@
-# Skills for Microsoft Fabric
+# Agent Skills for Microsoft Fabric
 
 ## AI‑native skills to build, explore, and operate Microsoft Fabric
 
