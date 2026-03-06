@@ -2,7 +2,7 @@
 
 ## AI‑native skills to build, explore, and operate Microsoft Fabric
 
-**Skills for Microsoft Fabric** is the AI skills layer that connects modern AI coding assistants directly to **Microsoft Fabric**.
+**Agent Skills for Microsoft Fabric** is the AI skills layer that connects modern AI coding assistants directly to **Microsoft Fabric**.
 
 From a single natural‑language interface, developers and data consumers can build Spark pipelines, query Warehouses, run KQL on Eventhouse, and inspect Power BI semantic models — securely, predictably, and in real time.
 
