@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/skills-for-fabric",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "AI coding assistant skills for Microsoft Fabric developers and consumers",
   "repository": {
     "type": "git",
@@ -34,7 +34,7 @@
     "plugin.json"
   ],
   "scripts": {
-    "postinstall": "node -e \"console.log('\\n✅ Fabric Skills installed. Run install.ps1 (Windows) or install.sh (Unix) to configure your AI tools.\\n')\"",
+    "postinstall": "node -e \"console.log('\\n✅ Skills for Fabric installed. Run install.ps1 (Windows) or install.sh (Unix) to configure your AI tools.\\n')\"",
     "test": "pytest",
     "test:semantic": "pytest -m semantic",
     "test:integration": "pytest -m integration"

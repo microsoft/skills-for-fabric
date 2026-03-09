@@ -116,9 +116,9 @@ Copy-Item -Path (Join-Path $evalSource "*") -Destination $TestFolder -Recurse -F
 Write-Host "Copied eval framework to: $TestFolder"
 
 # Reinstall the local plugin
-copilot plugin marketplace remove fabric-skills-marketplace --force
+copilot plugin marketplace remove fabric-collection --force
 copilot plugin marketplace add $repoRoot
-copilot plugin install fabric-skills@fabric-skills-marketplace
+copilot plugin install fabric-skills@fabric-collection
 
 # ---------------------------------------------------------------------------
 # Discover eval plan files

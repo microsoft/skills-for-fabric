@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Microsoft Fabric Skills Installer
+# Microsoft Skills for Fabric Installer
 #
 # Usage:
 #   ./install.sh [options]
@@ -55,7 +55,7 @@ info() { echo -e "${GRAY}    $1${NC}"; }
 
 echo ""
 echo -e "${MAGENTA}╔═══════════════════════════════════════════╗${NC}"
-echo -e "${MAGENTA}║   Microsoft Fabric Skills Installer       ║${NC}"
+echo -e "${MAGENTA}║   Microsoft Skills for Fabric Installer   ║${NC}"
 echo -e "${MAGENTA}╚═══════════════════════════════════════════╝${NC}"
 echo ""
 

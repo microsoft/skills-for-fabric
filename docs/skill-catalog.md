@@ -8,7 +8,7 @@
   
   Or commit your changes - the pre-commit hook will regenerate this file.
   
-  Last generated: 2026-02-25 15:51 UTC
+  Last generated: 2026-03-09 04:36 UTC
 -->
 
 # Skill Catalog
@@ -26,11 +26,11 @@ This catalog lists all available skills-for-fabric with their purpose and trigge
 
 | Skill | Type | Purpose |
 |-------|------|---------|
-| [check-updates](#check-updates) | Utility | Check for skills-for-fabric marketplace updates at session start.... |
+| [check-updates](#check-updates) | Utility | Check for skills-for-fabric marketplace updates at session s... |
 | [e2e-medallion-architecture](#e2e-medallion-architecture) | End-to-End | Implement end-to-end Medallion Architecture (Bronze/Silver/G... |
 | [eventhouse-authoring-cli](#eventhouse-authoring-cli) | Authoring | Execute KQL management commands (table management, ingestion... |
 | [eventhouse-consumption-cli](#eventhouse-consumption-cli) | Consumption | Run KQL queries against Fabric Eventhouse for real-time inte... |
-| [powerbi-authoring-cli](#powerbi-authoring-cli) | Authoring | Create, manage, and deploy Microsoft Fabric Power BI semanti... |
+| [powerbi-authoring-cli](#powerbi-authoring-cli) | Authoring | Create, manage, and deploy Power BI semantic models inside M... |
 | [powerbi-consumption-cli](#powerbi-consumption-cli) | Consumption | The ONLY supported path for read-only Microsoft Fabric Power... |
 | [spark-authoring-cli](#spark-authoring-cli) | Authoring | Develop Microsoft Fabric Spark/data engineering workflows wi... |
 | [spark-consumption-cli](#spark-consumption-cli) | Consumption | Analyze lakehouse data interactively using Fabric Livy sessi... |
@@ -83,7 +83,7 @@ This catalog lists all available skills-for-fabric with their purpose and trigge
 
 **Type:** Authoring
 
-**Purpose:** Create, manage, and deploy Microsoft Fabric Power BI semantic models via `az rest` CLI against Fabric and Power BI REST APIs.
+**Purpose:** Create, manage, and deploy Power BI semantic models inside Microsoft Fabric workspaces via `az rest` CLI against Fabric and Power BI REST APIs.
 
 **Location:** `skills/powerbi-authoring-cli/`
 

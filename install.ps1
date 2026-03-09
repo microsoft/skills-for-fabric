@@ -38,7 +38,7 @@ function Write-Info($message) { Write-Host "    $message" -ForegroundColor Gray 
 
 Write-Host ""
 Write-Host "╔═══════════════════════════════════════════╗" -ForegroundColor Magenta
-Write-Host "║   Microsoft Fabric Skills Installer       ║" -ForegroundColor Magenta  
+Write-Host "║   Microsoft Skills for Fabric Installer   ║" -ForegroundColor Magenta  
 Write-Host "╚═══════════════════════════════════════════╝" -ForegroundColor Magenta
 Write-Host ""
 

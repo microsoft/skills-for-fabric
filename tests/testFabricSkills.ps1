@@ -23,9 +23,9 @@ else {
     }
 }
 # Step 3 : Reinstall the local plugin
-copilot plugin marketplace remove fabric-skills-marketplace --force
+copilot plugin marketplace remove fabric-collection --force
 copilot plugin marketplace add $repoRoot
-copilot plugin install fabric-skills@fabric-skills-marketplace
+copilot plugin install fabric-skills@fabric-collection
 
 # Step 4: Switch current directory to directoryPath
 Push-Location $directoryPath

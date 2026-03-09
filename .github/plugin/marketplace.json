@@ -1,8 +1,8 @@
 {
-  "name": "fabric-skills-marketplace",
+  "name": "fabric-collection",
   "metadata": {
-    "description": "Microsoft Fabric Skills marketplace for GitHub Copilot CLI",
-    "version": "0.2.5"
+    "description": "Microsoft Skills for Fabric collection for GitHub Copilot CLI",
+    "version": "0.2.6"
   },
   "owner": {
     "name": "bocrivat_microsoft",
@@ -12,8 +12,8 @@
     {
       "name": "fabric-skills",
       "source": "./",
-      "description": "Complete bundle: all Microsoft Fabric skills for developers and consumers",
-      "version": "0.2.5",
+      "description": "Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
+      "version": "0.2.6",
       "skills": [
         "./skills/check-updates",
         "./skills/powerbi-consumption-cli",
@@ -46,8 +46,8 @@
     {
       "name": "fabric-authoring",
       "source": "./",
-      "description": "Developer skills for authoring Microsoft Fabric solutions - SDKs, APIs, automation scripts, CI/CD",
-      "version": "0.2.5",
+      "description": "Developer skills for authoring Microsoft Skills for Fabric solutions - SDKs, APIs, automation scripts, CI/CD",
+      "version": "0.2.6",
       "skills": [
         "./skills/check-updates",
         "./skills/sqldw-authoring-cli",
@@ -76,8 +76,8 @@
     {
       "name": "fabric-consumption",
       "source": "./",
-      "description": "Consumer skills for interactive Microsoft Fabric operations - queries, exploration, monitoring",
-      "version": "0.2.5",
+      "description": "Consumer skills for interactive Microsoft Skills for Fabric operations - queries, exploration, monitoring",
+      "version": "0.2.6",
       "skills": [
         "./skills/check-updates",
         "./skills/powerbi-consumption-cli",

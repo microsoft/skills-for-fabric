@@ -21,9 +21,9 @@ Run this check **once per week** when any skills-for-fabric skill is first invok
 The update check marker is stored in a **persistent, user-level directory** shared across all sessions and all plugins in the Fabric Skills marketplace:
 
 ```text
-~/.config/fabric-marketplace-skills/last-update-check.json
+~/.config/fabric-collection/last-update-check.json
 ```
-
+  
 This file contains a JSON object mapping plugin names to the **UTC date** (YYYY-MM-DD) of their last update check:
 
 ```json
@@ -33,13 +33,13 @@ This file contains a JSON object mapping plugin names to the **UTC date** (YYYY-
 }
 ```
 
-Before checking, read `~/.config/fabric-marketplace-skills/last-update-check.json`:
+Before checking, read `~/.config/fabric-collection/last-update-check.json`:
 - If the file exists and the entry for the current plugin is within the last **7 days** (compared to the current **UTC date**), skip the check.
 - If the file is missing, the plugin entry is absent, or the date is more than 7 days old (compared to the current **UTC date**), run the update check.
 
 > **IMPORTANT — use UTC consistently**: Always use the current UTC date when saving and comparing the last-update-check timestamp. Do not use the local system timezone, as it varies across environments and can cause the check to run too often or be skipped. In shell, use `date -u +%Y-%m-%d` (Linux/macOS) or `(Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")` (PowerShell).
 
-> **Note**: Create the `~/.config/fabric-marketplace-skills/` directory if it does not exist. On Windows, use `$env:USERPROFILE\.config\fabric-marketplace-skills\`.
+> **Note**: Create the `~/.config/fabric-collection/` directory if it does not exist. On Windows, use `$env:USERPROFILE\.config\fabric-collection\`.
 
 ## Update Check Procedure
 
@@ -139,10 +139,7 @@ Show detailed information:
 Choose the update method based on how you installed skills-for-fabric:
 
 ### GitHub Copilot CLI
-/plugin update fabric-skills@fabric-skills-marketplace
-
-### npm
-npm update -g @microsoft/skills-for-fabric
+/plugin update fabric-skills@fabric-collection
 
 ### Manual (Git clone)
 cd /path/to/skills-for-fabric
@@ -156,7 +153,7 @@ Would you like to update now? (The current skill will still work)
 
 ### Step 6: Set Update Marker
 
-After completing the check (regardless of result), update `~/.config/fabric-marketplace-skills/last-update-check.json` with today's **UTC date** (YYYY-MM-DD) for the current plugin. Create the directory and file if they don't exist. Preserve entries for other plugins already in the file.
+After completing the check (regardless of result), update `~/.config/fabric-collection/last-update-check.json` with today's **UTC date** (YYYY-MM-DD) for the current plugin. Create the directory and file if they don't exist. Preserve entries for other plugins already in the file.
 
 ## Must
 
@@ -170,7 +167,7 @@ After completing the check (regardless of result), update `~/.config/fabric-mark
 - Use Git CLI (Method A) or GitHub MCP tools (Method B) for version checking — these work with private repos
 - Fall back to the public GitHub REST API (Method C) **only** if Methods A and B both fail
 - Show a concise summary rather than overwhelming detail
-- Cache the check result in `~/.config/fabric-marketplace-skills/last-update-check.json`
+- Cache the check result in `~/.config/fabric-collection/last-update-check.json`
 - Provide copy-pasteable update commands
 
 ## Avoid
