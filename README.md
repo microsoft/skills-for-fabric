@@ -112,42 +112,25 @@ Always start by connecting to the **Skills for Fabric** marketplace
 #### Install all skills
 
 ```bash
-/plugin install skills-for-fabric@fabric-skills-marketplace
+/plugin install skills-for-fabric@fabric-collection
 ```
 
 #### Install by persona
 
 ```bash
 # Authoring (developers, automation, CI/CD)
-/plugin install fabric-authoring@fabric-skills-marketplace
+/plugin install fabric-authoring@fabric-collection
 
 # Consumption (interactive analytics)
-/plugin install fabric-consumption@fabric-skills-marketplace
+/plugin install fabric-consumption@fabric-collection
 ```
 
 #### Filter by engine or endpoint
 
 ```bash
-/plugin install skills-for-fabric@fabric-skills-marketplace --filter "spark-*"
-/plugin install skills-for-fabric@fabric-skills-marketplace --filter "sqldw-*"
-/plugin install skills-for-fabric@fabric-skills-marketplace --filter "eventhouse-*"
-```
-
----
-
-### npm (Alternative – experimental)
-
-```bash
-npm install -g @microsoft/skills-for-fabric
-cd $(npm root -g)/@microsoft/skills-for-fabric
-```
-
-```bash
-# Windows
-.\\install.ps1
-
-# macOS / Linux
-./install.sh
+/plugin install skills-for-fabric@fabric-collection --filter "spark-*"
+/plugin install skills-for-fabric@fabric-collection --filter "sqldw-*"
+/plugin install skills-for-fabric@fabric-collection --filter "eventhouse-*"
 ```
 
 ---
