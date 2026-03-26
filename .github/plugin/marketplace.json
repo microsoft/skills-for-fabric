@@ -10,7 +10,7 @@
   },
   "plugins": [
     {
-      "name": "fabric-skills",
+      "name": "skills-for-fabric",
       "source": "./",
       "description": "Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
       "version": "0.2.6",
