@@ -28,7 +28,7 @@ This file contains a JSON object mapping plugin names to the **UTC date** (YYYY-
 
 ```json
 {
-  "fabric-skills": "2026-02-17",
+  "skills-for-fabric": "2026-02-17",
   "another-plugin": "2026-02-16"
 }
 ```
@@ -139,7 +139,7 @@ Show detailed information:
 Choose the update method based on how you installed skills-for-fabric:
 
 ### GitHub Copilot CLI
-/plugin update fabric-skills@fabric-collection
+/plugin update skills-for-fabric@fabric-collection
 
 ### Manual (Git clone)
 cd /path/to/skills-for-fabric
