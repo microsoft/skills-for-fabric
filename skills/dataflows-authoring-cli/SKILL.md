@@ -257,7 +257,7 @@ az rest --method post \
 ```bash
 # Trigger refresh (returns 202 + Location header for polling)
 LOCATION=$(az rest --method post \
-  --url "https://api.fabric.microsoft.com/v1/workspaces/${WS_ID}/items/${DF_ID}/jobs/instances?jobType=Pipeline" \
+  --url "https://api.fabric.microsoft.com/v1/workspaces/${WS_ID}/items/${DF_ID}/jobs/Execute/instances" \
   --resource "https://api.fabric.microsoft.com" \
   --headers "Content-Length=0" \
   --output none --include-response-headers 2>&1 | grep -i "^location:" | awk '{print $2}' | tr -d '\r')
