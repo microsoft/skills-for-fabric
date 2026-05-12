@@ -52,7 +52,7 @@ Route to specialized skills for endpoint-specific implementation:
 - sqldw-authoring-cli for T-SQL authoring and warehouse object changes
 - sqldw-consumption-cli for read-only T-SQL analytics and exploration
 - sqldw-operations-cli for DW performance diagnostics, slow query analysis, and query insights
-- eventhouse-authoring-clifor KQL management commands — table management, ingestion, policies, materialized views, functions
+- eventhouse-authoring-cli for KQL management commands — table management, ingestion, policies, materialized views, functions
 - eventhouse-consumption-cli for read-only KQL queries against Eventhouse / KQL Databases
 - eventstream-authoring-cli for creating and managing Eventstream topologies — sources, operators, destinations via Fabric REST API
 - eventstream-consumption-cli for listing, inspecting, and monitoring Eventstream configurations and status
