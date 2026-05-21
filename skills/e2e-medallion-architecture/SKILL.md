@@ -75,6 +75,7 @@ For Spark-specific optimization details, see [data-engineering-patterns.md](../s
 - Clear layer ownership: engineers own Bronze/Silver, analysts own Gold
 - Fabric Variable Libraries to centralize paths and configuration across layers
 - Multi-workspace deployment patterns for medium/high governance requirements (Bronze/Silver/Gold in separate workspaces)
+- Use Materialized Lake Views (MLVs) for Silver/Gold tables when the transformation is expressible in Spark SQL and benefits from declarative refresh semantics. See [spark-authoring-cli — Materialized Lake View patterns](../spark-authoring-cli/resources/materialized-lake-view-patterns.md) and [MLV incremental refresh patterns](../spark-authoring-cli/resources/mlv-incremental-refresh-patterns.md).
 
 ### AVOID
 - Storing all layers in a single lakehouse — this defeats isolation and independent optimization

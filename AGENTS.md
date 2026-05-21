@@ -40,6 +40,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - Use Medallion architecture: Bronze (raw) → Silver (cleaned) → Gold (aggregated)
 - Lakehouse for data engineering, Warehouse for SQL analytics
 - Delta Lake format for all Lakehouse tables
+- For Materialized Lake View SQL authoring and incremental refresh optimization, use `skills/spark-authoring-cli/SKILL.md` and its MLV resource documents.
 
 ### Development
 - PySpark with mssparkutils for notebooks

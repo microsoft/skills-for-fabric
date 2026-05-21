@@ -10,7 +10,10 @@ description: >
   Triggers: "develop notebook", "data engineering", "workspace setup", "pipeline design",
   "infrastructure provisioning", "Delta Lake patterns", "Spark development", "lakehouse configuration",
   "write notebook code", "notebookutils", "notebook cell", "PySpark notebook",
-  "%%sql cell", "%%configure", "fabric notebook", "run notebook", "notebook deployment".
+  "%%sql cell", "%%configure", "fabric notebook", "run notebook", "notebook deployment",
+  "materialized lake view", "MLV", "incremental refresh", "refresh materialized lake view",
+  "design silver and gold with MLVs", "optimize MLV", "why is my MLV doing full refresh",
+  "CREATE MATERIALIZED LAKE VIEW".
 ---
 
 > **Update Check — ONCE PER SESSION (mandatory)**
@@ -85,6 +88,8 @@ This skill covers two complementary areas: (1) **managing Fabric Spark artifacts
 | Local Testing Strategy | [development-workflow.md § Local Testing Strategy](resources/development-workflow.md#local-testing-strategy) ||
 | Debugging Patterns | [development-workflow.md § Debugging Patterns](resources/development-workflow.md#debugging-patterns) ||
 | Recommended Patterns (Infrastructure) | [infrastructure-orchestration.md § Recommended patterns](resources/infrastructure-orchestration.md#recommended-patterns) ||
+| Materialized Lake View patterns | [materialized-lake-view-patterns.md § Recommended patterns](resources/materialized-lake-view-patterns.md#recommended-patterns) | Spark Lakehouse authoring guidance for MLV design (when to use MLVs, layering patterns) |
+| MLV incremental refresh patterns | [mlv-incremental-refresh-patterns.md § Recommended patterns](resources/mlv-incremental-refresh-patterns.md#recommended-patterns) | Use for refresh-readiness review and safe non-breaking rewrites |
 | Workspace Provisioning Principles | [infrastructure-orchestration.md § Workspace Provisioning Principles](resources/infrastructure-orchestration.md#workspace-provisioning-principles) ||
 | Lakehouse Configuration Guidance | [infrastructure-orchestration.md § Lakehouse Configuration Guidance](resources/infrastructure-orchestration.md#lakehouse-configuration-guidance) ||
 | Pipeline Design Patterns | [infrastructure-orchestration.md § Pipeline Design Patterns](resources/infrastructure-orchestration.md#pipeline-design-patterns) ||
@@ -149,7 +154,7 @@ This skill covers two complementary areas: (1) **managing Fabric Spark artifacts
 > Before submitting new notebook run, ALWAYS check for recent job instances first (last 5 minutes). If recent job exists, monitor it instead of creating duplicate. After submission, capture job instance ID immediately and poll status - never retry POST. See SPARK-AUTHORING-CORE.md Job Monitoring for patterns.
 >
 > **Rule 4 — For notebook code authoring, MUST follow SPARK-NOTEBOOK-AUTHORING-CORE.md.**
-> When writing code inside notebook cells, MUST read [SPARK-NOTEBOOK-AUTHORING-CORE.md](../../common/SPARK-NOTEBOOK-AUTHORING-CORE.md) first — it defines the code generation approach, rules, and a Module Index linking to detailed guides (lakehouse paths, connections, context, orchestration, etc.). Use the Spark-specific resources in this skill ([data-engineering-patterns.md](resources/data-engineering-patterns.md), [development-workflow.md](resources/development-workflow.md)) for Spark-only implementation details.
+> When writing code inside notebook cells, MUST read [SPARK-NOTEBOOK-AUTHORING-CORE.md](../../common/SPARK-NOTEBOOK-AUTHORING-CORE.md) first — it defines the code generation approach, rules, and a Module Index linking to detailed guides (lakehouse paths, connections, context, orchestration, etc.). Use the Spark-specific resources in this skill ([data-engineering-patterns.md](resources/data-engineering-patterns.md), [development-workflow.md](resources/development-workflow.md)) for Spark-only implementation details. When the task is about Materialized Lake Views, read [materialized-lake-view-patterns.md](resources/materialized-lake-view-patterns.md) for authoring/design guidance and [mlv-incremental-refresh-patterns.md](resources/mlv-incremental-refresh-patterns.md) for refresh-readiness analysis.
 
 ---
 
@@ -187,6 +192,30 @@ lakehouse_id=$(az rest --method post --resource "https://api.fabric.microsoft.co
 spark.sql("CREATE SCHEMA IF NOT EXISTS bronze")
 spark.sql("CREATE SCHEMA IF NOT EXISTS silver")
 spark.sql("CREATE SCHEMA IF NOT EXISTS gold")
+```
+
+### Create and Refresh a Materialized Lake View (MLV)
+```sql
+-- See resources/materialized-lake-view-patterns.md for design guidance
+-- and resources/mlv-incremental-refresh-patterns.md for refresh-readiness review.
+
+-- Bronze/Silver/Gold schemas in a Lakehouse with schemas enabled
+CREATE SCHEMA IF NOT EXISTS bronze;
+CREATE SCHEMA IF NOT EXISTS silver;
+CREATE SCHEMA IF NOT EXISTS gold;
+
+-- A simple Silver MLV
+CREATE MATERIALIZED LAKE VIEW silver.orders_clean AS
+SELECT
+  order_id,
+  customer_id,
+  CAST(order_ts AS TIMESTAMP) AS order_ts,
+  amount
+FROM bronze.orders_raw
+WHERE order_id IS NOT NULL;
+
+-- Refresh
+REFRESH MATERIALIZED LAKE VIEW silver.orders_clean;
 ```
 
 ### Create Lakehouse Livy Session

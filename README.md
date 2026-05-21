@@ -46,7 +46,7 @@ You can also filter the full bundle by workload:
 | `fabric-consumption` | Read-only exploration and query workflows across Warehouses, Lakehouses, Power BI semantic models, Eventhouse/KQL databases, Eventstreams, Dataflows Gen2, and catalog search. |
 | `fabric-operations` | Performance and health diagnostics, including warehouse query insights and slow-query investigation. |
 
-The full bundle includes skills for SQL data warehouse, Spark and Lakehouse, Power BI semantic models, Eventhouse and KQL, Eventstreams, Dataflows Gen2, catalog search, migration scenarios, and medallion architecture workflows.
+The full bundle includes skills for SQL data warehouse, Spark and Lakehouse (including Materialized Lake Views), Power BI semantic models, Eventhouse and KQL, Eventstreams, Dataflows Gen2, catalog search, migration scenarios, and medallion architecture workflows.
 
 See [CHANGELOG.md](CHANGELOG.md) for public release notes.
 
@@ -61,6 +61,14 @@ After installing a bundle, open Copilot CLI in a project folder and ask for the 
 
 ```text
 Use Microsoft Fabric skills to design a medallion architecture for NYC taxi data.
+```
+
+```text
+Use Microsoft Fabric skills to design a Bronze/Silver/Gold flow with Materialized Lake Views.
+```
+
+```text
+Review this CREATE MATERIALIZED LAKE VIEW statement for incremental refresh blockers.
 ```
 
 ## Authentication
