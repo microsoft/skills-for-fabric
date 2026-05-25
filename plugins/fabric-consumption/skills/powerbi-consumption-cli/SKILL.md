@@ -72,11 +72,12 @@ description: >
 - Keep this skill read-only: metadata discovery and analytical DAX queries only.
 - Treat DAX data queries and `INFO.VIEW.*` as available to any user with read access to the semantic model; assume other `INFO.*` functions may require elevated permissions.
 - Resolve workspace and semantic model item identity dynamically; do not hardcode IDs.
+- Resolve the semantic model GUID before calling `ExecuteQuery`; do not pass a friendly semantic model name as `artifactId`.
 - Use DAX `INFO.VIEW.*` / `INFO.*` for metadata discovery before writing data queries.
 
 ### PREFER
 
-- Validate semantic model scope early (`artifactId`) before iterative query refinement.
+- Validate semantic model scope early (`artifactId` must be a semantic model GUID) before iterative query refinement.
 - Discover semantic model schema progressively: use filtered and projected `INFO.VIEW.*` / `INFO.*` calls (e.g., `SELECTCOLUMNS` + `FILTER`) to fetch only the information directly relevant to the current task instead of retrieving the full schema up front. See [discovery-queries.md § Narrowing Results (Projection + Filtering)](./references/discovery-queries.md#narrowing-results-projection--filtering).
 - Keep guidance provider-agnostic so tool endpoint migration is low risk.
 
@@ -154,7 +155,7 @@ description: >
 
 Use a single `ExecuteQuery` capability with payload concepts:
 
-- `artifactId`: target semantic model identifier.
+- `artifactId`: GUID of the target semantic model, for example `1975b5f0-69e2-47a8-ae5f-c891b15934f4`. Do not pass the friendly semantic model name. Resolve the GUID from [COMMON-CLI.md § Finding Workspaces and Items in Fabric](../../common/COMMON-CLI.md#finding-workspaces-and-items-in-fabric) first.
 - `daxQuery`: direct DAX query text.
 
 > Temporary implementation note: current query integration is expected to be replaced before release by a public HTTP endpoint exposing `ExecuteQuery`.
@@ -165,6 +166,10 @@ Use a single `ExecuteQuery` capability with payload concepts:
   - **Issue:** Query execution cannot start because `ExecuteQuery` is not available in the active tool list.
   - **Cause:** The Fabric MCP server is not registered, not loaded, or the current client session has stale tool metadata.
   - **Fix:** Verify the active MCP server/tool inventory and confirm `ExecuteQuery` is exposed.
+- **ExecuteQuery fails with invalid arguments for `artifactId`**
+  - **Issue:** Query execution fails with `MCP error -32602: Tool invoked with invalid arguments`.
+  - **Cause:** `artifactId` was likely passed as a friendly semantic model name instead of a GUID.
+  - **Fix:** Resolve the semantic model item first and retry with its GUID as `artifactId`.
 - **Advanced INFO functions return permission errors**
   - **Issue:** Queries against `INFO.*` fail with authorization or privilege-related errors.
   - **Cause:** Many `INFO.*` functions require elevated semantic model permissions beyond standard read access.

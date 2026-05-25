@@ -2,6 +2,12 @@
 
 User-facing changes for the public Microsoft Fabric Skills release.
 
+## Unreleased
+
+### Fixed
+
+- **`powerbi-consumption-cli` now explicitly documents that `ExecuteQuery.artifactId` must be the semantic model GUID, not the friendly model name.** This helps agents recover from invalid-argument failures by resolving the semantic model item before executing DAX queries.
+
 ## [0.3.1] - 2026-05-10
 
 ### Added
