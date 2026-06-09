@@ -35,6 +35,8 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 - Use mssparkutils for Fabric-specific operations (fs, credentials, notebook)
 - Include partition columns for large tables
 - Run OPTIMIZE and VACUUM for table maintenance
+- For Materialized Lake View authoring and incremental refresh review, use `skills/spark-authoring-cli/SKILL.md`.
+- Resource docs: `skills/spark-authoring-cli/resources/materialized-lake-view-patterns.md` and `skills/spark-authoring-cli/resources/mlv-incremental-refresh-patterns.md`.
 
 ### Warehouse (T-SQL)
 - Check T-SQL surface area - not all SQL Server features are supported

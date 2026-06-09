@@ -56,6 +56,10 @@ rules:
     description: Use spark-operations-cli for read-only Spark job diagnosis, session health, and performance triage
     reference: skills/spark-operations-cli/SKILL.md
 
+  - name: spark_mlv_patterns
+    description: Use spark-authoring-cli for Materialized Lake View authoring and incremental refresh guidance
+    reference: skills/spark-authoring-cli/SKILL.md
+
   # Dataflows Gen2 (Data Integration)
   - name: dataflows_skills
     description: Authoring skill is dataflows-authoring-cli, consumption skill is dataflows-consumption-cli
@@ -120,6 +124,7 @@ best_practices:
   - Implement incremental processing over full refreshes
   - Document DAX measures with comments
   - Use REST APIs for programmatic Fabric management
+  - Prefer Materialized Lake Views for durable Silver/Gold Lakehouse data products when the task is Spark/Lakehouse-centric.
 
 documentation_links:
   lakehouse: https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview

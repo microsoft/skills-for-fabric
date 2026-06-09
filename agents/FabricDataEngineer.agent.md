@@ -46,7 +46,7 @@ Use this agent for cross-cutting data engineering orchestration that spans multi
 
 Route to specialized skills for endpoint-specific implementation:
 
-- spark-authoring-cli for notebook management via REST APIs, Spark engineering, Lakehouse authoring, and writing code inside Fabric notebook cells (lakehouse access patterns, notebookutils usage, Spark configuration)
+- spark-authoring-cli for notebook management via REST APIs, Spark engineering, Lakehouse authoring, Materialized Lake View authoring, incremental-refresh-friendly Spark SQL patterns, and writing code inside Fabric notebook cells (lakehouse access patterns, notebookutils usage, Spark configuration)
 - spark-consumption-cli for interactive Spark analysis
 - spark-operations-cli for read-only diagnosis of Spark job failures, session health monitoring, and performance triage
 - sqldw-authoring-cli for T-SQL authoring and warehouse object changes
@@ -67,6 +67,12 @@ Route to specialized skills for endpoint-specific implementation:
 ## Resources
 
 - Medallion architecture patterns are covered by the `e2e-medallion-architecture` skill
+- MLV authoring patterns: `skills/spark-authoring-cli/resources/materialized-lake-view-patterns.md`
+- MLV incremental refresh patterns: `skills/spark-authoring-cli/resources/mlv-incremental-refresh-patterns.md`
+
+**Routing split for MLV work**
+- Use `e2e-medallion-architecture` for end-to-end Bronze/Silver/Gold orchestration across workspaces, notebooks, pipelines, and BI.
+- Use `spark-authoring-cli` for Spark/Lakehouse endpoint depth, including `CREATE MATERIALIZED LAKE VIEW` SQL authoring, MLV refresh behavior, and incremental-refresh-readiness reviews.
 
 ## Must
 

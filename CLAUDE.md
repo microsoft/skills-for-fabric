@@ -50,6 +50,7 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 ### Data Engineering
 - **Lakehouse**: Delta tables, Spark, file management
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview
+  - Authoring skill: `skills/spark-authoring-cli/SKILL.md` — notebook authoring, Lakehouse authoring, Materialized Lake Views, and refresh-friendly Spark patterns.
 - **Notebooks**: PySpark notebooks with mssparkutils
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/how-to-use-notebook
 - **Spark Jobs**: Production Spark workloads
