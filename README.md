@@ -82,7 +82,7 @@ SQL, Spark, Power BI, and KQL workflows may require workload-specific endpoints 
 
 Skills provide guidance and patterns. MCP servers provide live tool access to data sources and APIs. Some bundles include MCP configuration where supported, and you can register additional Fabric MCP servers if your environment provides them.
 
-See [MCP setup](mcp-setup/README.md) and the [MCP servers guide](docs/mcp-servers-guide.md).
+See [MCP setup](mcp-setup/README.md).
 
 ## Other AI coding tools
 
