@@ -60,6 +60,10 @@ rules:
     description: Use spark-authoring-cli for Materialized Lake View authoring and incremental refresh guidance
     reference: skills/spark-authoring-cli/SKILL.md
 
+  - name: mlv_operations
+    description: Use mlv-operations-cli for MLV refresh scheduling, job monitoring, and cancellation
+    reference: skills/mlv-operations-cli/SKILL.md
+
   # Dataflows Gen2 (Data Integration)
   - name: dataflows_skills
     description: Authoring skill is dataflows-authoring-cli, consumption skill is dataflows-consumption-cli
@@ -80,6 +84,14 @@ rules:
       skills/fabriciq/SKILL.md in full before calling any FabricIQ MCP tool
       (see agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading).
     reference: skills/fabriciq/SKILL.md
+
+  - name: ontology_authoring
+    description: Fabric IQ Ontology (preview) — authoring skill
+    reference: skills/fabriciq-ontology-authoring-cli/SKILL.md
+
+  - name: ontology_consumption
+    description: Fabric IQ Ontology (preview) — consumption / read-only skill
+    reference: skills/fabriciq-ontology-consumption-cli/SKILL.md
 
   - name: catalog_search
     description: Use POST /v1/catalog/search to find items across workspaces by name, description, or type

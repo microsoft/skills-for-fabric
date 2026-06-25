@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/skills-for-fabric",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "AI coding assistant skills for Microsoft Fabric developers and consumers",
   "repository": {
     "type": "git",

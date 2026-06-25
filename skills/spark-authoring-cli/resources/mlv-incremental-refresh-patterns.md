@@ -203,6 +203,32 @@ ALTER TABLE bronze.customers SET TBLPROPERTIES (delta.enableChangeDataFeed = tru
 - Verify the **Optimal refresh** toggle is enabled (default: On) in schedule settings
 - For MLV chains, enable CDF on intermediate MLVs too
 
+### Sweeping refresh cadence: incremental daily + full weekly
+
+The most cost-effective production pattern for MLVs with CDF-enabled sources:
+
+| Cadence | Method | Purpose |
+|---------|--------|---------|
+| Daily (scheduled) | Automatic (optimal refresh) | Incremental refresh via CDF — fast, low-cost, processes only new/changed rows |
+| Weekly (manual or scheduled) | `REFRESH MATERIALIZED LAKE VIEW schema.view_name FULL` | Full rebuild — catches edge cases IR misses (schema drift, orphaned deletes, compaction) |
+
+**When to use this pattern:**
+- Source tables are append-heavy with occasional updates/deletes
+- MLVs serve dashboards that need daily freshness
+- You want cost control (IR = ~5% of full refresh cost) with weekly safety net
+
+**Setup:**
+1. Enable CDF on all source tables: `ALTER TABLE src SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`
+2. Create a Daily schedule via REST API or Lakehouse UI (Optimal Refresh = On)
+3. Run `REFRESH MATERIALIZED LAKE VIEW ... FULL` weekly via notebook pipeline or manual trigger
+
+**Why the weekly FULL matters:**
+- Incremental refresh cannot detect: schema changes in sources, vacuum/compaction side effects, or changes that bypass CDF (e.g., direct file manipulation)
+- FULL rebuild guarantees consistency — catches anything IR missed during the week
+- Cost: one FULL per week ≈ same as 7 incremental refreshes (~14% overhead for 100% correctness guarantee)
+
+> **Tip**: Schedule the weekly FULL on a low-traffic window (e.g., Sunday 3 AM) to avoid capacity contention with dashboards.
+
 ---
 
 ## Example assessment language

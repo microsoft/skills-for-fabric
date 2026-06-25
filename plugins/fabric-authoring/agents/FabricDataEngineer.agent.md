@@ -8,6 +8,7 @@ delegates_to:
   - spark-authoring-cli
   - spark-consumption-cli
   - spark-operations-cli
+  - mlv-operations-cli
   - sqldw-authoring-cli
   - sqldw-consumption-cli
   - sqldw-operations-cli
@@ -46,13 +47,14 @@ Use this agent for cross-cutting data engineering orchestration that spans multi
 
 Route to specialized skills for endpoint-specific implementation:
 
-- spark-authoring-cli for notebook management via REST APIs, Spark engineering, Lakehouse authoring, and writing code inside Fabric notebook cells (lakehouse access patterns, notebookutils usage, Spark configuration)
+- spark-authoring-cli for notebook management via REST APIs, Spark engineering, Lakehouse authoring, Materialized Lake View (MLV) SQL authoring, and writing code inside Fabric notebook cells (lakehouse access patterns, notebookutils usage, Spark configuration)
 - spark-consumption-cli for interactive Spark analysis
 - spark-operations-cli for read-only diagnosis of Spark job failures, session health monitoring, and performance triage
+- mlv-operations-cli for MLV refresh scheduling (create/update/delete schedules), on-demand refresh triggering, job monitoring, and cancellation via REST APIs
 - sqldw-authoring-cli for T-SQL authoring and warehouse object changes
 - sqldw-consumption-cli for read-only T-SQL analytics and exploration
 - sqldw-operations-cli for DW performance diagnostics, slow query analysis, and query insights
-- eventhouse-authoring-clifor KQL management commands — table management, ingestion, policies, materialized views, functions
+- eventhouse-authoring-cli for KQL management commands — table management, ingestion, policies, materialized views, functions
 - eventhouse-consumption-cli for read-only KQL queries against Eventhouse / KQL Databases
 - eventstream-authoring-cli for creating and managing Eventstream topologies — sources, operators, destinations via Fabric REST API
 - eventstream-consumption-cli for listing, inspecting, and monitoring Eventstream configurations and status

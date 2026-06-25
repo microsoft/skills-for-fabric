@@ -156,6 +156,18 @@ The TOC is grouped by purpose. Start at **Diagnostic Workflows** when triaging a
 - The Spark Advisor API over manual log parsing for skew, task errors, and timeout detection
 - Resource Usage API `coreEfficiency` metric to quantify cluster utilization before recommending scaling
 - Job instance history comparison (last 5 runs) to detect regressions before deep-diving
+- For MLV refresh scheduling, monitoring, or run-history, use [mlv-operations-cli](../mlv-operations-cli/SKILL.md). For diagnosing the underlying Spark job failure (OOM, skew, shuffle spill), continue with this skill — MLV refreshes execute as Spark jobs and their logs are accessible via the same monitoring APIs.
+- **MLV failure classification** — when diagnosing a failed MLV refresh, classify the error before deep-diving:
+
+  | Error Pattern | Category | Diagnosis Path |
+  |--------------|----------|----------------|
+  | `MLV_SPARK_SESSION_REQUEST_SUBMISSION_FAILED` | Infrastructure | Capacity paused/unavailable, Spark pool misconfigured. Check capacity state first. |
+  | `MLV_SELECTED_NOT_FOUND` | Configuration | MLV table was deleted/renamed. Verify table exists via `SHOW MATERIALIZED LAKE VIEWS IN schema`. |
+  | `OutOfMemoryError` / `SparkOutOfMemory` | Resource | Source data grew beyond cluster capacity. Check Spark Advisor for memory pressure. |
+  | `ShuffleBlockFetchFailed` / data skew | Performance | Uneven data distribution. Use Resource Usage API to identify skewed partitions. |
+  | `DeltaTableVersionNotFound` | Dependency | Source table was vacuumed below retention threshold. Extend `delta.logRetentionDuration`. |
+  | `ConstraintViolationException` / `ON MISMATCH` | Data Quality | DQ constraint dropped/failed rows. Check source data quality upstream. |
+  | Timeout (run > 24 hours) | Scale | Lineage too large for single run. Split into smaller lineage groups across lakehouses. |
 
 ### AVOID
 
@@ -258,4 +270,3 @@ All session API paths follow: `$FABRIC_API_URL/workspaces/$workspaceId/<itemType
 > **Data retention warning**: Spark Monitoring API data (logs, stages, advisor) typically expires in **minutes to hours** after session end. Diagnose failures promptly. If APIs return 404, jump to Step 1b in the [reference](references/automated-diagnostic-workflow.md#step-1b--fallback-session-not-found--data-expired).
 
 > **Tier 2 escalation**: For truncated data, HTTP 408/504, or DAG/SQL plan visualization, suggest the [offline Spark History Server workflow](references/spark-history-server.md).
-
