@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema",
   "name": "fabric-consumption",
   "description": "Consumer skills for interactive Microsoft Skills for Fabric operations - queries, exploration, monitoring",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "license": "MIT",
   "repository": "https://github.com/microsoft/skills-for-fabric",
   "keywords": [
@@ -22,7 +22,8 @@
     "./skills/eventstream-consumption-cli",
     "./skills/activator-consumption-cli",
     "./skills/dataflows-consumption-cli",
-    "./skills/search-consumption-cli"
+    "./skills/search-consumption-cli",
+    "./skills/fabriciq-ontology-consumption-cli"
   ],
   "agents": [
     "./agents/FabricAdmin.agent.md",

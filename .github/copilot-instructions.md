@@ -66,7 +66,7 @@ Target users diagnosing performance and health: system view queries, multi-step 
 
 ## Testing Requirements for New Skills
 
-Vally is the required PR and nightly harness for new or changed skill behavior. Add or update `tests/evals/<skill>/eval.yaml`; use `tests/evals/README.md` as the canonical guide. Start with Layer 0 coverage (`skill-invocation`, `completed`, crash-pattern rejection, one output assertion, and budget graders). Legacy smoke (`tests/tests.json` and `tests/run-smoke-tests.ps1`) is frozen for manual-only break-glass and should not receive new stims.
+Vally is the required PR and nightly harness for new or changed skill behavior. Add or update `tests/evals/<skill>/eval.yaml`; use `tests/evals/README.md` as the canonical guide. Start with Layer 0 coverage (`skill-invocation`, `completed`, crash-pattern rejection, one output assertion, and budget graders).
 
 ## Cross-Tool Compatibility
 

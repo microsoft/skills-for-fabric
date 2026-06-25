@@ -53,6 +53,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - Lakehouse for data engineering, Warehouse for SQL analytics
 - Delta Lake format for all Lakehouse tables
 - For Materialized Lake View SQL authoring and incremental refresh optimization, use `skills/spark-authoring-cli/SKILL.md` and its MLV resource documents.
+- For MLV refresh scheduling, job monitoring, and cancellation, use `skills/mlv-operations-cli/SKILL.md`.
 
 ### Development
 - PySpark with mssparkutils for notebooks
@@ -83,6 +84,10 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - Consumption skill: `skills/semantic-model-consumption/SKILL.md` — raw DAX queries against semantic models via MCP ExecuteQuery tool
 - FabricIQ skill: `skills/fabriciq/SKILL.md` — multi-step Power BI data analysis (discover, inspect, resolve, generate, execute)
 - ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](../agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
+
+### Fabric IQ / Ontology (preview)
+- Authoring skill: `skills/fabriciq-ontology-authoring-cli/SKILL.md` — define entity types, properties (incl. timeseries), relationship types, and bind them to lakehouse/Eventhouse tables via the item-definition REST API
+- Consumption skill: `skills/fabriciq-ontology-consumption-cli/SKILL.md` — read ontology items for agent grounding context and route ontology-backed queries to the matching per-datasource consumption skill
 
 ## Constraints
 

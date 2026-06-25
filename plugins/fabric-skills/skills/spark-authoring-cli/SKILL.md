@@ -12,7 +12,6 @@ description: >
   "%%sql cell", "%%configure", "fabric notebook", "run notebook", "notebook deployment",
   "materialized lake view", "MLV", "CREATE MATERIALIZED LAKE VIEW",
   "MLV incremental refresh", "review MLV for incremental refresh", "MLV refresh policy",
-  "schedule MLV refresh",
   "infrastructure provisioning"
 ---
 
@@ -90,6 +89,7 @@ This skill covers two complementary areas: (1) **managing Fabric Spark artifacts
 | Recommended Patterns (Infrastructure) | [infrastructure-orchestration.md § Recommended patterns](resources/infrastructure-orchestration.md#recommended-patterns) ||
 | Materialized Lake View patterns | [materialized-lake-view-patterns.md § Recommended patterns](resources/materialized-lake-view-patterns.md#recommended-patterns) | Spark Lakehouse authoring guidance for MLV design (when to use MLVs, layering patterns) |
 | MLV incremental refresh patterns | [mlv-incremental-refresh-patterns.md § IR-friendly syntax guide](resources/mlv-incremental-refresh-patterns.md#ir-friendly-syntax-guide) | Use for refresh-readiness review and safe non-breaking rewrites |
+| MLV schedule & job management | [mlv-operations-cli](../mlv-operations-cli/SKILL.md) | Route here when user asks to schedule, trigger, monitor, or cancel MLV refreshes (not authoring) |
 | Workspace Provisioning Principles | [infrastructure-orchestration.md § Workspace Provisioning Principles](resources/infrastructure-orchestration.md#workspace-provisioning-principles) ||
 | Lakehouse Configuration Guidance | [infrastructure-orchestration.md § Lakehouse Configuration Guidance](resources/infrastructure-orchestration.md#lakehouse-configuration-guidance) ||
 | Pipeline Design Patterns | [infrastructure-orchestration.md § Pipeline Design Patterns](resources/infrastructure-orchestration.md#pipeline-design-patterns) ||
@@ -138,6 +138,7 @@ This skill covers two complementary areas: (1) **managing Fabric Spark artifacts
 - **Don't create new runs if monitoring existing job** — One job at a time; wait for completion before submitting new runs
 - **Don't hardcode workspace/lakehouse IDs** — Discover dynamically via item listing or catalog search APIs
 - **Do NOT use Lakehouse Livy sessions to run a Fabric notebook** — Lakehouse Livy sessions (the public Livy API) are for ad-hoc interactive Spark code execution. To run a notebook as a job, use the Jobs API (`RunNotebook`) which creates a Notebook Spark session internally. See SPARK-AUTHORING-CORE.md § Notebook Execution & Job Management
+- **Do NOT schedule MLV refreshes from notebooks** — If the user asks to "schedule MLV refresh", route to [mlv-operations-cli](../mlv-operations-cli/SKILL.md) which uses the REST API. Notebook-based `REFRESH MATERIALIZED LAKE VIEW ... FULL` is for one-time manual refresh only, not recurring schedules.
 
 ---
 

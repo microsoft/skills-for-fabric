@@ -66,16 +66,21 @@ Guide LLM based on use case:
 - Small project with <10 tables, single data pipeline
 - All data has same security requirements
 - Team is small, no cross-team collaboration
+- **Medallion architecture with schema-enabled lakehouse** — create `bronze`, `silver`, `gold` schemas within one lakehouse; MLVs with incremental refresh make cross-schema transformations efficient
 
 **Multiple lakehouses** when:
 - Large project with distinct data domains (sales, marketing, finance)
 - Different security/compliance requirements per domain
-- Separate bronze/silver/gold layers for medallion architecture
 - Different retention policies per data type
+
+**Avoid creating separate lakehouses** for:
+- Medallion layers (bronze/silver/gold) when using schema-enabled lakehouses — use schemas within one lakehouse instead
+- Derived/transformed tables within the same layer/schema — use notebooks, MLVs, or standard tables within the existing lakehouse/schema, not separate lakehouses
 
 ### Lakehouse Naming Conventions
 Prompt LLM to follow pattern:
-- **Medallion architecture**: `{project}_bronze`, `{project}_silver`, `{project}_gold`
+- **Medallion architecture with schema-enabled lakehouse**: Single lakehouse named `{project}_lakehouse`, with schemas `bronze`, `silver`, `gold` inside
+- **Medallion architecture without schema-enabled lakehouse** (legacy): `{project}_bronze`, `{project}_silver`, `{project}_gold` as separate lakehouses
 - **Domain separation**: `sales_lakehouse`, `marketing_lakehouse`, `shared_dimensions`
 - **Environment suffix**: Include env if workspace spans environments (rare)
 

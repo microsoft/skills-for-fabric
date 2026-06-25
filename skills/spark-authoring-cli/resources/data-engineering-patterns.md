@@ -65,13 +65,222 @@ Guide LLM to define explicit schemas with nullable constraints, data type valida
 
 ## Transformation Patterns
 
-### When to Use Different Operations
+This section helps you choose the right transformation approach for your data pipeline. Each pattern follows a consistent structure: **WHAT** (definition), **WHY** (benefits/trade-offs), **WHEN** (decision criteria), and **HOW** (examples).
 
-**Aggregations**: For summarization and metrics; combine multiple in single pass with `.agg()`
+---
 
-**Window Functions**: For ranking (row_number, rank), running calculations (cumulative sums), and lead/lag comparisons; more efficient than self-joins
+### Pattern 1: Aggregations (GROUP BY + Aggregate Functions)
 
-**Joins**: Inner (matching only), Left (dimension lookups), Broadcast (<100MB tables to avoid shuffle)
+**WHAT:**  
+Summarize data by grouping rows and applying aggregate functions (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`, `COLLECT_LIST`).
+
+**WHY:**
+- ✅ Single-pass computation (efficient)
+- ✅ Built-in Spark optimization (adaptive query execution)
+- ✅ Can combine multiple aggregates in one `.agg()` call
+- ⚠️ Large cardinality GROUP BY (millions of unique keys) may cause memory pressure
+
+**WHEN to use:**
+- Summarizing metrics by dimension (e.g., revenue by region, counts by product)
+- Calculating totals, averages, or other statistical measures
+- Creating reporting tables or dashboards
+- Preparing data for visualization
+
+**Examples:**
+
+```python
+from pyspark.sql import functions as F
+
+# Daily sales summary
+df.groupBy("order_date") \
+  .agg(
+    F.sum("amount").alias("total_sales"),
+    F.count("order_id").alias("order_count"),
+    F.countDistinct("customer_id").alias("unique_customers")
+  )
+
+# Multi-dimensional aggregation
+df.groupBy("product_category", "region", "order_date") \
+  .agg(F.avg("discount_percent").alias("avg_discount"))
+```
+
+**Alternative:** If aggregation + periodic refresh → consider **Materialized Lake View** (see Pattern 4 below).
+
+---
+
+### Pattern 2: Window Functions (Partitioned Analytics)
+
+**WHAT:**  
+Perform calculations across rows related to the current row without collapsing them into groups. Common functions: `ROW_NUMBER()`, `RANK()`, `LAG()`, `LEAD()`, `SUM() OVER (...)`, `AVG() OVER (...)`.
+
+**WHY:**
+- ✅ More efficient than self-joins for ranking/running totals
+- ✅ Preserves row-level detail while adding analytical columns
+- ✅ Supports complex ordering and partitioning logic
+- ⚠️ Large partitions can cause shuffle overhead (consider repartitioning by partition key first)
+
+**WHEN to use:**
+- **Ranking**: Top N per category, percentile ranks
+- **Running calculations**: Cumulative sums, moving averages
+- **Lag/Lead comparisons**: Month-over-month change, previous transaction
+- **Deduplication**: `ROW_NUMBER()` + `filter(rank == 1)` to pick most recent (note: QUALIFY **and window functions** block MLV incremental refresh — keep window functions OUT of MLV; apply ranking in downstream notebook for IR-eligible pipelines. See [mlv-incremental-refresh-patterns.md § Pattern 1](mlv-incremental-refresh-patterns.md))
+
+**Examples:**
+
+```python
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
+# Top 3 products per category by sales
+window_spec = Window.partitionBy("category").orderBy(F.desc("sales"))
+df.withColumn("rank", F.row_number().over(window_spec)) \
+  .filter(F.col("rank") <= 3)
+
+# Running total and previous value
+window_running = Window.partitionBy("customer_id").orderBy("order_date") \
+                       .rowsBetween(Window.unboundedPreceding, Window.currentRow)
+df.withColumn("cumulative_spent", F.sum("amount").over(window_running)) \
+  .withColumn("previous_order", F.lag("order_date", 1).over(window_running))
+```
+
+**Alternative:** Self-joins are less efficient but sometimes unavoidable for complex multi-step logic.
+
+---
+
+### Pattern 3: Joins (Combining Datasets)
+
+**WHAT:**  
+Merge two DataFrames based on a common key. Types: `inner`, `left` (left outer), `right`, `full` (full outer), `cross`, `left_semi`, `left_anti`.
+
+**WHY:**
+- ✅ Standard relational operation for combining data
+- ✅ Broadcast joins (<100MB dimension table) avoid shuffle — very fast
+- ⚠️ Large-to-large joins can cause shuffle and spill to disk
+- ⚠️ Skewed keys (one key with millions of rows) create straggler tasks
+
+**WHEN to use:**
+
+| Join Type | When to Use | Example |
+|---|---|---|
+| **Inner** | Only matching rows needed | Transactions + valid customers |
+| **Left (left outer)** | Keep all left rows, add right columns where match exists | Orders + optional shipping details |
+| **Broadcast** | One table <100MB, other is large | Fact table + dimension table |
+| **Left Semi** | Filter left table by existence in right (like `IN` subquery) | Customers who placed orders |
+| **Left Anti** | Find rows in left NOT in right (like `NOT IN`) | Customers who never placed orders |
+
+**Examples:**
+
+```python
+# Inner join: transactions + customer details
+transactions.join(customers, on="customer_id", how="inner")
+
+# Broadcast join: large fact table + small dimension
+from pyspark.sql.functions import broadcast
+fact_table.join(broadcast(dim_table), on="product_id")
+
+# Left join: keep all orders, add customer name if exists
+orders.join(customers, on="customer_id", how="left") \
+      .select("order_id", "amount", "customer_name")
+```
+
+**Tips:**
+- For skewed joins, use salting (add random suffix to key)
+- Use `df.explain()` to verify broadcast join actually happened
+- Consider pre-filtering both DataFrames before joining to reduce shuffle
+
+---
+
+### Pattern 4: Materialized Lake Views (Declarative Transformations)
+
+**WHAT:**  
+A Fabric-native feature that materializes transformation results as Delta tables with automatic refresh, data quality constraints, and query optimization. Two authoring modes: Spark SQL (with incremental refresh) or PySpark (full refresh only).
+
+**WHY:**
+- ✅ **Declarative**: Define WHAT to compute, not HOW (Fabric handles refresh scheduling)
+- ✅ **Auto-refresh**: Spark SQL MLVs support incremental refresh; PySpark MLVs use full refresh
+- ✅ **Query-optimized**: Pre-aggregated, indexed, faster than querying raw tables
+- ✅ **Data quality**: Built-in `CHECK` constraints with `ON MISMATCH DROP|FAIL`
+- ⚠️ **Spark SQL MLVs**: No Python UDFs, but support incremental refresh
+- ⚠️ **PySpark MLVs**: Support UDFs and complex logic, but full refresh only (no incremental)
+- ⚠️ **Batch-only**: Not suitable for real-time streaming
+- ⚠️ **Incremental limitations**: Some SQL patterns block incremental refresh (see [mlv-incremental-refresh-patterns.md](mlv-incremental-refresh-patterns.md))
+
+**WHEN to use:**
+
+Use this decision tree to choose between MLVs and PySpark notebooks:
+
+```
+┌─ Is transformation logic pure SQL (SELECT/WHERE/JOIN/GROUP BY)?
+│
+├─ YES ─┐
+│       ├─ Does it need periodic refresh (not real-time)?
+│       │
+│       ├─ YES ─┐
+│       │       ├─ Would incremental refresh save cost (source is append-only + CDF enabled + query uses supported SQL constructs)?
+│       │       │
+│       │       ├─ YES → ✅ **Use Materialized Lake View**
+│       │       │          (Declarative, auto-incremental, query-optimized)
+│       │       │
+│       │       └─ NO  → ⚠️  **MLV or Notebook**
+│       │                   (Small tables: MLV. Large full-refresh: consider notebook with optimizations)
+│       │
+│       └─ NO (real-time) → ❌ **Use Structured Streaming Notebook/Job Definition + Eventstream**
+│                               (MLVs are batch-only; use Spark Structured Streaming for real-time ingestion)
+│
+└─ NO (Python/complex logic) → ❌ **Use PySpark Notebook**
+                                   (UDFs, iterative algorithms, external APIs, custom validation)
+```
+
+**Concrete examples:**
+
+| Use Case | Transformation | Best Choice | Rationale |
+|---|---|---|---|
+| **Daily sales aggregation** | `SELECT date, SUM(amount) FROM transactions GROUP BY date` | **MLV** | Pure SQL, periodic refresh, incremental on `date` |
+| **Customer lifetime value** | DataFrame with complex Python UDFs, external API calls | **Notebook** | Python logic, not SQL-expressible |
+| **Bronze→Silver dedup** | `SELECT * FROM bronze.orders WHERE date > watermark` (then filter duplicates in notebook OR use Delta MERGE for upsert) | **Notebook or MERGE statement** | MERGE provides idempotent dedup; easier in notebook than MLV |
+| **ML feature engineering** | Complex PySpark with pandas UDFs, statistics, outlier detection | **Notebook** | Iterative logic, scikit-learn integration |
+| **Real-time KPI dashboard** | Streaming aggregation over 5-minute windows | **Eventstream** | Real-time requirement; MLVs are batch |
+| **Gold layer metrics** | `SELECT product_id, AVG(rating), COUNT(*) FROM reviews GROUP BY product_id` | **MLV** | Read-optimized, frequently queried, periodic refresh |
+
+**Cost/performance considerations:**
+
+| Factor | MLV | Notebook |
+|---|---|---|
+| **Development time** | Fast (SQL-only) | Moderate (PySpark code + testing) |
+| **Refresh overhead** | Low (auto-incremental) | High (manual watermark logic) |
+| **Query performance** | Optimized (pre-aggregated) | Depends on Delta optimization |
+| **Debugging** | Limited (SQL errors only) | Full (logs, breakpoints, print statements) |
+| **Flexibility** | Low (SQL-only) | High (any Python/Spark API) |
+
+**When to switch from MLV to Notebook:**
+- MLV hits SQL limitations (no UDFs, complex Python logic needed)
+- Incremental refresh blockers appear (see [mlv-incremental-refresh-patterns.md](mlv-incremental-refresh-patterns.md))
+- Debugging requires inspecting intermediate steps (MLV is declarative, no step-by-step visibility)
+
+**When to switch from Notebook to MLV:**
+- Notebook logic simplifies to pure SQL after refactoring
+- Manual watermark/incremental logic becomes complex — let MLV handle it
+- Transformation is stable and needs less frequent iteration
+
+**See also:**
+- [Materialized Lake View patterns](materialized-lake-view-patterns.md) — design patterns, scheduling, when to use vs Delta tables
+- [MLV incremental refresh patterns](mlv-incremental-refresh-patterns.md) — IR blocker catalog, safe rewrites, CDF prerequisites
+- [mlv-operations-cli](../../mlv-operations-cli/SKILL.md) — schedule, trigger, monitor, and cancel MLV refreshes via REST API (use when user asks to automate refresh, not author SQL)
+
+---
+
+### Quick Decision Matrix
+
+| Need | Use This |
+|---|---|
+| Summarize metrics by dimension | Aggregations (Pattern 1) |
+| Rank/running totals preserving row detail | Window Functions (Pattern 2) |
+| Combine data from two tables | Joins (Pattern 3) |
+| SQL transformation with scheduled refresh + DQ | **Materialized Lake View (Pattern 4)** |
+| Python logic / UDFs / complex algorithms | PySpark Notebook |
+| Real-time streaming | Eventstream → Lakehouse |
+
+---
 
 ### Example Approaches
 **Customer Segmentation:** Use window functions for lifetime metrics, when().otherwise() for classification, temporal dimensions for recency

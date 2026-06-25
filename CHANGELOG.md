@@ -2,6 +2,19 @@
 
 User-facing changes for the public Microsoft Fabric Skills release.
 
+## [0.3.5] - 2026-06-25
+
+### Added
+- **New skills `fabriciq-ontology-authoring-cli` and `fabriciq-ontology-consumption-cli`** — Fabric IQ Ontology (preview) support from the CLI. `fabriciq-ontology-authoring-cli` creates and evolves Ontology items (entity types, properties incl. timeseries, relationship types, and bindings to OneLake lakehouse or Eventhouse / KQL tables) via the Fabric item-definition REST API with a mandatory Preview & Confirm gate before any LRO write. `fabriciq-ontology-consumption-cli` reads Ontology items to produce agent grounding context and routes ontology-backed data queries by binding type to the matching per-datasource consumption skill (`eventhouse-consumption-cli`, `spark-consumption-cli`, `sqldw-consumption-cli`). Adds per-skill `references/` (including a shared ontology schema reference bundled into each skill), routing tests, Vally integration evals, and full-eval plans.
+- **New skill: `mlv-operations-cli`** -- Manage Materialized Lake View (MLV) refresh schedules and job execution via Fabric REST APIs. Provides scheduling and monitoring operations (9 endpoints):
+  - **Schedule Management**: Create/list/update/delete refresh schedules (Cron, Daily, Weekly, Monthly)
+  - **Job Execution**: Trigger on-demand refreshes, monitor job status/history, cancel running jobs
+  - **UX Patterns**: Human-in-the-loop confirmations, step-by-step planning, iterative error handling
+  - **Gap Documentation**: Transparently documents MLV discovery limitations — user must provide lakehouse ID and table names manually
+- **Vally integration tests** -- 5 eval scenarios (2 with L1+L2 program verifiers, 3 with L0 output assertions + l1l2_exempt for error/edge cases)
+- **Cross-skill integration** -- Routing from spark-authoring-cli, spark-operations-cli, FabricDataEngineer agent delegation
+- **Competitive advantage** -- Fabric is first platform to offer conversational MLV scheduling (Databricks Lakeflow has no equivalent)
+
 ## [0.3.4] - 2026-06-18
 
 ### Added

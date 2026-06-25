@@ -30,6 +30,30 @@ not when the task is about Spark job triage or broad cross-workload orchestratio
 5. **Partitioned outputs** when downstream reads are heavily filtered by date or a small set of dimensions.
 6. **Thin Gold MLVs** that serve reusable business outputs instead of embedding every downstream convenience calculation.
 
+### MLV topology: count, consolidation, and redundancy
+
+**How many MLVs per lakehouse?**
+
+| Topology | When to use | Considerations |
+|----------|-------------|---------------|
+| 1–5 MLVs | Simple analytics (single team, one domain) | Easy to manage, single lineage schedule covers all |
+| 5–20 MLVs | Multi-domain lakehouse (bronze/silver/gold layers) | Lineage refresh takes longer; Optimal Refresh handles ordering |
+| 20–50 MLVs | Enterprise lakehouse (cross-team, many consumers) | Consider splitting into multiple lakehouses for independent scheduling |
+| 50+ MLVs | Anti-pattern — split | Too many in one lineage = long refresh times, single-point-of-failure |
+
+**Consolidating redundant MLVs:**
+- If multiple MLVs query the same source with similar transforms → consolidate into one broader MLV
+- If downstream consumers need different subsets → one MLV with broader scope + views/filters on top
+- If refresh cadences differ → separate lakehouses (one schedule per lineage constraint)
+
+**When to split across lakehouses:**
+- Different refresh cadences needed (hourly vs daily)
+- Different team ownership (RBAC boundaries)
+- Independent failure isolation (one lineage failure shouldn't block another)
+- Cross-lakehouse lineage (Extended lineage) can still chain them in dependency order
+
+> **Rule of thumb**: If a single lineage refresh takes > 30 minutes, consider splitting. Each split allows independent scheduling and parallel execution.
+
 ### Avoid
 
 1. **Window functions inside MLVs** — move them downstream.
@@ -284,13 +308,13 @@ Use the Lakehouse **Materialized lake views** tab → **Manage** → **Schedules
 
 - Repeat cadence: minute, hourly, daily, weekly, or monthly
 - **Optimal refresh** toggle (default On): Fabric automatically picks incremental or full refresh per view
-- **Extended lineage**: refresh chains across multiple lakehouses in dependency order from a single schedule
+- **Extended lineage**: refresh chains across multiple lakehouses in dependency order from a single schedule. When MLVs in Lakehouse B depend on tables in Lakehouse A, a single schedule on Lakehouse B refreshes Lakehouse A's MLVs first, then B's — no need for separate schedules per lakehouse. See [Manage lineage](https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/view-lineage) for cross-lakehouse dependency visualization.
 
 Key behaviors (per current Fabric documentation — confirm against the [refresh reference](https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/refresh-materialized-lake-view) as platform limits may change):
 - A refresh run fails if it exceeds **24 hours**
 - If a new refresh starts while another is in progress, Fabric **skips** the later one
 
-For programmatic schedule management (create/update/delete schedules, trigger on-demand refresh via code), use the [MLV Public REST API](https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/materialized-lake-views-public-api).
+For programmatic schedule management (create/update/delete schedules, trigger on-demand refresh via code), use the [MLV Public REST API](https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/materialized-lake-views-public-api). For conversational schedule management via Copilot, see the [mlv-operations-cli](../../mlv-operations-cli/SKILL.md) skill.
 
 ### Manual refresh order
 

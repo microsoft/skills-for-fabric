@@ -51,6 +51,7 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - **Lakehouse**: Delta tables, Spark, file management
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview
   - Authoring skill: `skills/spark-authoring-cli/SKILL.md` — notebook authoring, Lakehouse authoring, Materialized Lake Views, and refresh-friendly Spark patterns.
+  - Operations skill: `skills/mlv-operations-cli/SKILL.md` — MLV refresh scheduling, job monitoring, and cancellation via REST API. Use for "schedule MLV refresh", "trigger refresh", "monitor refresh status".
 - **Notebooks**: PySpark notebooks with mssparkutils
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/how-to-use-notebook
 - **Spark Jobs**: Production Spark workloads
@@ -84,6 +85,11 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
   - Docs: https://learn.microsoft.com/en-us/fabric/real-time-intelligence/data-activator/activator-introduction
   - Authoring skill: `skills/activator-authoring-cli/SKILL.md` — create Activator items, sources, rules, conditions, and actions
   - Consumption skill: `skills/activator-consumption-cli/SKILL.md` — inspect Activator definitions, rules, sources, and actions
+  - Primary CLI tool: `az rest` via Fabric REST API
+- **Fabric IQ / Ontology (preview)**: Semantic model of entity types, properties, and relationships over Fabric data
+  - Docs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
+  - Authoring skill: `skills/fabriciq-ontology-authoring-cli/SKILL.md` — define entity types, properties (incl. timeseries), relationship types, and bind them to lakehouse/Eventhouse tables via the item-definition REST API
+  - Consumption skill: `skills/fabriciq-ontology-consumption-cli/SKILL.md` — read ontology items for agent grounding context and route ontology-backed queries to the matching per-datasource consumption skill
   - Primary CLI tool: `az rest` via Fabric REST API
 - **KQL Database / Eventhouse**: Time-series queries with Kusto
   - Docs: https://learn.microsoft.com/en-us/fabric/real-time-intelligence/create-database
