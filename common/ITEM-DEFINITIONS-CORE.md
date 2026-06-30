@@ -558,7 +558,7 @@ The following item types also support definition APIs. See each spec link for fu
 | KQLQueryset | `RealTimeQueryset.json` | [Spec](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/eventhouse-queryset-definition) |
 | CopyJob | `copyjob-content.json` | [Spec](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/copyjob-definition) |
 | Dataflow | `queryMetadata.json`, `mashup.pq` | [Spec](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/dataflow-definition) |
-| DataBuildToolJob | `dbtjob-content.json` | [Spec](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/dbtjob-definition) |
+| DataBuildToolJob | `dbt-content.json` (live API; docs/spec say `dbtjob-content.json`) + `Code/dbt/*` project files | [Spec](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/dbtjob-definition) |
 | Eventstream | `eventstream.json`, `eventstreamProperties.json` | [Spec](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/eventstream-definition) |
 | EventSchemaSet | `EventSchemaSetDefinition.json` | [Spec](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/eventschemaset-definition) |
 | GraphQLApi | `graphql-definition.json` | [Spec](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/graphql-api-definition) |

@@ -55,16 +55,14 @@ For Spark-specific optimization details, see [data-engineering-patterns.md](../s
 ## Must/Prefer/Avoid
 
 ### MUST DO
-- **Choose lakehouse architecture** based on schema-enabled availability (see [infrastructure-orchestration.md](../spark-authoring-cli/resources/infrastructure-orchestration.md)):
-  - **Preferred:** Schema-enabled lakehouse → create ONE workspace + ONE lakehouse with `bronze`, `silver`, `gold` schemas
-  - **Legacy:** Non-schema-enabled → create separate workspaces per layer (Bronze, Silver, Gold) for governance and access control
-- **Use Livy API for schema and table creation** — to create schemas and tables in a schema-enabled lakehouse, submit Spark SQL statements via Livy sessions (`POST /livyApi/versions/2023-12-01/sessions` → `POST .../statements`). This is the only programmatic REST path for DDL operations (CREATE SCHEMA, CREATE TABLE) in Fabric lakehouses.
+- Create a **separate lakehouse** for each medallion layer (Bronze, Silver, Gold)
 - Add **metadata columns** in Bronze: ingestion timestamp, source file, batch ID
 - Apply **data quality rules** in the Bronze-to-Silver transformation (deduplication, null handling, range validation)
 - Use **Delta Lake format** for all medallion layer tables
 - Use **partition-aware overwrite** in Silver/Gold writes to avoid reprocessing unchanged data
 - Include **validation steps** after each layer (row counts, schema checks, anomaly detection)
 - Follow the **`.ipynb` validation + Fabric nuances** in [notebook-api-operations.md](../spark-authoring-cli/resources/notebook-api-operations.md#ipynb-validation--fabric-nuances) when creating notebooks via REST API — every code cell must include `"outputs": []` and `"execution_count": null`
+- **Default to separate workspaces per layer** for governance and access control: one workspace each for Bronze, Silver, and Gold
 - **Complete the full end-to-end flow** — do not stop after creating notebooks; always bind lakehouses, execute notebooks sequentially (Bronze → Silver → Gold), verify results, and connect Power BI to the Gold layer unless the user explicitly requests a partial setup
 
 ### PREFER
@@ -77,12 +75,10 @@ For Spark-specific optimization details, see [data-engineering-patterns.md](../s
 - Clear layer ownership: engineers own Bronze/Silver, analysts own Gold
 - Fabric Variable Libraries to centralize paths and configuration across layers
 - Multi-workspace deployment patterns for medium/high governance requirements (Bronze/Silver/Gold in separate workspaces)
-- Use Materialized Lake Views (MLVs) for Silver/Gold tables when the transformation is expressible in Spark SQL and benefits from declarative refresh semantics. See [spark-authoring-cli — Materialized Lake View patterns](../spark-authoring-cli/resources/materialized-lake-view-patterns.md) and [MLV incremental refresh patterns](../spark-authoring-cli/resources/mlv-incremental-refresh-patterns.md).
-- For MLV refresh scheduling and monitoring (create/delete schedules, trigger on-demand refresh, check job status), use [mlv-operations-cli](../mlv-operations-cli/SKILL.md). Note: "materialized view", "spark materialized view", and "MLV" all refer to the same Fabric feature.
+- **Spark notebooks for Lakehouse/PySpark transformations; dbt for SQL-first transformations that land in a Fabric Warehouse** — when a Silver/Gold layer is a Warehouse and the transformations are expressible in T-SQL, the `dbt-authoring-cli` skill (DataBuildToolJob, dbt Core in Fabric) offers versioned models, lineage, and built-in tests as an alternative to hand-written notebooks/stored procedures
 
 ### AVOID
-- **Storing all layers in a single lakehouse WITHOUT schemas** — non-schema lakehouses require notebook init cells or Environment configuration to enable OneLake Spark Catalog for RLS/CLS and MLVs. Use separate lakehouses for isolation if schemas aren't available.
-- **Creating 3 separate lakehouses when schema-enabled lakehouse is available** — use schemas within one lakehouse instead (cleaner, no boilerplate init cells, more efficient for MLV cross-schema transformations)
+- Storing all layers in a single lakehouse — this defeats isolation and independent optimization
 - Skipping the Silver layer and going directly from Bronze to Gold
 - Hardcoded workspace IDs, lakehouse IDs, or FQDNs — discover via REST API
 - SELECT * without LIMIT on Bronze tables (they grow unboundedly)
@@ -96,26 +92,9 @@ For Spark-specific optimization details, see [data-engineering-patterns.md](../s
 
 ## Workspace Setup Guidance
 
-When setting up a medallion workspace, choose your architecture pattern first (see [infrastructure-orchestration.md](../spark-authoring-cli/resources/infrastructure-orchestration.md) for detailed guidance):
+When setting up a medallion workspace, guide LLM to generate commands for:
 
-### Option A: Schema-Enabled Lakehouse (Preferred)
-
-1. **Create single workspace**: `{project}-{env}`
-2. **Create one lakehouse** with schemas: `{project}_lakehouse`
-3. **Create schemas within the lakehouse**:
-   - `bronze` schema for raw ingestion
-   - `silver` schema for cleaned/validated data
-   - `gold` schema for aggregated analytics
-4. **Choose transformation approach**:
-   - **Option 4a:** Use notebooks for each layer (PySpark or Spark SQL transformations)
-   - **Option 4b:** Use Materialized Lake Views (Spark SQL) for declarative transformations with incremental refresh (when query is IR-eligible) — see [materialized-lake-view-patterns.md](../spark-authoring-cli/resources/materialized-lake-view-patterns.md) and [mlv-incremental-refresh-patterns.md](../spark-authoring-cli/resources/mlv-incremental-refresh-patterns.md)
-   - **Note:** PySpark MLVs exist but use full refresh only (no incremental) — use when you need UDFs/complex Python logic
-   - **MLV benefit:** OneLake Spark Catalog is **automatically enabled** for schema-enabled lakehouses — MLVs work out-of-box with no notebook init cells or Environment configuration required
-5. **RBAC** (optional): Use row-level security and column masking within schemas for fine-grained access control (also requires OneLake Spark Catalog)
-
-### Option B: Separate Lakehouses (Legacy)
-
-1. **Create three workspaces**:
+1. **Default architecture: create three workspaces** (recommended):
    - `{project}-bronze-{env}`
    - `{project}-silver-{env}`
    - `{project}-gold-{env}`
@@ -127,34 +106,15 @@ When setting up a medallion workspace, choose your architecture pattern first (s
    - Bronze: ingestion/engineering write permissions
    - Silver: engineering/data quality permissions
    - Gold: analytics/BI consumer access with stricter curation controls
-4. **Enable OneLake Spark Catalog for non-schema lakehouses** (required for RLS/CLS and catalog-backed access patterns):
-   - **Primary:** Set `spark.sql.fabric.catalog.enable-schemaless-lakehouses=true` in an Environment and attach it to notebooks.
-   - **Alternative:** Omit default lakehouse binding from notebooks. Use four-part fully-qualified references (`workspace.lakehouse.schema.table`). OneLake Spark Catalog auto-enables when no default lakehouse is set.
-   - **Alternative (internal/unsupported):** Add this as the **first cell** in every notebook:
-   ```python
-   %%pyspark
-   !echo "spark.sql.fabric.catalog.enable-schemaless-lakehouses=true" >> /home/trusted-service-user/.trident-context
-   ```
-   - **⚠️ Note:** This workaround uses an internal runtime configuration path that may change in future Fabric releases. **Prefer schema-enabled lakehouses** for stable, documented OneLake Spark Catalog support.
-   - With this configuration, non-schema lakehouses support:
-     - ✅ Row-level security (RLS) and column-level security (CLS)
-   - **Note:** MLVs require schema-enabled lakehouses (Option A). For non-schema lakehouses, use notebooks with Delta tables.
-
-### Common Steps (Both Options)
-
-After completing Option A or Option B above, perform these steps:
-
-1. **Create notebooks** for each layer (one per transformation stage) — follow `.ipynb` validation + Fabric nuances
-2. **Bind each notebook to its lakehouse** — set `metadata.dependencies.lakehouse` with the correct lakehouse ID (see [notebook-api-operations.md § Default Lakehouse Binding](../spark-authoring-cli/resources/notebook-api-operations.md#default-lakehouse-binding)):
-   - Option A: All notebooks → same lakehouse, use schema prefixes (`bronze.table`, `silver.table`)
-   - Option B:
-     - Bronze notebook → Bronze workspace/lakehouse
-     - Silver notebook → Silver workspace/lakehouse (reads Bronze via cross-workspace OneLake access / fully qualified references)
-     - Gold notebook → Gold workspace/lakehouse (reads Silver via cross-workspace access)
-3. **Confirm notebook deployment** — check that `updateDefinition` returned `Succeeded`; this is sufficient confirmation that content and lakehouse binding persisted. Do NOT call `getDefinition` to re-verify — it is an async LRO and adds unnecessary latency.
-4. **Execute notebooks** sequentially — Bronze first, then Silver, then Gold — using `POST .../jobs/instances?jobType=RunNotebook` with the correct `defaultLakehouse` in execution config (both `id` and `name` required)
-5. **Connect Power BI to Gold layer** — discover the Gold lakehouse SQL endpoint, create a Direct Lake semantic model, create a report with visuals on the Gold summary table (see [Gold Layer → Power BI Consumption](#gold-layer--power-bi-consumption))
-6. **Create pipeline** to orchestrate the Bronze → Silver → Gold flow for recurring execution
+4. **Create notebooks** for each layer (one per transformation stage) — follow `.ipynb` validation + Fabric nuances
+5. **Bind each notebook to its lakehouse** — set `metadata.dependencies.lakehouse` with the correct lakehouse ID (see [notebook-api-operations.md § Default Lakehouse Binding](../spark-authoring-cli/resources/notebook-api-operations.md#default-lakehouse-binding)):
+   - Bronze notebook → Bronze workspace/lakehouse
+   - Silver notebook → Silver workspace/lakehouse (reads Bronze via cross-workspace oneLake access / fully qualified references)
+   - Gold notebook → Gold workspace/lakehouse (reads Silver via cross-workspace access)
+6. **Confirm notebook deployment** — check that `updateDefinition` returned `Succeeded`; this is sufficient confirmation that content and lakehouse binding persisted. Do NOT call `getDefinition` to re-verify — it is an async LRO and adds unnecessary latency.
+7. **Execute notebooks** sequentially — Bronze first, then Silver, then Gold — using `POST .../jobs/instances?jobType=RunNotebook` with the correct `defaultLakehouse` in execution config (both `id` and `name` required)
+8. **Connect Power BI to Gold layer** — discover the Gold lakehouse SQL endpoint, create a Direct Lake semantic model, create a report with visuals on the Gold summary table (see [Gold Layer → Power BI Consumption](#gold-layer--power-bi-consumption))
+9. **Create pipeline** to orchestrate the Bronze → Silver → Gold flow for recurring execution
 
 ### Explicit Override: Single Workspace
 
@@ -186,6 +146,8 @@ When a user requests data ingestion into the Bronze layer, guide LLM to:
 
 ## Silver Layer — Transformation Patterns
 
+> **Transformation engine choice** — the patterns below use Spark notebooks (Lakehouse). If the Silver layer is a **Fabric Warehouse** and the logic is SQL-expressible, the `dbt-authoring-cli` skill is an alternative that gives versioned models, lineage, and tests. Use Spark for PySpark/Delta-heavy work; use dbt for declarative SQL transformations into a Warehouse.
+
 When a user requests Bronze-to-Silver transformation, guide LLM to:
 
 - **Quality rules**: Deduplicate on natural/composite key, filter invalid ranges, handle nulls (drop required, fill optional), validate logical constraints
@@ -196,6 +158,8 @@ When a user requests Bronze-to-Silver transformation, guide LLM to:
 ---
 
 ## Gold Layer — Aggregation Patterns
+
+> **Warehouse Gold layer?** If the Gold layer is a Fabric Warehouse, the dimensional models and aggregates below can also be built with the `dbt-authoring-cli` skill (dbt Core in Fabric) instead of Spark notebooks — preferred when the team wants SQL-first models with lineage and tests.
 
 When a user requests Gold analytics tables, guide LLM to generate:
 
@@ -259,7 +223,7 @@ Build a semantic model on top of the Gold lakehouse, using DirectLake.
    ```sql
    SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'nyc_taxi_daily_summary'
    ```
-3. **Create a semantic model** — use the [semantic-model-authoring](../semantic-model-authoring/SKILL.md) skill for semantic model creation and TMDL deployment. Create via `POST /v1/workspaces/{workspaceId}/items` with `type: "SemanticModel"` then deploy definition via `updateDefinition` using TMDL format (see [ITEM-DEFINITIONS-CORE.md § SemanticModel](../../common/ITEM-DEFINITIONS-CORE.md#semanticmodel)):
+3. **Create a semantic model** — use the [powerbi-authoring-cli](../powerbi-authoring-cli/SKILL.md) skill for semantic model creation and TMDL deployment. Create via `POST /v1/workspaces/{workspaceId}/items` with `type: "SemanticModel"` then deploy definition via `updateDefinition` using TMDL format (see [ITEM-DEFINITIONS-CORE.md § SemanticModel](../../common/ITEM-DEFINITIONS-CORE.md#semanticmodel)):
    - The model must reference the Gold lakehouse SQL endpoint as its data source
    - Define a table mapping to the Gold summary table (e.g., `nyc_taxi_daily_summary`)
    - Use **Direct Lake** mode — this connects directly to Delta tables in OneLake without data import
@@ -268,7 +232,7 @@ Build a semantic model on top of the Gold lakehouse, using DirectLake.
    - Reference the semantic model created in step 3 via `definition.pbir`
    - Define at least one page with visuals on the Gold summary table
    - Suggested visuals: line chart (daily trend), card (KPI totals), bar chart (by category), table (detail view)
-5. **Verify end-to-end** — use the `semantic-model-consumption` skill to run DAX queries against the semantic model and confirm data flows from Gold tables through to the report
+5. **Verify end-to-end** — use the `powerbi-consumption-cli` skill to run DAX queries against the semantic model and confirm data flows from Gold tables through to the report
 
 ### Principles
 
@@ -276,8 +240,8 @@ Build a semantic model on top of the Gold lakehouse, using DirectLake.
 - **Wait for SQL endpoint provisioning** — status must be `Success` before connecting; newly created lakehouses may take minutes to provision
 - **Prefer Direct Lake mode** — avoids data duplication; semantic model reads directly from OneLake Delta tables
 - **Match table/column names exactly** — the semantic model table definition must use the exact Delta table and column names from the Gold lakehouse
-- **For semantic model authoring** (TMDL, refresh, permissions), cross-reference the [semantic-model-authoring](../semantic-model-authoring/SKILL.md) skill
-- **For DAX query validation**, cross-reference the [semantic-model-consumption](../semantic-model-consumption/SKILL.md) skill
+- **For semantic model authoring** (TMDL, refresh, permissions), cross-reference the [powerbi-authoring-cli](../powerbi-authoring-cli/SKILL.md) skill
+- **For DAX query validation**, cross-reference the [powerbi-consumption-cli](../powerbi-consumption-cli/SKILL.md) skill
 
 ---
 
