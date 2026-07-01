@@ -2,6 +2,11 @@
 
 User-facing changes for the public Microsoft Fabric Skills release.
 
+## [0.3.6] - 2026-07-01
+
+### Added
+- **New skills `dbt-authoring-cli` and `dbt-consumption-cli`** — dbt (data build tool) job support from the CLI. `dbt-authoring-cli` creates, configures, updates, deploys, and runs Fabric `DataBuildToolJob` items via `az rest`, and generates dbt Core 1.9 SQL for the supported adapters (Fabric Warehouse, Azure SQL Database, PostgreSQL, Snowflake). It packs a local project into `Code/dbt/*` definition parts with **read-modify-write** (so `updateDefinition` never drops files), binds targets **by connection GUID** (no credentials in config — the golden rule), discovers the config-part name (`dbt[\w-]*content\.json`, which differs live vs docs), and connects a job to an existing **GitHub repository** as a run-only source (`GitHubSourceControl` connection from a classic PAT held only in the connection). `dbt-consumption-cli` lists dbt jobs, decodes their configuration and `Code/dbt/*` project files (incl. `schema.yml`), reviews run history and `failureReason`, and triggers/monitors runs — read-only. Adds a shared `common/DBT-CORE.md` (execution model, supportability matrix, per-adapter SQL, project structure, security rule) and per-skill `references/` with copy/paste `az rest` recipes. A Preview & Confirm gate precedes any write or run.
+
 ## [0.3.5] - 2026-06-25
 
 ### Added
