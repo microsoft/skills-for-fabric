@@ -35,7 +35,7 @@ FabricIQ is a remote HTTP MCP server hosted by Microsoft Fabric for Power BI dat
   --token "$(az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv)"
 ```
 
-> **Note:** The Bearer token expires after ~60-90 minutes. Re-run the command to refresh. In CI, the token is acquired automatically via service principal (see `tests/run-vally-eval.ps1`).
+> **Note:** The Bearer token expires after ~60-90 minutes. Re-run the command to refresh.
 
 ### Custom Fabric MCP Server
 

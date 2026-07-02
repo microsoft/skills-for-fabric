@@ -63,11 +63,6 @@ Target users who interact via CLI/AI: run queries, explore data, ad-hoc operatio
 ### Operations (`-operations-` skills)
 Target users diagnosing performance and health: system view queries, multi-step investigation workflows, threshold-based recommendations.
 
-
-## Testing Requirements for New Skills
-
-Vally is the required PR and nightly harness for new or changed skill behavior. Add or update `tests/evals/<skill>/eval.yaml`; use `tests/evals/README.md` as the canonical guide. Start with Layer 0 coverage (`skill-invocation`, `completed`, crash-pattern rejection, one output assertion, and budget graders).
-
 ## Cross-Tool Compatibility
 
 When modifying skills, ensure compatibility files in `compatibility/` are updated:
