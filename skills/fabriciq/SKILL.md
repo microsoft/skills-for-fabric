@@ -5,6 +5,7 @@ description: >
   Orchestrates: discover Power BI artifacts, inspect report/model schemas, resolve entity values, generate DAX, execute queries.
   Returns plain-language answers from Power BI semantic models.
   Use when the user asks a natural-language question about Power BI report or dashboard content (not raw DAX).
+  For raw DAX execution (EVALUATE statements) or model metadata inspection (INFO functions), use `semantic-model-consumption` instead.
   Triggers: "ask power bi", "PBI question", "discover report", "report data",
   "dashboard data", "what are the top", "show me the power bi data",
   "which products sold", "compare sales in report".

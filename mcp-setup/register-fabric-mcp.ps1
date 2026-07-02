@@ -21,11 +21,21 @@
 .PARAMETER Tool
     Which tool to configure: copilot, claude, vscode, all (default: all).
 
+.PARAMETER Headers
+    Hashtable of custom HTTP headers to include in the MCP server config (e.g., @{"X-VARIANTS"="Fabric.Routing.PowerBIDataExploration"}).
+
 .EXAMPLE
     .\register-fabric-mcp.ps1 -ServerUrl "https://fabric-mcp.example.com" -ServerName "fabric"
 
 .EXAMPLE
     .\register-fabric-mcp.ps1 -ServerUrl "https://fabric-mcp.example.com" -AuthType bearer -Token $env:FABRIC_TOKEN
+
+.EXAMPLE
+    # Register FabricIQ with live token and required headers
+    $token = az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv
+    .\register-fabric-mcp.ps1 -ServerUrl "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365" `
+      -ServerName "FabricIQ" -AuthType bearer -Token $token `
+      -Headers @{ "X-VARIANTS" = "Fabric.Routing.PowerBIDataExploration" }
 #>
 
 param(
@@ -38,6 +48,8 @@ param(
     [string]$AuthType = "none",
     
     [string]$Token = "",
+    
+    [hashtable]$Headers = @{},
     
     [ValidateSet("copilot", "claude", "vscode", "all")]
     [string]$Tool = "all"
@@ -87,6 +99,10 @@ $serverConfig = @{
     transport = "http"
 }
 
+if ($Headers.Count -gt 0) {
+    $serverConfig["headers"] = $Headers
+}
+
 if ($AuthType -ne "none") {
     if ([string]::IsNullOrEmpty($Token)) {
         Write-Warning "AuthType is '$AuthType' but no token provided. Using environment variable reference."
@@ -105,6 +121,9 @@ if ($Tool -eq "copilot" -or $Tool -eq "all") {
 }
 
 if ($Tool -eq "claude" -or $Tool -eq "all") {
+    if ($Headers.Count -gt 0 -or $AuthType -ne "none") {
+        Write-Warning "Claude Desktop uses mcp-proxy and does not support custom headers or auth config directly. Headers/auth will not be applied to this target."
+    }
     $claudeConfig = Join-Path $env:APPDATA "Claude\claude_desktop_config.json"
     # Claude uses a different format with command/args for remote servers
     # Version pinned for security and reproducibility
@@ -117,6 +136,9 @@ if ($Tool -eq "claude" -or $Tool -eq "all") {
 }
 
 if ($Tool -eq "vscode" -or $Tool -eq "all") {
+    if ($Headers.Count -gt 0 -or $AuthType -ne "none") {
+        Write-Warning "VS Code MCP config supports URL only. Headers/auth will not be applied to this target."
+    }
     $vscodeConfig = Join-Path $env:APPDATA "Code\User\settings.json"
     if (Test-Path $vscodeConfig) {
         Write-Status "Configuring VS Code..."

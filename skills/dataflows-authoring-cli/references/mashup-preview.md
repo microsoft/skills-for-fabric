@@ -15,7 +15,7 @@ When you explain or use this API, surface the **exact** literal names below; do 
 | Literal | What it is | Where it appears |
 |---|---|---|
 | `executeQuery` (singular) | The preview endpoint path segment. **Not** `executeQueries`, **not** `ExecuteQuery`. | URL path: `.../dataflows/{dataflowId}/executeQuery` |
-| `QueryName` | Top-level request-body field naming the `shared` member to evaluate. PascalCase canonical (case-insensitive on the wire). | JSON request body |
+| `QueryName` | Top-level request-body field naming the `shared` member to evaluate. Microsoft Learn documents this field as `queryName`; it is case-insensitive on the wire, and the repo's live-verified examples use PascalCase `QueryName`. | JSON request body |
 | `customMashupDocument` | Top-level request-body field carrying the **complete** `section Section1; ...` M document being previewed. **Not** `mashupDocument`, **not** `MashupDocument`, **not** `query`, **not** base64-encoded -- it is a plain UTF-8 string. | JSON request body |
 | `mashup.pq` | The saved part path inside the dataflow definition. The M body you pass as `customMashupDocument` during preview is the same body you base64-encode into the `mashup.pq` part when you persist via `updateDefinition`. | Definition `parts[].path` |
 | `queryMetadata.json` | The saved part holding `connections[]`, `queriesMetadata`, and `formatVersion`. | Definition `parts[].path` |
@@ -439,6 +439,39 @@ shared Joined =
 | `ErrorResponse` 403 | Access denied | Caller lacks Contributor on the dataflow, or a bound connection is not shared with the caller | Confirm role assignment; verify connection sharing |
 | 200 + embedded `{"Error":"Credentials are required to connect to the <source> source"}` | Connection not bound to the dataflow at evaluation time, or the bound `connectionId` is invalid | Bind the connection via `updateDefinition` first ([Preconditions § 2](#preconditions)); verify `connectionId` resolves via `GET /v1/connections` |
 | 200 + embedded `{"Error":"Timeout..."}` | Unbounded evaluation against a high-volume source | Cap with `Table.FirstN`, push a `TOP N` predicate via `Value.NativeQuery`, or add a date filter |
+
+---
+
+## Preview-Driven Authoring Loop
+
+<a id="preview-driven-authoring-loop"></a>
+
+When the change touches Power Query M (new query, edited mashup, new source, changed parameters), preview the candidate `customMashupDocument` against the dataflow's bound connections **before** persisting. Catches syntax, schema, and credential errors at authoring time.
+
+> **Intent split.** This workflow is for the *pre-save* intent. To execute a **saved** query (`QueryName` only) or run an **ad-hoc read-only** `customMashupDocument` with no intent to persist, use [`dataflows-consumption-cli`](../../dataflows-consumption-cli/SKILL.md#query-evaluation).
+
+### Minimal ordered steps
+
+1. **Locate or create the dataflow shell** — `POST /v1/workspaces/{ws}/dataflows` with `{"displayName":"…"}` (SKILL.md Workflow A step 4).
+2. **Ensure connections are bound** — for new credentialed sources, do a minimal `updateDefinition` with `queryMetadata.json connections[]` first (the "bootstrap save"). A `connections[]` array declared only in the initial create payload is **not** yet visible to `executeQuery`. See [Bootstrap branch](#bootstrap-branch--new-dataflow--new-credentialed-source).
+3. **Compose the candidate `customMashupDocument`** as a complete `section Section1; ...` document. The request's `QueryName` (top-level, PascalCase) must match a `shared` member in the document. See [customMashupDocument format](#custommashupdocument-format).
+4. **Preview** — `POST /v1/workspaces/{ws}/dataflows/{df}/executeQuery` with body `{"QueryName": "<name>", "customMashupDocument": "<section>"}`. Pass `--output-file results.arrow` — `az rest` writes the raw Apache Arrow IPC stream to disk. Arrow → CSV/pandas: [dataflows-consumption-cli § Query Evaluation](../../dataflows-consumption-cli/SKILL.md#query-evaluation).
+5. **Validate the preview (two-tier — both required before persisting):**
+   - **a. Embedded-error check.** HTTP 200 is **not** proof of success; engine errors are embedded inside the stream as `{"Error":"..."}`. Quick scan: `grep -q '"Error":"' results.arrow`. Canonical pyarrow detector inspects schema metadata — see [§ Error handling — A](#detecting-failures-inside-the-arrow-body).
+   - **b. Render `head(10)` as a markdown table to the user.** The embedded-error check only catches engine-level failures (column not found, cast errors, SEM0100, etc.). It does **not** catch *silent-success* bugs: filter dropped all rows, wrong column referenced, wrong join key, off-by-one filter, wrong cast producing epoch dates. The 10-row visual lets the human verify shape, row count, and value sanity in seconds. Snippet + suppression rules: [dataflows-consumption-cli § Example 5b](../../dataflows-consumption-cli/SKILL.md#example-5b-render-query-results-as-a-markdown-table).
+   - **c. Probe for per-cell errors.** An errored cell serializes as an Arrow **null** — indistinguishable from a genuine null in the head(10) view. To disambiguate, wrap the cell in `try` and read the `[HasError]` field: `try <step>{N}[Col]` returns `[HasError = true, Error = [...]]` for an errored cell vs `[HasError = false, Value = ...]` otherwise; filter with `Table.SelectRows(<step>, each not (try [Col])[HasError])`. Detail: [m-language.md § Per-cell errors](../references/m-language.md#per-cell-errors-in-column-transformations).
+6. **Persist via `updateDefinition`** — strip any preview-only `Table.FirstN` / `TOP N` / test-mode parameters from the saved mashup. Verify `queryMetadata.json connections[]` survived the full-replacement write before triggering refresh.
+
+Skip the preview only for metadata-only edits (display name, schedule, `loadEnabled` toggle) or when the agent records an explicit skip reason (bootstrap, prohibitive cost, side-effecting source).
+
+### ASCII chart preview (optional)
+
+After the two-tier validation passes, optionally render the preview data as ASCII charts for visual validation:
+
+- **Line chart** (time-series data): `references/charts/line_chart.py`
+- **Horizontal bar chart** (categorical data): `references/charts/bar_chart.py`
+
+Ask the user if they want chart visualizations before proceeding. If accepted, call `executeQuery` for each entity, parse the Arrow IPC stream, render the appropriate chart type, and ask the user to confirm before the final `updateDefinition`. Both chart scripts are pure Python 3 (no dependencies). For parameters and display guidelines, see [chart-visualization.md](../../dataflows-consumption-cli/references/chart-visualization.md).
 
 ---
 

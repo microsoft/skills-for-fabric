@@ -140,16 +140,18 @@ The `aggregateFunction` property on Aggregate and GroupBy operators accepts thes
 }
 ```
 
-### Node Naming Rules (ALL node types)
+### Node Naming Rules
 
-**All node names (sources, operators, destinations, streams) MUST be:**
+**All user-defined node names (sources, operators, destinations, DerivedStreams) MUST be:**
 - **Alphanumeric only** — no underscores, hyphens, dots, or spaces
 - **3–63 characters** long
 - **Unique** within the topology
 
-Use **PascalCase**: `EHStockAggregates`, `FilterPremium`, `MainStream` (not `EH_stock_aggregates`, `filter-premium`)
+Use **PascalCase**: `EHStockAggregates`, `FilterPremium`, `LakehouseDest` (not `EH_stock_aggregates`, `filter-premium`)
 
-> At runtime, the ASA engine generates internal identifiers by prefixing node names (e.g., `dst-`). Underscores in names cause rejection: *"Invalid output name. Please use only alphanumeric identifiers."*
+> **Exception — DefaultStream names:** The platform auto-generates the DefaultStream name using the pattern `{eventstreamName}-stream` (e.g., `myEventstream-stream`). This system-generated name *may* contain hyphens — it is the only exception to the alphanumeric constraint. When referencing any stream in `inputNodes`, use the exact name from the topology.
+
+> At runtime, the ASA engine generates internal identifiers by prefixing node names (e.g., `dst-`). Underscores in user-defined names cause rejection: *"Invalid output name. Please use only alphanumeric identifiers."*
 
 ### FilterOperatorType Enum Values
 
@@ -421,6 +423,195 @@ WHERE payload.source.[table] = 'Products'
 
 No operators are currently known to be UI-only / preview. The SQL operator was previously preview but is now confirmed in the official API template.
 
+### Choosing the Right Operator — Decision Tree
+
+Use this guide to pick the best operator for a given user intent. SQL is the most powerful but also the most error-prone; native operators are simpler and less likely to fail.
+
+```text
+User intent
+├── Simple row filtering ("keep rows where X > Y")?
+│   └── ✅ Filter operator — simplest, lowest risk
+├── Rename / cast / compute columns ("rename col_a to col_b")?
+│   └── ✅ ManageFields operator
+├── Flatten an array column into rows ("explode tags")?
+│   └── ✅ Expand operator — column MUST be array type
+├── Merge two streams ("combine both feeds")?
+│   └── ⚠️ Union operator — schemas must match; **currently unreliable in multi-source topologies** (see Gotcha #18) — prefer SQL UNION after projecting both branches to the same schema
+├── Correlate two streams on a key ("match orders to payments")?
+│   └── ⚠️ Join operator — **currently unreliable in multi-source topologies** (see Gotcha #18) — verify single-stream constraints before using
+├── Time-windowed aggregation with grouping ("count per vendor every 5 min")?
+│   └── ✅ GroupBy operator — uses nested `window` object
+├── Simple aggregate with partitioning ("average temp per device")?
+│   └── ✅ Aggregate operator — uses flat `duration`
+├── Need LAG / LEAD / CASE / UNION / multiple INTO?
+│   └── ✅ SQL operator (only option for advanced analytics)
+├── Need CDC Debezium flattening ("flatten payload.after")?
+│   └── ✅ SQL operator with dot notation
+└── Need multi-destination routing ("route fraud to one table, all to another")?
+    └── ✅ SQL operator with multiple SELECT...INTO clauses
+```
+
+**Rule of thumb:** If a native operator can do it, prefer it over SQL. SQL is needed only for: window functions (LAG/LEAD), CASE expressions, multi-destination routing, CDC flattening, and UNION after projecting both branches to the same schema.
+
+### SQL Operator — Intent-to-Pattern Library
+
+When using the SQL operator, match the user's intent to the correct pattern. Patterns are organized by complexity — start simple, escalate only as needed.
+
+#### Tier 1: Simple Filtering (Low Risk ⭐)
+
+**User says:** "Filter out events where temperature < 30"
+
+```sql
+SELECT *
+INTO [OutputDest]
+FROM [MainStream]
+WHERE temperature >= 30
+```
+
+Common mistake: Forgetting `INTO [OutputDest]` — the alias must match a downstream node name exactly.
+
+#### Tier 2: Time-Windowed Aggregation (Medium Risk ⭐⭐)
+
+**User says:** "Count taxi rides per payment type every 5 minutes"
+
+```sql
+SELECT
+    payment_type,
+    COUNT(*) AS ride_count,
+    SUM(fare_amount) AS total_fare
+INTO [AggregatedOutput]
+FROM [MainStream]
+GROUP BY payment_type, TumblingWindow(minute, 5)
+```
+
+Common mistakes:
+- ❌ Forgetting `TumblingWindow` in GROUP BY — required for streaming aggregation
+- ❌ Wrong time unit — must be `second`, `minute`, `hour` (lowercase)
+- ❌ Using `GROUP BY payment_type` without a window — streaming SQL requires a time window
+
+#### Tier 3: Window Functions / Anomaly Detection (High Risk ⭐⭐⭐)
+
+**User says:** "Detect temperature spikes — flag when current reading is 10° above previous"
+
+```sql
+SELECT
+    deviceId,
+    temperature,
+    LAG(temperature, 1) OVER (PARTITION BY deviceId LIMIT DURATION(minute, 10)) AS prev_temp,
+    temperature - LAG(temperature, 1) OVER (PARTITION BY deviceId LIMIT DURATION(minute, 10)) AS temp_delta
+INTO [AlertOutput]
+FROM [MainStream]
+WHERE temperature - LAG(temperature, 1) OVER (PARTITION BY deviceId LIMIT DURATION(minute, 10)) > 10
+```
+
+Common mistakes:
+- ❌ Missing `LIMIT DURATION` — ASA requires a bounded window for LAG/LEAD
+- ❌ Missing `PARTITION BY` — without it, LAG looks across all devices
+- ❌ Using `OVER (ORDER BY timestamp)` — ASA uses `LIMIT DURATION`, not `ORDER BY`
+
+#### Tier 4: Conditional Routing / Fraud Detection (High Risk ⭐⭐⭐⭐)
+
+**User says:** "Flag suspicious rides: low fare but long distance. Aggregate by payment type per minute."
+
+```sql
+-- Route suspicious rides (CASE classifies, no WHERE needed — all rows evaluated)
+SELECT
+    medallion,
+    fare_amount,
+    trip_distance,
+    CASE
+        WHEN fare_amount < 5.0 AND trip_distance > 10.0 THEN 'suspicious'
+        ELSE 'normal'
+    END AS fraud_flag
+INTO [FraudAlerts]
+FROM [MainStream]
+
+-- Aggregate all rides
+SELECT
+    payment_type,
+    COUNT(*) AS ride_count,
+    AVG(fare_amount) AS avg_fare
+INTO [AllRideStats]
+FROM [MainStream]
+GROUP BY payment_type, TumblingWindow(minute, 1)
+```
+
+Common mistakes:
+- ❌ INTO alias mismatch — each INTO must match a different downstream node
+- ❌ CASE without END — always close CASE expressions
+- ❌ Mixing aggregated and non-aggregated columns outside GROUP BY
+
+#### Tier 5: CDC Flattening + Multi-Table Routing (High Risk ⭐⭐⭐⭐)
+
+**User says:** "Route CDC changes: Orders to one table, Products to another, flatten the Debezium payload"
+
+```sql
+-- Route and flatten Orders (exclude deletes where payload.after is null)
+SELECT
+    payload.op AS cdc_operation,
+    payload.after.OrderId AS OrderId,
+    payload.after.CustomerId AS CustomerId,
+    payload.after.[Status] AS [Status],
+    payload.source.[table] AS source_table,
+    EventProcessedUtcTime
+INTO [LHOrders]
+FROM [CdcStream]
+WHERE payload.source.[table] = 'Orders' AND payload.op <> 'd'
+
+-- Route and flatten Products (exclude deletes)
+SELECT
+    payload.op AS cdc_operation,
+    payload.after.ProductId AS ProductId,
+    payload.after.ProductName AS ProductName,
+    payload.source.[table] AS source_table,
+    EventProcessedUtcTime
+INTO [LHProducts]
+FROM [CdcStream]
+WHERE payload.source.[table] = 'Products' AND payload.op <> 'd'
+```
+
+Common mistakes:
+- ❌ Forgetting bracket escaping for reserved words: `[table]`, `[Status]`, `[Close]`, `[Open]`, `[Order]`, `[Year]`
+- ❌ Projecting `payload.after.*` without filtering out deletes (`op = 'd'`) — `after` is null for deletes, producing rows with null business keys
+- ❌ Missing dot notation — without `payload.after.*` flattening, Lakehouse destinations only get metadata columns
+
+#### Common Reserved Words (Not Exhaustive)
+
+These column/field names are commonly encountered and **must** be bracket-escaped in SQL queries: `[Close]`, `[Open]`, `[Year]`, `[Order]`, `[Status]`, `[table]`, `[Date]`, `[Time]`, `[Key]`, `[Value]`, `[Type]`, `[Group]`, `[Select]`, `[From]`, `[Where]`, `[Index]`. Use exact casing as it appears in the source data (e.g., `[table]` for Debezium CDC, not `[Table]`).
+
+### SQL Operator — Error Troubleshooting
+
+| Error Message | Cause | Fix |
+|---|---|---|
+| *"The output {alias} used in the query was not defined"* | `INTO [alias]` doesn't match any downstream node name | Ensure a Destination or DerivedStream with that exact `name` has this SQL operator in its `inputNodes` |
+| *"Operator 'SQL' must have parent(s) of type 'Stream'"* | SQL operator's `inputNodes` references an Operator, not a Stream | Insert a DerivedStream between the upstream operator and the SQL operator |
+| *"Incorrect syntax near 'Close'"* (or Open, Year, Order, etc.) | Reserved word used without brackets | Escape with brackets: `[Close]`, `[Order]` |
+| *"Comparison is not allowed for types..."* | Filter `value.dataType` doesn't match source column type | Check source schema — use `BigInt` for int, `Float` for float, `Nvarchar(max)` for string |
+| Operator shows blank in UI (no error) | `dataType` mismatch in Filter/Aggregate value | Verify `dataType` matches source exactly — there is no implicit coercion |
+| *"Invalid output name. Please use only alphanumeric identifiers"* | Node name contains `_`, `-`, `.`, or spaces | Use PascalCase alphanumeric names: `FilteredOutput` not `filtered_output` |
+| Aggregate uses `Min`/`Max` — deployment fails silently | Wrong enum value | Use `Minimum` / `Maximum` (not `Min` / `Max`) |
+| SQL→DerivedStream→Destination: destination never receives data | Blocked topology path | Wire SQL directly to Destination (`SQL → Destination`), or use DerivedStream only for Real-Time Hub |
+| Expand fails: *"column referenced is invalid..."* | Expand used on nested object instead of array | Use SQL with dot notation (`obj.field`) for nested objects; Expand only works on array columns |
+| Lakehouse destination only gets metadata columns (no payload) | CDC events not flattened | Add SQL operator with `payload.after.*` dot notation to flatten Debezium envelope |
+
+### SQL Operator — Anti-Patterns
+
+These topology and SQL patterns **will fail** — avoid them:
+
+| ❌ Anti-Pattern | Why It Fails | ✅ Correct Pattern |
+|---|---|---|
+| Operator → SQL (e.g., Filter → SQL) | SQL requires Stream-type input, not Operator output | Operator → DerivedStream → SQL |
+| SQL → DerivedStream → Destination | Blocked path — destination never receives data | SQL → Destination (direct), or SQL → DerivedStream (for Real-Time Hub only) |
+| SQL `INTO` alias / internal stream ID with `_` or `-` | ASA engine rejects non-alphanumeric internal IDs for SQL output aliases | PascalCase alphanumeric alias: `StockAggregates` not `stock_aggregates` |
+| Node name < 3 chars (`"LH"`) | API rejects names under 3 characters | Use 3+ char names: `LHDest` |
+| `Min` / `Max` as AggregateFunction | Enum only accepts full names | `Minimum` / `Maximum` |
+| `EqualTo` as FilterOperatorType | Not a valid enum value | `LessThan` with value+1 (for integers) or `GreaterThanOrEqual` + `LessThanOrEqual` pair |
+| `window` object on Aggregate operator | Aggregate uses flat `duration`, not `window` | `"duration": {"value": 1, "unit": "Minute"}` at aggregation level |
+| `duration` at properties level on GroupBy | GroupBy uses nested `window` object | `"window": {"type": "Tumbling", "properties": {"duration": ...}}` |
+| Time-window aggregation without `TumblingWindow` in GROUP BY | Streaming SQL requires bounded time windows | Always include `TumblingWindow(unit, size)` in GROUP BY |
+| Unescaped reserved words in SQL queries | Parser treats them as keywords | Wrap in brackets: `[Close]`, `[Status]`, `[table]` |
+| Expand on nested object column | Expand only supports array columns | Use SQL with dot notation: `obj.field` |
+
 ---
 
 ## Destination Configuration
@@ -447,15 +638,78 @@ No operators are currently known to be UI-only / preview. The SQL operator was p
 
 ### Eventhouse Ingestion Modes
 
-| Mode | Value | Behaviour |
-|------|-------|-----------|
-| Processed Ingestion | `ProcessedIngestion` | Events pass through operators before reaching Eventhouse |
-| Direct Ingestion | `DirectIngestion` | Events flow directly from source to Eventhouse — lowest latency. Requires `connectionName` and `mappingRuleName`. |
+| Mode | Value | Behaviour | API-Automatable? |
+|------|-------|-----------|------------------|
+| Processed Ingestion | `ProcessedIngestion` | Events route through the Eventstream processing engine to Eventhouse | ✅ Yes — **recommended for API/CLI automation** |
+| Direct Ingestion | `DirectIngestion` | Events flow directly from source to Eventhouse via Kusto streaming ingestion — lowest latency | ⚠️ Partial — requires UI-created data connection (see below) |
 
-**Direct Ingestion** requires:
-1. `connectionName` — found in Eventhouse KQL database → Data streams
-2. `mappingRuleName` — an ingestion mapping rule on the target table
-3. Service principal must have `database viewer` + `table ingestor` roles
+#### ProcessedIngestion (Recommended for API automation)
+
+Use this mode when deploying Eventstream→Eventhouse pipelines via REST API, CLI skills, or CI/CD. No pre-existing data connection is required — the Eventstream platform handles ingestion internally.
+
+**Required properties:**
+- `workspaceId` — workspace containing the KQL Database
+- `itemId` — the **KQL Database** GUID (not the Eventhouse item ID)
+- `databaseName` — KQL Database display name
+- `tableName` — target KQL table (the engine will auto-create a table based on the event schema it infers; if the event schema is already known, consider pre-creating the table for precise schema control)
+- `inputSerialization` — **mandatory** (see Gotcha #14): `{"type": "Json", "properties": {"encoding": "UTF8"}}`
+
+**Example:**
+```json
+{
+  "name": "StocksRawDest",
+  "type": "Eventhouse",
+  "properties": {
+    "dataIngestionMode": "ProcessedIngestion",
+    "workspaceId": "<workspace-guid>",
+    "itemId": "<kql-database-guid>",
+    "databaseName": "MyKQLDatabase",
+    "tableName": "StocksRaw",
+    "inputSerialization": {
+      "type": "Json",
+      "properties": { "encoding": "UTF8" }
+    }
+  },
+  "inputNodes": [{"name": "myEventstream-stream"}]
+}
+```
+
+**Pre-requisites (can be automated via `eventhouse-authoring-cli`):**
+1. *(Recommended)* KQL table pre-created with explicit schema (`.create table`) — avoids schema-inference surprises
+2. Streaming ingestion policy enabled (`.alter table T policy streamingingestion enable`)
+
+**Latency:** ~10-30 seconds (event processing engine batches before ingestion).
+
+#### DirectIngestion (Lowest latency — requires UI setup)
+
+Use this mode only when sub-second ingestion latency is critical AND the data connection has been pre-created via the Eventhouse UI.
+
+> ⚠️ **API limitation:** The `connectionName` references a Fabric-managed "data stream" connection that can ONLY be created through the Eventhouse portal UI ("Get Data" → "Eventstream"). No REST API exists to create this connection programmatically. Deploying with `connectionName: null` results in a permanent error state on the destination.
+
+**Required properties:**
+- `workspaceId`, `itemId` (KQL Database GUID), `databaseName`, `tableName`
+- `connectionName` — the name of the UI-created data stream connection (found in Eventhouse → KQL Database → Data streams tab)
+- `mappingRuleName` — a JSON ingestion mapping on the target table
+
+**Pre-requisites:**
+1. KQL table exists with compatible schema
+2. JSON ingestion mapping created (via `eventhouse-authoring-cli`): `.create table T ingestion json mapping "MappingName" '[...]'`
+3. Streaming ingestion policy enabled
+4. **Data stream connection created via Eventhouse UI** (not automatable via API)
+
+**Important constraints:**
+- Once a destination is deployed as DirectIngestion (`KustoPullMode`), its mode cannot be changed to ProcessedIngestion (`KustoPushMode`) via update — the API rejects with: *"Node type cannot be updated. Original type: KustoPullMode, attempted new type: KustoPushMode"*
+- To switch modes: delete the destination node (use a new node ID) and recreate with the desired mode
+
+#### Cross-Skill Collaboration Pattern
+
+For the recommended ProcessedIngestion path, use skills in sequence:
+
+| Step | Skill | Command |
+|------|-------|---------|
+| 1. Create KQL table | `eventhouse-authoring-cli` | `.create table StocksRaw (Date:datetime, Open:real, ...)` |
+| 2. Enable streaming | `eventhouse-authoring-cli` | `.alter table StocksRaw policy streamingingestion enable` |
+| 3. Deploy Eventstream | `eventstream-authoring-cli` | Deploy topology with ProcessedIngestion destination |
 
 ### Lakehouse Destination Example
 
@@ -674,7 +928,7 @@ The `eventstream.json` object includes `"compatibilityLevel": "1.0"` (or `"1.1"`
 | 3 | Eventstream name with `_` or `.` breaks SQL operator | Known preview limitation | Avoid underscores and dots in Eventstream display names |
 | 4 | `403 Forbidden` on create | Insufficient permissions | Caller needs Contributor role or higher on the workspace |
 | 5 | Source with cloud connection fails | Identity lacks connection access | Grant the calling identity (user or SPN) access to the cloud connection |
-| 6 | Eventhouse direct ingestion fails | Missing `connectionName` or `mappingRuleName` | Retrieve `connectionName` from Eventhouse → Data streams; create mapping rule on target table |
+| 6 | Eventhouse DirectIngestion fails | `connectionName` references a Fabric-managed data stream connection that can only be created via UI. Deploying with `connectionName: null` leaves destination in permanent error. | **Prefer `ProcessedIngestion` mode for API automation** (no data connection needed). If DirectIngestion is required, create the data connection via Eventhouse UI first, then reference its name. See *Eventhouse Ingestion Modes* section. |
 | 7 | Update Definition returns `202 Accepted` | Long-running operation | Poll the `Location` header URL until completion |
 | 8 | Some sources not in official API template | `AzureBlobStorageEvents`, `FabricCapacityUtilizationEvents` in Learn docs but not in template | Test before using; may require specific API version |
 | 9 | `429 Too Many Requests` | API throttling | Implement exponential backoff; respect `Retry-After` header |

@@ -3,6 +3,23 @@
   "description": "Template for Fabric MCP server configuration. Copy and customize for your environment.",
   
   "mcpServers": {
+    "FabricIQ": {
+      "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
+      "transport": "http",
+      "description": "FabricIQ MCP server for Power BI data analysis -- artifact discovery, schema inspection, DAX generation, and query execution",
+      "headers": {
+        "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
+      },
+      "auth": {
+        "type": "bearer",
+        "token": "${FABRIC_MCP_TOKEN}"
+      },
+      "capabilities": {
+        "tools": true,
+        "resources": false,
+        "prompts": false
+      }
+    },
     "fabric": {
       "url": "https://YOUR_FABRIC_MCP_SERVER_URL",
       "transport": "http",
@@ -38,8 +55,8 @@
   },
 
   "_comments": {
-    "url": "Replace with your actual MCP server URLs",
-    "token": "Set FABRIC_MCP_TOKEN environment variable or replace with actual token",
+    "url": "Replace with your actual MCP server URLs (FabricIQ URL is fixed -- no replacement needed)",
+    "token": "Set FABRIC_MCP_TOKEN environment variable or replace with actual token. For FabricIQ use: az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv",
     "transport": "Use 'http' for remote servers, 'stdio' for local process-based servers",
     "capabilities": "Adjust based on what your MCP server supports"
   }

@@ -4,25 +4,6 @@ description: >
   Orchestrate end-to-end Microsoft Fabric data engineering workflows that span multiple workloads and personas.
   Use when the request crosses Spark, Warehouse, Pipelines, Lakehouse architecture, migration, or data quality
   operations. Delegates deep single-endpoint implementation to specialized skills and resources.
-delegates_to:
-  - spark-authoring-cli
-  - spark-consumption-cli
-  - spark-operations-cli
-  - mlv-operations-cli
-  - sqldw-authoring-cli
-  - sqldw-consumption-cli
-  - sqldw-operations-cli
-  - eventhouse-authoring-cli
-  - eventhouse-consumption-cli
-  - eventstream-authoring-cli
-  - eventstream-consumption-cli
-  - semantic-model-authoring
-  - semantic-model-consumption
-  - dataflows-authoring-cli
-  - dataflows-consumption-cli
-  - dataflows-save-as-authoring-cli
-  - e2e-medallion-architecture
-  - FabricMigrationEngineer
 ---
 
 # FabricDataEngineer — Data Engineering Agent

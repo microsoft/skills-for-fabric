@@ -1,17 +1,19 @@
 ---
 name: eventstream-authoring-cli
 description: >
-  Create, wire, and publish Microsoft Fabric Eventstream real-time event streaming
-  topologies via the Fabric Items REST API. Build graph-based definitions with 25
-  source types (Event Hubs, IoT Hub, CDC connectors, Kafka, SampleData), 8
-  transformation operators (Filter, Aggregate, GroupBy, Join, ManageFields, Union,
-  Expand, SQL), 4 destination types (Lakehouse Delta, Eventhouse, Activator, Custom
-  Endpoint), and DefaultStream/DerivedStream routing. Use when the user wants to:
-  (1) author or publish an Eventstream topology, (2) add CDC sources with SQL-based
-  Debezium payload flattening, (3) assemble multi-table fan-out routing,
-  (4) modify or delete Eventstream definitions. Triggers: "create eventstream",
-  "deploy eventstream", "design eventstream topology", "CDC source", "eventstream operator",
-  "real-time ingestion pipeline", "eventstream definition", "update eventstream".
+  Create, wire, and publish Fabric Eventstream real-time streaming topologies via
+  the Items REST API. Build definitions with 25 source types (Event Hubs, IoT Hub,
+  CDC, Kafka, SampleData), 8 operators (Filter, Aggregate, GroupBy, Join,
+  ManageFields, Union, Expand, SQL), 4 destinations (Lakehouse, Eventhouse,
+  Activator, Custom Endpoint), DefaultStream/DerivedStream routing. Use to:
+  (1) author Eventstream topology, (2) add Event Hub source, (3) add filter
+  operator, (4) add CDC source with Debezium flattening, (5) wire destinations,
+  (6) modify/delete Eventstream definitions. Triggers: "create eventstream",
+  "deploy eventstream", "eventstream topology", "add source to eventstream",
+  "add event hub source", "add filter operator", "eventstream filter",
+  "eventstream destination", "CDC source", "eventstream operator",
+  "eventstream definition", "update eventstream", "wire eventstream",
+  "real-time ingestion pipeline", "eventstream topology deployment".
 ---
 
 > **Update Check — ONCE PER SESSION (mandatory)**
@@ -79,7 +81,7 @@ Save the returned `id` as `EVENTSTREAM_ID`.
 Construct the `eventstream.json` topology with sources, streams, operators, and destinations. Each node references its upstream via `inputNodes`.
 
 Prefer building the JSON programmatically to avoid serialization errors. Key rules:
-- Every source must have a corresponding DefaultStream
+- The topology must have exactly one DefaultStream — all sources feed into it via `inputNodes`
 - Operators reference their input via `inputNodes[].name`
 - DerivedStreams require `inputSerialization` in properties
 - Destinations reference their input stream or operator
@@ -96,10 +98,10 @@ For deploying a complete Eventstream with topology in a single API call, use the
 
 ```bash
 # 1. Build eventstream.json content (topology)
-TOPOLOGY_JSON='{"compatibilityLevel":"1.0","sources":[...],"streams":[...],"operators":[...],"destinations":[...]}'
+TOPOLOGY_JSON='{"compatibilityLevel":"1.1","sources":[...],"streams":[...],"operators":[...],"destinations":[...]}'
 
 # 2. Build eventstreamProperties.json (optional — controls retention and throughput)
-PROPERTIES_JSON='{"retentionTimeInDays":1,"eventThroughputLevel":"Low","schemaMode":"Inferred"}'
+PROPERTIES_JSON='{"retentionTimeInDays":1,"eventThroughputLevel":"Low"}'
 
 # 3. Base64-encode both (no line wraps)
 TOPOLOGY_B64=$(echo -n "$TOPOLOGY_JSON" | base64 -w 0)
@@ -130,7 +132,7 @@ az rest --method POST \
   }"
 ```
 
-> **Note:** If `eventstreamProperties.json` is omitted, the API applies defaults: `retentionTimeInDays: 1`, `eventThroughputLevel: "Low"`, `schemaMode: "Inferred"`. Include it explicitly to control retention (1–90 days) and throughput.
+> **Note:** If `eventstreamProperties.json` is omitted, the API applies defaults: `retentionTimeInDays: 1`, `eventThroughputLevel: "Low"`. Include it explicitly to control retention (1–90 days) and throughput.
 
 > On Windows (PowerShell), use `[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($json))` for base64 encoding.
 
@@ -138,13 +140,51 @@ az rest --method POST \
 
 ## Update Eventstream Topology
 
-1. **Get current definition**: `GET /v1/workspaces/{wsId}/eventstreams/{esId}/definition`
+1. **Get current definition**: `POST /v1/workspaces/{wsId}/eventstreams/{esId}/getDefinition`
 2. **Decode** the `eventstream.json` payload from base64
 3. **Modify** the topology (add/remove/update nodes)
 4. **Re-encode** to base64
-5. **Submit**: `PUT /v1/workspaces/{wsId}/eventstreams/{esId}/definition`
+5. **Submit**: `POST /v1/workspaces/{wsId}/eventstreams/{esId}/updateDefinition`
+
+> **API Note**: The Eventstream Definition APIs use `POST` with action verbs (`getDefinition`, `updateDefinition`), not `GET`/`PUT` on a `/definition` resource. This follows the Fabric Items Definition pattern. See [official docs](https://learn.microsoft.com/en-us/fabric/real-time-intelligence/event-streams/api-get-eventstream-definition).
 
 The Update Definition API returns `202 Accepted` for long-running operations. Poll the `Location` header URL until completion.
+
+### Adding a Filter Operator
+
+> **⚠️ CRITICAL**: Filter operator conditions use **nested objects** for `column` and `value` — NOT bare strings. Using `"column": "temperature"` instead of the object form below will cause a silent API rejection.
+
+```json
+{
+  "name": "FilterHighTemp",
+  "type": "Filter",
+  "inputNodes": [{"name": "my-stream"}],
+  "properties": {
+    "conditions": [{
+      "column": {
+        "node": null,
+        "columnName": "temperature",
+        "columnPath": null,
+        "expressionType": "ColumnReference"
+      },
+      "operatorType": "GreaterThan",
+      "value": {
+        "dataType": "Float",
+        "value": "30.0",
+        "expressionType": "Literal"
+      }
+    }]
+  }
+}
+```
+
+**Required structure for ALL operator condition fields:**
+- `column` → object with `{node, columnName, columnPath, expressionType: "ColumnReference"}`
+- `value` → object with `{dataType, value, expressionType: "Literal"}`
+- `operatorType` → string: `GreaterThan`, `LessThan`, `Equals`, `NotEquals`, `GreaterThanOrEqual`, `LessThanOrEqual`
+- `dataType` → `Float`, `Int`, `Long`, `String`, `DateTime`
+
+This same nested-object pattern applies to **all operators** that reference columns (Filter, Aggregate, GroupBy, Join, ManageFields).
 
 ---
 
@@ -167,7 +207,8 @@ Returns `200 OK` on success.
 - **Always base64-encode** the `eventstream.json` payload before submitting definitions
 - **Always pass `--resource https://api.fabric.microsoft.com`** with `az rest` calls
 - **Always use JMESPath filtering** to resolve workspace name → ID and item name → ID
-- **Always include a DefaultStream** for each source in the topology
+- **Always use nested objects for operator column/value references** — `"column": {"columnName": "x", "expressionType": "ColumnReference", ...}`, never `"column": "x"` (API rejects bare strings silently)
+- **Exactly one DefaultStream per topology** — all sources connect to it (the API rejects multiple DefaultStreams)
 - **Poll LRO responses** — Update Definition returns `202 Accepted` with a `Location` header
 
 ### PREFER

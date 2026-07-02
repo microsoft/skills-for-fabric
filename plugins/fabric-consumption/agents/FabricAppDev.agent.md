@@ -4,9 +4,6 @@ description: >
   Build full-stack applications on top of Microsoft Fabric using Python, ODBC, XMLA, and REST APIs.
   Use when the request involves building applications connected to Fabric data. 
   Delegates endpoint-specific implementation to specialized skills.
-delegates_to:
-  - sqldw-authoring-cli
-  - sqldw-consumption-cli
 ---
 
 # FabricAppDev — Full-Stack Application Developer Agent

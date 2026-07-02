@@ -10,7 +10,15 @@
 #   --server-name NAME    Local name for the server (default: fabric)
 #   --auth-type TYPE      Authentication: none, bearer, api-key (default: none)
 #   --token TOKEN         Authentication token (if required)
+#   --headers JSON        Custom HTTP headers as JSON string (e.g., '{"X-VARIANTS": "..."}')
 #   --tool TOOL           Tool to configure: copilot, claude, vscode, all (default: all)
+#
+# Example (FabricIQ):
+#   ./register-fabric-mcp.sh \
+#     --server-url "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365" \
+#     --server-name "FabricIQ" --auth-type bearer \
+#     --token "$(az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv)" \
+#     --headers '{"X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"}'
 #
 
 set -e
@@ -19,6 +27,7 @@ set -e
 SERVER_NAME="fabric"
 AUTH_TYPE="none"
 TOKEN=""
+HEADERS=""
 TOOL="all"
 SERVER_URL=""
 
@@ -41,6 +50,10 @@ while [[ $# -gt 0 ]]; do
             TOKEN="$2"
             shift 2
             ;;
+        --headers)
+            HEADERS="$2"
+            shift 2
+            ;;
         --tool)
             TOOL="$2"
             shift 2
@@ -58,6 +71,7 @@ if [[ -z "$SERVER_URL" ]]; then
 fi
 
 # Colors
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
@@ -83,6 +97,16 @@ if [[ "$AUTH_TYPE" != "none" ]]; then
     AUTH_CONFIG=", \"auth\": {\"type\": \"$AUTH_TYPE\", \"token\": \"$TOKEN\"}"
 fi
 
+# Build headers config
+HEADERS_CONFIG=""
+if [[ -n "$HEADERS" ]]; then
+    if ! echo "$HEADERS" | jq empty 2>/dev/null; then
+        echo -e "${RED}[✗] --headers value is not valid JSON: $HEADERS${NC}" >&2
+        exit 1
+    fi
+    HEADERS_CONFIG=", \"headers\": $HEADERS"
+fi
+
 # Configure GitHub Copilot CLI
 configure_copilot() {
     local config_path="$HOME/.copilot/mcp.json"
@@ -96,7 +120,7 @@ configure_copilot() {
         local existing="{}"
     fi
     
-    local server_config="{\"url\": \"$SERVER_URL\", \"transport\": \"http\"$AUTH_CONFIG}"
+    local server_config="{\"url\": \"$SERVER_URL\", \"transport\": \"http\"$HEADERS_CONFIG$AUTH_CONFIG}"
     
     echo "$existing" | jq ".mcpServers.$SERVER_NAME = $server_config" > "$config_path"
     success "GitHub Copilot CLI configured at $config_path"
@@ -104,6 +128,9 @@ configure_copilot() {
 
 # Configure Claude Desktop
 configure_claude() {
+    if [[ -n "$HEADERS" || "$AUTH_TYPE" != "none" ]]; then
+        warning "Claude Desktop uses mcp-proxy and does not support custom headers or auth config directly. Headers/auth will not be applied to this target."
+    fi
     local config_path
     if [[ "$OSTYPE" == "darwin"* ]]; then
         config_path="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
@@ -131,6 +158,9 @@ configure_claude() {
 
 # Configure VS Code
 configure_vscode() {
+    if [[ -n "$HEADERS" || "$AUTH_TYPE" != "none" ]]; then
+        warning "VS Code MCP config supports URL only. Headers/auth will not be applied to this target."
+    fi
     local config_path="$HOME/.config/Code/User/settings.json"
     if [[ "$OSTYPE" == "darwin"* ]]; then
         config_path="$HOME/Library/Application Support/Code/User/settings.json"

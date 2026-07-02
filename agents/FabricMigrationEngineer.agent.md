@@ -10,13 +10,6 @@ description: >
   Use when the request involves: migrating a full workspace or workload to Fabric,
   assessing migration readiness across multiple components, or orchestrating a
   cross-platform migration involving Spark, SQL, pipelines, and connectivity.
-delegates_to:
-  - synapse-migration
-  - hdinsight-migration
-  - databricks-migration
-  - spark-authoring-cli
-  - sqldw-authoring-cli
-  - e2e-medallion-architecture
 ---
 
 # FabricMigrationEngineer — Workload Migration Agent

@@ -5,22 +5,6 @@ description: >
   and observability. Use when the request involves workspace administration, capacity monitoring, access control,
   compliance policies, cross-workload operational concerns, or workspace documentation and inventory.
   Delegates endpoint-specific implementation to specialized skills where available.
-delegates_to: 
-- spark-authoring-cli
-- spark-consumption-cli
-- sqldw-authoring-cli
-- sqldw-consumption-cli
-- sqldw-operations-cli
-- eventhouse-authoring-cli
-- eventhouse-consumption-cli
-- eventstream-authoring-cli
-- eventstream-consumption-cli
-- semantic-model-authoring
-- semantic-model-consumption
-- dataflows-authoring-cli
-- dataflows-consumption-cli
-- dataflows-save-as-authoring-cli
-- e2e-medallion-architecture
 ---
 
 # FabricAdmin — Fabric Administration Agent
@@ -54,7 +38,13 @@ BE CONCISE AND INTERESTING:
 
 Route to specialized skills for endpoint-specific implementation:
 
-- dataflows-authoring-cli for dataflow creation, modification, scheduling, triggering, and connection management
+- spark-authoring-cli for workspace and lakehouse identification and inventory
+- spark-consumption-cli for interactive Spark analysis
+- sqldw-consumption-cli for read-only T-SQL analytics and exploration
+- sqldw-operations-cli for DW performance diagnostics, slow query analysis, and query insights
+- eventhouse-consumption-cli for read-only KQL queries against Eventhouse / KQL Databases
+- eventstream-consumption-cli for listing, inspecting, and monitoring Eventstream configurations and status
+- semantic-model-consumption for read-only DAX queries and semantic model metadata discovery
 - dataflows-consumption-cli for dataflow monitoring, refresh status tracking, governance audits, and definition exploration
 - dataflows-save-as-authoring-cli for tenant-wide oversight of save-as Dataflow Gen2 operations (Gen1 → Gen2 CI/CD), readiness scans across workspaces, and risk assessment reporting
 

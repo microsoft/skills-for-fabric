@@ -99,12 +99,18 @@ az rest --method post --resource "https://api.fabric.microsoft.com" \
 
 ### Analyze Connections from queryMetadata.json
 
+> **Inline / literal-source dataflows:** queries built from an inline expression
+> (e.g. `#table(...)`, hardcoded literals) have **no external data source**, so
+> `queryMetadata.json` contains no `connections` entries (empty/absent array).
+> Report "this dataflow has no external data source connections (inline source)"
+> rather than implying a binding exists.
+
 ```bash
 # Decode queryMetadata.json and list connections
 az rest --method post --resource "https://api.fabric.microsoft.com" \
   --url "$API/workspaces/$WS_ID/dataflows/$DF_ID/getDefinition" | \
   jq -r '.definition.parts[] | select(.path=="queryMetadata.json") | .payload' | \
-  base64 --decode | jq '.connections[] | {path, kind, connectionId}'
+  base64 --decode | jq '.connections // [] | if length == 0 then "No external connections (inline/literal source)" else .[] | {path, kind, connectionId} end'
 ```
 
 ### Identify Load-Enabled vs Helper Queries
@@ -123,6 +129,12 @@ az rest --method post --resource "https://api.fabric.microsoft.com" \
 ```
 
 ## Parameter Discovery
+
+> **Non-parametric dataflows:** the `/parameters` endpoint returns
+> `DataflowNotParametricError` (HTTP 4xx) when a dataflow has no Power Query
+> parameters. Handle it gracefully — report "this dataflow has no parameters"
+> rather than surfacing the raw error — and optionally confirm by scanning
+> mashup.pq for `IsParameterQuery` (see "Find Parameters in mashup.pq" below).
 
 ### Format Parameters as Report
 

@@ -1,12 +1,15 @@
 ---
 name: search-consumption-cli
 description: >
-  Find and discover Microsoft Fabric items across workspaces when the workspace is unknown.
-  Use when the user wants to: (1) find an item by name across workspaces,
-  (2) list items of specific type across workspaces, (3) identify which workspace contains an item,
+  Search the Microsoft Fabric catalog to find an item by name across all workspaces
+  when you don't know which workspace it is in, using the Fabric Catalog Search API.
+  Use when the user wants to: (1) search the catalog for an item by name across workspaces,
+  (2) discover or list items of a specific type across the tenant,
+  (3) identify which workspace contains an item,
   (4) return item/workspace IDs for downstream API calls.
-  Triggers: "which workspace has", "where is", "what items do I have", "do I have",
-  "find item", "find all items", "search for item", "discover items", "find across workspaces".
+  Triggers: "search for an item", "search the catalog", "catalog search",
+  "search Fabric for an item", "search for item", "find an item by name across workspaces",
+  "which workspace has", "discover items across the tenant".
 ---
 
 > **Update Check — ONCE PER SESSION (mandatory)**
@@ -197,5 +200,5 @@ az rest --method post \
 | `FilterTooManyValues` | Filter has more than 500 values | Reduce the number of type values in the filter. |
 | `InvalidRequest` | Missing request body | Ensure `--body` points to a valid JSON file. |
 | Empty results for known item | Item type not supported | Dataflow Gen1/Gen2 are excluded. Use `GET /v1/workspaces/{id}/items` instead. |
-| New item not found | Catalog index propagation delay | Newly created items can take up to 24 hours to appear in search results. Verify the item exists via `GET /v1/workspaces/{id}/items` instead. |
+| New item not found | Catalog index propagation delay | Indexing lag is variable and not yet near-real-time — usually minutes, but not guaranteed. A just-created item may not appear in search results yet; verify it exists via `GET /v1/workspaces/{id}/items` instead. |
 | Too many results | Search text too broad | Add a type filter or use more specific search text. |

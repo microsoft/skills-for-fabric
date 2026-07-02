@@ -42,6 +42,8 @@ quality-report.json
 tests/.vally-results/
 # Some vally CLI invocations write to a root-level results dir; ignore it too
 vally-results/
+# Pester writes a JUnit-style testResults.xml at the repo root in CI mode
+testResults.xml
 # Vally eval staging -- substituted {{WORKSPACE}} copies for real runs (never commit)
 tests/.vally-staging/
 tests/.vally-baseline-skill-root/

@@ -142,7 +142,7 @@ Use this when **the dataflow does not yet exist**. Covers the full happy path: d
 4. **Create the dataflow shell.** `POST /v1/workspaces/{ws}/dataflows` with `{"displayName":"…"}` returns sync 201. The `definition` field is optional at create time and can be set in the next step.
 5. **Save M + connection bindings in one call.** `POST /v1/workspaces/{ws}/dataflows/{df}/updateDefinition?updateMetadata=true` with three parts: `mashup.pq` (real `Web.Contents` / `Sql.Database` / …), `queryMetadata.json` (with `connections[]` populated; each `connectionId` is the stringified composite `{"ClusterId":"…","DatasourceId":"…"}`), and `.platform`. Typically returns sync 200; may return 202 + LRO `Location` on large bodies — handle both.
 6. **Verify the binding persisted.** Re-call `getDefinition`, decode `queryMetadata.json`, and confirm `connections[]` is intact. **Do not** use `GET /items/{id}/connections` for verification — that endpoint reflects refresh-materialized state, not the persisted definition, and returns 0 even after a successful bind. See [AVOID](#avoid).
-7. **(Optional) Validate via executeQuery before refresh.** `POST /v1/workspaces/{ws}/dataflows/{df}/executeQuery` with body `{"QueryName":"<shared-member>"}` (top-level, **PascalCase** `QueryName`). See [Workflow C](#c-preview-driven-authoring-loop).
+7. **(Encouraged) Offer to preview output as ASCII charts.** Ask the user: *"Would you like me to preview the data as charts before the first refresh?"*. In this create flow the definition is already saved in step 5, so the chart preview here is a **post-save validation gate before you materialize via refresh** — not a pre-save step. (If instead you want to validate *candidate* M **before** the first `updateDefinition` — e.g. iterating on the M, or bootstrap-binding a credentialed source so `executeQuery` can see it — use the pre-persist [Preview-Driven Authoring Loop](#c-preview-driven-authoring-loop); the chart rendering is identical, only the ordering relative to the save differs.) If accepted, call `executeQuery` for each entity, parse the Arrow IPC stream, render line charts (time-series) or horizontal bar charts (categories) via `references/charts/line_chart.py` / `references/charts/bar_chart.py`, and ask the user to confirm before proceeding. Details: [mashup-preview.md § ASCII chart preview](references/mashup-preview.md#ascii-chart-preview-optional). If declined, proceed directly to step 8.
 8. **(Optional) Trigger refresh** to materialize. `POST .../jobs/instances?jobType=Refresh` with body `{"executionData":{"executeOption":"ApplyChangesIfNeeded"}}`. **`ApplyChangesIfNeeded` is required on the first refresh after any definition change** — without it, Fabric refreshes the previously-applied definition. Poll the LRO until `status` is `Completed` (refresh enum) or `Failed`/`Cancelled`.
 
 ```bash
@@ -233,23 +233,11 @@ done
 #    Full LRO polling: references/authoring-script-templates.md.
 ```
 
-### C. Preview-Driven Authoring Loop (pre-save executeQuery — see [mashup-preview.md](references/mashup-preview.md))
+### C. Preview-Driven Authoring Loop (pre-save executeQuery — see [mashup-preview.md](references/mashup-preview.md#preview-driven-authoring-loop))
 
-When the change touches Power Query M (new query, edited mashup, new source, changed parameters), preview the candidate `customMashupDocument` against the dataflow's bound connections **before** persisting. Catches syntax, schema, and credential errors at authoring time. Full prerequisites, bootstrap branch, auto-wrap rule, hard-avoid for unbounded preview, and Apache Arrow handling: [mashup-preview.md](references/mashup-preview.md).
+When the change touches Power Query M (new query, edited mashup, new source, changed parameters), preview the candidate `customMashupDocument` against the dataflow's bound connections **before** persisting. Catches syntax, schema, and credential errors at authoring time. Full ordered steps, bootstrap branch, auto-wrap rule, hard-avoid for unbounded preview, ASCII chart preview, and Apache Arrow handling: [mashup-preview.md § Preview-Driven Authoring Loop](references/mashup-preview.md#preview-driven-authoring-loop).
 
 > **Intent split.** This workflow is for the *pre-save* intent. To execute a **saved** query (`QueryName` only) or run an **ad-hoc read-only** `customMashupDocument` with no intent to persist, use [`dataflows-consumption-cli`](../dataflows-consumption-cli/SKILL.md#query-evaluation). `mashup-preview.md` is the shared API reference for both intents.
-
-Minimal ordered steps:
-
-1. **Locate or create the dataflow shell** — `POST /v1/workspaces/{ws}/dataflows` with `{"displayName":"…"}` (workflow A step 4).
-2. **Ensure connections are bound** — for new credentialed sources, do a minimal `updateDefinition` with `queryMetadata.json connections[]` first (the "bootstrap save"). A `connections[]` array declared only in the initial create payload is **not** yet visible to `executeQuery`.
-3. **Compose the candidate `customMashupDocument`** as a complete `section Section1; ...` document. The request's `QueryName` (top-level, PascalCase) must match a `shared` member in the document.
-4. **Preview** — `POST /v1/workspaces/{ws}/dataflows/{df}/executeQuery` with body `{"QueryName": "<name>", "customMashupDocument": "<section>"}`. Pass `--output-file results.arrow` — `az rest` writes the raw Apache Arrow IPC stream to disk. Arrow → CSV/pandas: [dataflows-consumption-cli § Query Evaluation](../dataflows-consumption-cli/SKILL.md#query-evaluation).
-5. **Validate the preview (two-tier — both required before persisting):**
-   - **a. Embedded-error check.** HTTP 200 is **not** proof of success; engine errors are embedded inside the stream as `{"Error":"..."}`. Quick scan: `grep -q '"Error":"' results.arrow`. Canonical pyarrow detector inspects schema metadata — see [mashup-preview.md § Error handling — A](references/mashup-preview.md#detecting-failures-inside-the-arrow-body).
-   - **b. Render `head(10)` as a markdown table to the user.** The embedded-error check only catches engine-level failures (column not found, cast errors, SEM0100, etc.). It does **not** catch *silent-success* bugs: filter dropped all rows, wrong column referenced, wrong join key, off-by-one filter, wrong cast producing epoch dates. The 10-row visual lets the human verify shape, row count, and value sanity in seconds. Snippet + suppression rules: [dataflows-consumption-cli § Example 5b](../dataflows-consumption-cli/SKILL.md#example-5b-render-query-results-as-a-markdown-table).
-   - **c. Probe for per-cell errors.** An errored cell serializes as an Arrow **null** — indistinguishable from a genuine null in the head(10) view. To disambiguate, wrap the cell in `try` and read the `[HasError]` field: `try <step>{N}[Col]` returns `[HasError = true, Error = [...]]` for an errored cell vs `[HasError = false, Value = ...]` otherwise; filter with `Table.SelectRows(<step>, each not (try [Col])[HasError])`. Detail: [m-language.md § Per-cell errors](references/m-language.md#per-cell-errors-in-column-transformations).
-6. **Persist via `updateDefinition`** — strip any preview-only `Table.FirstN` / `TOP N` / test-mode parameters from the saved mashup. Verify `queryMetadata.json connections[]` survived the full-replacement write before triggering refresh.
 
 Skip the preview only for metadata-only edits (display name, schedule, `loadEnabled` toggle) or when the agent records an explicit skip reason (bootstrap, prohibitive cost, side-effecting source).
 
@@ -301,6 +289,7 @@ For connection discovery: [authoring-cli-quickref.md § Connection Discovery and
 
 ### MUST DO
 
+- **Offer to preview every entity before the first refresh of a new dataflow** — after creating the shell and binding connections via `updateDefinition` (which persists the definition), ask the user if they want to see preview charts before materializing via refresh. In the [preview-driven loop](#c-preview-driven-authoring-loop) the preview instead precedes the persisting `updateDefinition`. If accepted, follow [mashup-preview.md § ASCII chart preview](references/mashup-preview.md#ascii-chart-preview-optional). Skip only for metadata-only edits (display name, schedule) or when the agent records an explicit skip reason.
 - **`az login` first** — all `az rest` calls use the active session. No session → 401.
 - **Use `--resource "https://api.fabric.microsoft.com"` for Fabric APIs.** For Power BI v2 (`gatewayClusterDatasources`), use `--resource "https://analysis.windows.net/powerbi/api"` **without a trailing slash** — the slashed form fails `AADSTS500011 invalid_resource`.
 - **Base64-encode all 3 definition parts** — `mashup.pq` + `queryMetadata.json` + `.platform`, each `payloadType: "InlineBase64"`. `updateDefinition` is a full replacement; sending 1 or 2 parts silently drops queries.
@@ -322,6 +311,7 @@ For connection discovery: [authoring-cli-quickref.md § Connection Discovery and
 
 ### AVOID
 
+- **Materializing a new dataflow (first refresh) without offering the user a preview** — the user cannot validate that the M code matches their intent by reading code alone. Always offer to preview each entity's output as an ASCII chart before the first refresh (and, in the preview-driven loop, before the persisting `updateDefinition`). The user may decline, but the offer should always be made.
 - **Adding a `format` property to `definition`** — Items API uses `parts[]` only; `"format": "json"` returns `400 InvalidDefinitionFormat`.
 - **Hardcoded workspace/dataflow GUIDs** — discover via REST API (Connection section).
 - **Using `GET /v1/workspaces/{ws}/items/{itemId}/connections` to verify a freshly-bound dataflow.** It reflects refresh-materialized state, **not** the persisted definition, and returns 0 after a successful bind. Verify via `getDefinition` + decode `queryMetadata.json.connections[]`.
@@ -353,6 +343,7 @@ For connection discovery: [authoring-cli-quickref.md § Connection Discovery and
 - **`"Automatic"` for parameter type in job execution** — lets the engine infer from definition.
 - **Env vars (`WS_ID`, `DF_ID`, `API`, `RESOURCE`)** for script reuse.
 - **Batch connection validation** — loop over `queryMetadata.json connections[]` and `GET /v1/connections/{id}` in one pass before refresh; optionally `POST /v1/connections/{id}/testConnection` to catch rotated credentials.
+- **Offer preview charts** before committing a new dataflow — render sample data as an ASCII chart so the user can validate the output shape and values.
 
 ### TROUBLESHOOTING
 

@@ -7,8 +7,6 @@ description: >
   Use when the user asks data questions about Power BI reports, semantic models, or dashboards.
   Triggers: "Power BI", "PBI", "ask power bi", "discover artifact", "report data",
   "dashboard data", "semantic model question", "what are the top", "show me the data", "provide insights", or BI terms like MAU, DAU, churn.
-delegates_to:
-- fabriciq
 ---
 
 # FabricIQ — Power BI Insights Agent
