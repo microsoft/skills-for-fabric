@@ -90,7 +90,7 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 ### Power BI / FabricIQ
 - Consumption skill: `skills/semantic-model-consumption/SKILL.md` — raw DAX queries via MCP ExecuteQuery
 - FabricIQ skill: `skills/fabriciq/SKILL.md` — multi-step Power BI analysis (discover, inspect, resolve, generate, execute)
-- ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](../agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
+- ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
 
 ### Fabric IQ / Ontology (preview)
 - Use the Fabric item-definition REST API (Create / Get / Update Item Definition) with `InlineBase64` parts

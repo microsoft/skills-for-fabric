@@ -135,7 +135,7 @@ Since JobInsight is Scala-only and cluster-bound, the recommended automation pat
      --url "https://api.fabric.microsoft.com/v1/workspaces/$workspaceId/items/$notebookId/jobs/RunNotebook/instances" \
      --body '{"executionData": {"parameters": {"workspaceId": "...", "livyId": "...", "targetDir": "..."}}}'
    ```
-3. Poll the Location header for completion (see [COMMON-CLI.md § LRO Pattern](../../common/COMMON-CLI.md#long-running-operations-lro-pattern))
+3. Poll the Location header for completion (see [COMMON-CLI.md § LRO Pattern](../../../common/COMMON-CLI.md#long-running-operations-lro-pattern))
 
 ---
 
