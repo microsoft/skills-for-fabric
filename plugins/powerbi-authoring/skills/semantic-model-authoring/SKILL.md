@@ -392,6 +392,7 @@ If any check fails, fix the issue and re-run validation.
 | Symptom                              | Fix                                                                                                                   |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | MCP connection failure               | Fall back to TMDL editing (see Tool Selection Priority). Inform the user about the fallback.                          |
+| MCP connect timeout on macOS (`timed out after 60000ms`) | The `powerbi-modeling-mcp` native macOS binary ships unsigned; macOS kills it with SIGKILL (exit 137) before the stdio handshake completes. Ad-hoc sign the downloaded binary, then restart the client: `find "$HOME/.npm/_npx" -path '*powerbi-modeling-mcp-*/dist/powerbi-modeling-mcp' -type f \| while read -r b; do xattr -dr com.apple.quarantine "$b" 2>/dev/null; codesign --force --sign - "$b"; done` |
 | TMDL validation errors               | Read error details, fix syntax, re-validate. Load [tmdl-guidelines.md](./references/tmdl-guidelines.md).              |
 | `403 Forbidden` / `identity None`    | User needs Contributor+ role - stop immediately. Do not retry.                                                        |
 | `401 Unauthorized`                   | Wrong `--resource` audience or missing permissions to the item. Check [semantic-model-rest-api.md](./references/semantic-model-rest-api.md). |
