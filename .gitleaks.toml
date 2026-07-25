@@ -2,10 +2,3 @@
 # https://github.com/gitleaks/gitleaks#configuration
 
 title = "skills-for-fabric Gitleaks Config"
-
-# Allowlist paths containing test fixtures with fake secrets
-[allowlist]
-  description = "Allowlist for test files with fake/mock secrets"
-  paths = [
-    '''tests/redteam/test_prompt_injection\.py''',
-  ]

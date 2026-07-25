@@ -85,7 +85,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 ### Power BI / FabricIQ
 - Consumption skill: `skills/semantic-model-consumption/SKILL.md` — raw DAX queries against semantic models via MCP ExecuteQuery tool
 - FabricIQ skill: `skills/fabriciq/SKILL.md` — multi-step Power BI data analysis (discover, inspect, resolve, generate, execute)
-- ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](../agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
+- ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
 
 ### Fabric IQ / Ontology (preview)
 - Authoring skill: `skills/fabriciq-ontology-authoring-cli/SKILL.md` — define entity types, properties (incl. timeseries), relationship types, and bind them to lakehouse/Eventhouse tables via the item-definition REST API

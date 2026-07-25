@@ -85,7 +85,7 @@ This skill provides two diagnostic tiers. Always start with **Tier 1**. Escalate
 Uses Fabric Spark Monitoring REST APIs (via `az rest`) to pull session data, failed jobs, slowest stages, Spark Advisor findings, and driver logs. Fast; no download; no active session required.
 
 **Workflow:**
-1. **Find the session** — List Livy sessions for the notebook/SJD (see [Monitoring Workflow](../../common/SPARK-MONITORING-CORE.md#diagnostic-workflow-using-monitoring-apis))
+1. **Find the session** — List Livy sessions for the notebook/SJD (see [Monitoring Workflow](../../../common/SPARK-MONITORING-CORE.md#diagnostic-workflow-using-monitoring-apis))
 2. **Check Advisor** — Query the Spark Advisor API for automated root-cause detection
 3. **Failure analysis** — If job failed, inspect failed jobs/stages, read driver/executor logs
 4. **Performance analysis** — Check stage metrics, executor utilization, resource usage

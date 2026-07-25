@@ -121,7 +121,7 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
   - Authoring skill: `skills/semantic-model-authoring/SKILL.md` — semantic model authoring
   - Consumption skill: `skills/semantic-model-consumption/SKILL.md` — raw DAX queries against semantic models via MCP ExecuteQuery tool
   - FabricIQ skill: `skills/fabriciq/SKILL.md` — multi-step Power BI data analysis (discover, inspect, resolve, generate, execute)
-  - ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](../agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
+  - ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
 - **Power BI Reports**: PBIR/PBIP report projects, visual design, Desktop validation, and Fabric report item management
   - Docs: https://learn.microsoft.com/en-us/power-bi/developer/projects/projects-report
   - Skill docs: https://aka.ms/Report_Authoring_skill_LearnDocs
