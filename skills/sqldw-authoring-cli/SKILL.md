@@ -261,6 +261,7 @@ For CLI-specific issues: [COMMON-CLI.md](../../common/COMMON-CLI.md) Gotchas & T
 - **`-Q`** (non-interactive exit) for agentic use.
 - **`-F vertical`** for exploration of wide tables.
 - **Env vars** (`FABRIC_SERVER`, `FABRIC_DB`) for script reuse.
+- **`dbt-authoring-cli` skill for versioned, multi-model SQL transformations** — when building a maintainable set of SQL transformation models (Silver→Gold, dimensional models) with lineage, dependency ordering, and built-in tests, consider a DataBuildToolJob (dbt Core in Fabric) instead of hand-written stored-procedure ETL. This skill (raw `sqlcmd` T-SQL) remains the right choice for ad-hoc DDL/DML, ingestion (COPY INTO), and one-off operations.
 
 ### TROUBLESHOOTING
 
