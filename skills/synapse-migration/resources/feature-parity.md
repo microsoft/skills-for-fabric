@@ -8,6 +8,7 @@ Quick-reference summary of Synapse Spark features and their Fabric equivalents.
 |---|---|---|---|
 | Spark Pool (on-demand) | Starter Pool | ✅ Full | Auto-provisioned, no config needed |
 | Spark Pool (custom) | Custom Pool / Environment | ✅ Full | Node family + size + autoscale via Environment |
+| **Synapse Dedicated SQL Pool** | **Fabric Lakehouse** | ⚠️ **Partial; rewrite required** | Schema and executable code artifacts only; T-SQL semantics require explicit conversion and review. See [dedicated-pool-to-lakehouse.md](dedicated-pool-to-lakehouse.md). |
 | Pool-level libraries | Environment (libraries section) | ✅ Full | PyPI, Conda, custom .whl/.jar |
 | `mssparkutils.*` | `notebookutils.*` | ✅ Full | Namespace change only — see [utility-api-mapping.md](utility-api-mapping.md) |
 | `mssparkutils.env` | `notebookutils.runtime` | ⚠️ Renamed | `.env.getWorkspaceName()` → `.runtime.context["workspaceName"]` |
