@@ -1,15 +1,18 @@
 ---
 name: synapse-migration
 description: >
-  Port Azure Synapse Analytics Spark workloads to Microsoft Fabric.
+  Port Azure Synapse Analytics workloads to Microsoft Fabric.
+  Covers: (1) Spark workloads (notebooks, Lake Databases, Spark Job Definitions),
+  (2) Dedicated SQL Pool to Fabric Lakehouse (T-SQL → PySpark conversion).
   Translates mssparkutils calls to notebookutils (including the env→runtime namespace change),
   replaces Linked Services with Fabric Data Connections and OneLake Shortcuts.
-  Covers Spark Pools, Lake Databases, Notebooks, and Spark Job Definitions.
   Use when the user wants to:
   (1) port Synapse Spark notebooks to Fabric Lakehouse or Spark Job Definitions,
-  (2) replace mssparkutils or Linked Services in Synapse code.
+  (2) replace mssparkutils or Linked Services in Synapse code,
+  (3) migrate Dedicated SQL Pool schema and code to Fabric Lakehouse with T-SQL → PySpark conversion.
   Triggers: "migrate from synapse", "synapse to fabric", "mssparkutils to notebookutils",
-  "synapse linked service replacement", "port synapse notebooks", "synapse workspace migration".
+  "synapse linked service replacement", "port synapse notebooks", "synapse workspace migration",
+  "dedicated pool to lakehouse", "T-SQL to PySpark", "DACPAC to lakehouse", "synapse SQL to fabric".
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -27,6 +30,10 @@ description: >
 > 2. To find item details (including its ID) from workspace ID, item type, and item name: list all items of that type in that workspace, then use JMESPath filtering
 > 3. `mssparkutils` and `notebookutils` share the same API surface in most cases — the namespace is the primary change
 > 4. Linked Services have no direct REST API equivalent in Fabric — they are replaced by Data Connections (for external sources) and OneLake Shortcuts (for storage mounts)
+> 5. Dedicated Pool migration is source-driven: discover the source catalog, generate target artifacts from discovered objects, and convert each stored procedure to its own Spark SQL/PySpark Fabric notebook. Validate and publish each generated notebook to the target workspace; generated notebooks are outputs, not orchestration dependencies.
+> 6. Treat the source Dedicated Pool as read-only. Never create sample or synthetic data, schemas, tables, views, procedures, users, roles, or grants in the source. Do not run source DDL, DML, or stored procedures. Source operations are limited to metadata discovery and metadata-based validation unless the user separately and explicitly approves a source mutation.
+> 7. Dedicated Pool data migration is out of scope. Never export, stage, copy, upload, shortcut, transfer, or load source table rows, and never run row-level or business-result equivalence queries. This skill migrates schema and executable code artifacts only.
+> 8. Print regular migration status. Announce every step before it starts, report each object or checkpoint as it completes or fails, emit a concise heartbeat at least every 30-60 seconds during long-running operations, and close every phase with completed/failed/skipped/pending counts. Include the phase, step, object, state, elapsed time, and next action; never print credentials, tokens, connection strings, or sensitive data values.
 
 # Synapse Analytics → Microsoft Fabric Migration
 
@@ -48,6 +55,12 @@ These companion documents provide general Fabric REST patterns. **Do NOT read th
 | Topic | Reference |
 |---|---|
 | **Migration Orchestrator** | [migration-orchestrator.md](resources/migration-orchestrator.md) |
+| **Dedicated Pool → Lakehouse Migration** | [dedicated-pool-to-lakehouse.md](resources/dedicated-pool-to-lakehouse.md) |
+| Dedicated Pool Discovery | [dedicated-pool-discovery.md](resources/dedicated-pool-discovery.md) |
+| Dedicated Pool Gap Assessment | [dedicated-pool-gap-assessment.md](resources/dedicated-pool-gap-assessment.md) |
+| Dedicated Pool Conversion | [dedicated-pool-conversion.md](resources/dedicated-pool-conversion.md) |
+| Dedicated Pool Deployment | [dedicated-pool-deployment.md](resources/dedicated-pool-deployment.md) |
+| Dedicated Pool Validation | [dedicated-pool-validation.md](resources/dedicated-pool-validation.md) |
 | API-Driven Migration Workflow | [§ API-Driven Migration Workflow](#api-driven-migration-workflow) |
 | Migration Workload Map | [§ Migration Workload Map](#migration-workload-map) |
 | Spark Pool → Environment Migration | [spark-pool-migration.md](resources/spark-pool-migration.md) |
@@ -77,6 +90,7 @@ These companion documents provide general Fabric REST patterns. **Do NOT read th
 | When | Read This File | Lines |
 |---|---|---|
 | User asks to migrate a workspace (full orchestration) | [migration-orchestrator.md](resources/migration-orchestrator.md) | ~1264 |
+| **User asks to migrate Dedicated SQL Pool → Lakehouse** | **[dedicated-pool-to-lakehouse.md](resources/dedicated-pool-to-lakehouse.md)** | **~55** |
 | Phase 0: Spark Pools → Environments | [spark-pool-migration.md](resources/spark-pool-migration.md) | ~290 |
 | Phase 1: Databases → Lakehouses (built-in HMS) | [lake-database-migration.md](resources/lake-database-migration.md) | ~574 |
 | Phase 1: Databases → Lakehouses (external HMS) | [external-hms-migration.md](resources/external-hms-migration.md) | ~388 |
@@ -143,8 +157,8 @@ Use this table to determine the correct Fabric target for each Synapse component
 
 | Synapse Component | Fabric Target | Notes |
 |---|---|---|
-| **Spark Pool** (notebooks, jobs) | Fabric Spark (Lakehouse / Notebooks / SJD) | Starter Pool replaces on-demand pools for most workloads |
-| **Dedicated SQL Pool** | **Fabric Warehouse** | T-SQL surface area differences apply — see [§ T-SQL & Spark Configuration Differences](#t-sql--spark-configuration-differences). *Procedural migration guide not yet available — separate migration track. For T-SQL authoring, delegate to `sqldw-authoring-cli`.* |
+| **Spark Pool** (notebooks, jobs) | **Fabric Environment + Notebook or Spark Job Definition** | Migrate Spark configuration, libraries, and code using the Spark-specific resources in this skill. |
+| **Dedicated SQL Pool** | **Fabric Lakehouse** (T-SQL to Spark SQL/PySpark) or **Fabric Warehouse** | **Lakehouse path**: extract metadata with SqlPackage/catalog queries, convert schema and code artifacts, and generate one Fabric notebook per stored procedure. Source table rows are not migrated; see [dedicated-pool-to-lakehouse.md](resources/dedicated-pool-to-lakehouse.md). **Warehouse path**: delegate T-SQL authoring to `sqldw-authoring-cli`. |
 | **Serverless SQL Pool** | **Lakehouse SQL Endpoint** | Read-only Delta/Parquet queries; no DDL required |
 | **Synapse Pipelines** | **Fabric Data Pipelines** | Activity types, triggers, and expressions are broadly compatible. *Pipeline migration resource not yet available — separate migration track.* |
 | **Synapse Link for Cosmos DB / SQL** | **Fabric Mirroring** | Native mirroring replaces the Synapse Link connector pattern. *Not covered by this skill.* |
@@ -184,6 +198,8 @@ For Synapse pool → Fabric SKU mapping tables, sizing decision guide, and cost 
 ## Must / Prefer / Avoid
 
 ### MUST DO
+- **Generate stored-procedure notebooks from source metadata** — create one parameterized Spark SQL/PySpark Fabric notebook per procedure, validate its `.ipynb` structure and code cells, then publish it through Fabric REST
+- **Use direct APIs for non-procedural phases** — use SqlPackage/DMVs for discovery, Fabric REST for item management, and Fabric Livy statements for schema and Delta data execution
 - **Replace all `mssparkutils` imports with `notebookutils`** — see [utility-api-mapping.md](resources/utility-api-mapping.md) for the complete namespace table
 - **Replace all Linked Services** with Fabric Data Connections (for external databases/services) or OneLake Shortcuts (for ADLS Gen2 / Blob storage mounts) — see [connectivity-migration.md](resources/connectivity-migration.md)
 - **Replace `spark.read.synapsesql()`** with Lakehouse shortcut reads or JDBC connections to the Fabric Warehouse SQL endpoint
@@ -200,6 +216,7 @@ For Synapse pool → Fabric SKU mapping tables, sizing decision guide, and cost 
 - **Parameterized notebooks** to allow environment promotion (dev → test → prod) without code changes
 
 ### AVOID
+- **Do not use target notebooks as migration orchestration dependencies** — generated per-procedure notebooks are required outputs and are published without execution
 - **Do not copy-paste PolyBase `CREATE EXTERNAL TABLE` DDL** into Fabric Warehouse — rewrite as `COPY INTO` or use Lakehouse for external data access
 - **Do not assume Synapse Linked Service connection strings are reusable** — credentials and endpoints must be reconfigured as Fabric Data Connections
 - **Do not install libraries in notebook cells** (`%pip install` at runtime) for production workloads — use Fabric Environments for reproducible, versioned library management
@@ -276,7 +293,9 @@ After completing Phases 0–3 and validation, hand off to these companion skills
 
 ### Agentic Exploration Workflow
 
-Once data has landed in Fabric Lakehouses, use this sequence to validate and explore:
+Use this sequence only after a separately approved process has loaded data into Fabric Lakehouses. The Dedicated Pool to Lakehouse pattern in this skill migrates schema and code artifacts only, so it must stop after artifact validation and must not run this workflow.
+
+For migrations that explicitly include approved data movement and data validation:
 
 1. **Discover** → List schemas, tables, and row counts via Lakehouse SQL Endpoint (`sqldw-consumption-cli`)
 2. **Sample** → `SELECT TOP 5` on migrated tables to verify data integrity
