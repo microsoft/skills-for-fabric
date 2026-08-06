@@ -22,6 +22,10 @@ __pycache__/
 /build/bin/
 /build/obj/
 
+# Local package and migration run artifacts
+/dist/
+/migration-reports/
+
 # Logs
 *.log
 
