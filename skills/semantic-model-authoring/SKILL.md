@@ -1,6 +1,6 @@
 ---
 name: semantic-model-authoring
-description: "Manages Power BI semantic models, including tables, columns, measures, relationships, DAX authoring and tuning, Import, DirectQuery and Direct Lake designs, sources, connections, permissions, refresh, and deployment. Load this skill before acting on a semantic model, unless it is part of publishing a PBIP project, which powerbi-report-management owns. For natural-language data questions use fabriciq; for visuals use powerbi-report-authoring."
+description: "Manages Power BI semantic models, including tables, columns, measures, relationships, DAX authoring and tuning, Performance Analyzer diagnostics, Import, DirectQuery and Direct Lake designs, sources, connections, permissions, refresh, and deployment. Load this skill before acting on a semantic model or analyzing a Power BI Performance Analyzer JSON export, unless it is part of publishing a PBIP project, which powerbi-report-management owns. For natural-language data questions use fabriciq; for visuals use powerbi-report-authoring."
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -25,6 +25,7 @@ Use this decision tree to route to the correct workflow based on user intent:
 | Add/edit semantic model objects (e.g. measures, tables, columns, relationships) | [Modify an Existing Model](#workflow-modify-an-existing-model)                       |
 | Write or refactor DAX code                                                      | [Modify an Existing Model](#workflow-modify-an-existing-model)                       |
 | Improve DAX query or measure performance                                        | [Optimize DAX Performance](#workflow-optimize-dax-performance)                       |
+| Analyze a Power BI Performance Analyzer JSON export                             | [Analyze Performance Analyzer JSON](#workflow-analyze-performance-analyzer-json)     |
 | Analyze semantic model against best practices                                   | [Analyze Best Practices](#workflow-analyze-best-practices)                           |
 | Prepare a semantic model for AI consumption (Copilot / Data Agents)             | [Semantic Model AI Readiness](#workflow-semantic-model-ai-readiness)                 |
 | Deploy a model to a Fabric workspace                                            | [Deploy to Fabric](#workflow-deploy-to-fabric)                                       |
@@ -48,6 +49,7 @@ Load these references on demand when a workflow step requires them. Do not load 
 | Metadata Discovery (DAX INFO functions) | [metadata-discovery.md](./references/metadata-discovery.md)                 | When discovering model metadata via DAX INFO functions (see [Workflow: Discover Semantic Model Metadata](#workflow-discover-semantic-model-metadata)) |
 | DAX Performance Decision Guide   | [dax-perf-decision-guide.md](./references/dax-perf-decision-guide.md)              | Start here when optimizing DAX                                                             |
 | DAX Performance Pattern Catalog  | [dax-perf-patterns.md](./references/dax-perf-patterns.md)                          | Load on demand after the decision guide identifies candidate patterns                       |
+| Performance Analyzer JSON        | [performance-analyzer-guidelines.md](./references/performance-analyzer-guidelines.md) | When working with a Performance Analyzer JSON file                                          |
 | Semantic Model AI Readiness                | [semantic-model-ai-readiness.md](./references/semantic-model-ai-readiness.md)                          | When preparing a model for Copilot or Data Agents                                           |
 | Semantic Model REST API          | [semantic-model-rest-api.md](./references/semantic-model-rest-api.md)              | When using `az rest` for TMDL CRUD, refresh, parameters, permissions, or property retrieval |
 | Connection Binding               | [connection-binding.md](./references/connection-binding.md)                        | When binding/unbinding a semantic model to a Fabric data connection (gateway, cloud, VNet, automatic, none) |
@@ -176,6 +178,23 @@ Load [dax-perf-decision-guide.md](./references/dax-perf-decision-guide.md) first
 1. Tier model for categorizing optimization effort
 2. Trace diagnostics to identify bottlenecks
 3. Pattern catalog with candidate optimization techniques to test and validate
+
+---
+
+## Workflow: Analyze Performance Analyzer JSON
+
+**When this applies:** User asks to inspect a Power BI Performance Analyzer JSON export, diagnose slow report visuals, rank visual timings, or review captured DAX or DirectQuery evidence.
+
+Load [performance-analyzer-guidelines.md](./references/performance-analyzer-guidelines.md) before starting and follow its analysis workflow, reporting contract, and validation checklist.
+
+Steps:
+
+1. **Validate the capture** - resolve the local `.json` file, parse it with a structured JSON parser, identify the export schema, and stop with a specific error when the file is malformed or unsupported.
+2. **Normalize the evidence** - extract visual identity, page grouping, timing categories, DAX text, and DirectQuery text without double counting repeated events.
+3. **Calculate and rank** - calculate the canonical metrics from the reference and rank visuals by actionable duration. Keep `Other` visible as synchronization or queueing evidence, but exclude it from actionable ranking.
+4. **Diagnose** - assess DAX, DirectQuery, rendering, parameter evaluation, page density, legacy Card usage, capture quality, and relative outliers using only evidence supported by the export.
+5. **Report** - create the complete HTML, Markdown, JSON, and CSV package under `./powerbi_performance_report`, relative to the execution working directory. Do not modify the source report or semantic model.
+6. **Validate and hand off** - run the reference validation checklist. When DAX materially contributes and trace-capable model access is available, continue with [Optimize DAX Performance](#workflow-optimize-dax-performance). Route broader modeling concerns to [Analyze Best Practices](#workflow-analyze-best-practices), and treat DirectQuery source recommendations as investigation steps until source-side evidence validates them.
 
 ---
 
