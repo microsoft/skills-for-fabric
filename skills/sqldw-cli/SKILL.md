@@ -1,6 +1,6 @@
 ---
 name: sqldw-cli
-description: "Manages Fabric Warehouse, Lakehouse SQL analytics endpoints, and Mirrored Databases, including DDL and DML, COPY INTO ingestion, read-only T-SQL SELECT and row counts over lakehouse tables, and queryinsights performance triage. Use to query these items or count rows in a table. A Fabric SQL database, the OLTP engine, belongs to sqldb-cli."
+description: "Manage Fabric Warehouse, Lakehouse SQL analytics endpoints, and Mirrored Databases: DDL/DML, COPY INTO, read-only T-SQL, Query Insights diagnostics, Capacity Metrics CU-spike correlation, custom SQL pool guidance, and Lakehouse health. Fabric SQL database (OLTP) belongs to sqldb-cli. Triggers: query warehouse, create warehouse table, failed or canceled query, CU spike, Capacity Metrics app, custom SQL pool, Lakehouse table health."
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -25,7 +25,22 @@ It is a **mode dispatcher** and contains NO procedures. Pick the mode that match
 |---|---|---|---|
 | `authoring` | changes warehouse state: table DDL, DML, ingestion, transactions, procedures, schema evolution, time travel | create warehouse table, COPY INTO, OPENROWSET, INSERT/UPDATE/DELETE, warehouse MERGE, CTAS, sp_rename, create T-SQL procedure, warehouse time travel | [references/authoring.md](references/authoring.md) |
 | `consumption` | reads data or metadata: SELECT, row counts, filtering, aggregation, schema/object discovery, CSV export | query warehouse, count rows lakehouse, SELECT lakehouse, show tables, describe warehouse schema, export SQL data | [references/consumption.md](references/consumption.md) |
-| `operations` | diagnoses performance or health through the `queryinsights` views | slowest warehouse queries, queryinsights CPU, pressure events, cache warmth, cluster key recommendation, performance degraded | [references/operations.md](references/operations.md) |
+| `operations` | diagnoses performance, failures, capacity consumption, SQL pool usage, or health through `queryinsights` and supported endpoint diagnostics | failed or canceled warehouse queries, CU spike, Capacity Metrics app, expensive SQL users, custom SQL pool recommendation, queryinsights CPU, pressure events, cache warmth, Lakehouse tables needing attention | [references/operations.md](references/operations.md) |
+
+## Operations reference index
+
+Read `references/operations.md` first for any operations request, then open the matching leaf directly from this index. Do not chain from links inside a leaf; for composite requests, follow `scenarios.md` only to the additional leaves that this index links directly.
+
+| Request | Read this leaf reference |
+|---|---|
+| composite operations scenarios such as why is my warehouse slow, performance degradation, optimization, or what are people running | [references/operations/scenarios.md](references/operations/scenarios.md) |
+| slow-query summaries, top users, recent queries, pattern search, runtime profiles, cluster-key candidates | [references/operations/query-reference.md](references/operations/query-reference.md) |
+| failed or canceled requests, error codes, recurring non-successful query shapes | [references/operations/failure-analysis.md](references/operations/failure-analysis.md) |
+| SQL pool pressure windows and overlapping requests | [references/operations/pool-pressure.md](references/operations/pool-pressure.md) |
+| CPU concentration, regressions, repeated expensive queries, cache interpretation | [references/operations/resource-consumers.md](references/operations/resource-consumers.md) |
+| Lakehouse Delta file health and tables needing maintenance | [references/operations/lakehouse-health.md](references/operations/lakehouse-health.md) |
+| Capacity Metrics CU spike, costly item, SQL query/user correlation | [references/operations/capacity-metrics-correlation.md](references/operations/capacity-metrics-correlation.md) — start at section 1 |
+| custom SQL pool recommendation for an already identified SQL endpoint | [references/operations/capacity-metrics-correlation.md](references/operations/capacity-metrics-correlation.md) — skip FabricIQ and start at section 6 |
 
 ### Mode boundary rule
 
@@ -33,7 +48,7 @@ Classify by **intent**, not by endpoint — all three modes issue the same `exec
 
 - A schema-discovery `SELECT` run to plan a `CREATE TABLE` belongs to `authoring`, even though it only reads.
 - A `SELECT` that answers the user's question is `consumption`.
-- A `SELECT` against `queryinsights.*` to explain slowness is `operations`; a `SELECT` against user tables is not, however slow it is.
+- A query against `queryinsights.*` or a supported diagnostic such as Lakehouse `sys.sp_get_table_health_metrics` is `operations`; a `SELECT` against user tables is not, however slow it is.
 
 `consumption` and `operations` are read-only. If a request genuinely spans modes, handle them one at a time and read each reference before you start that part. If the mode is ambiguous after reading this table, ask one short clarifying question instead of guessing.
 
@@ -45,13 +60,13 @@ Reading the reference and drafting the T-SQL is NOT completing the task. If you 
 |---|---|
 | `authoring` | The DDL/DML itself, sent through `execute_query`. Follow it with a readback in a second call (`SELECT ... FROM INFORMATION_SCHEMA.TABLES` after CREATE, `SELECT COUNT(*)` after DML) and report the object you created or changed **under the name the user asked for**. Only a Warehouse accepts table DDL/DML — see the mode reference for what a Lakehouse SQL endpoint and a Mirrored Database allow. |
 | `consumption` | none — this mode is read-only |
-| `operations` | none — read-only, but you must still **run** the diagnostic queries: every figure comes from a `SELECT` you executed in the turn you report it, cited inline with its source view, never carried forward from an earlier turn. Never execute `ALTER`, `CREATE` or `DROP` yourself, even when the diagnosis is certain. A vague request ("just make it faster") is a new diagnostic question: re-run the queries backing the levers you name, then ask which target to pursue rather than emitting a speculative tuning list. |
+| `operations` | none — read-only, but you must still **run** the diagnostic statements: every figure comes from a `SELECT` or documented read-only diagnostic procedure executed in the turn you report it, cited inline with its source view or procedure, never carried forward from an earlier turn. The only allowed diagnostic `EXEC` is `sys.sp_get_table_health_metrics` on a Lakehouse SQL analytics endpoint. Never execute `ALTER`, `CREATE` or `DROP` yourself, even when the diagnosis is certain. |
 
 ### `consumption` and `operations` reporting
 
 Neither read-only mode has a terminal write, so its deliverable is the answer itself. Run the query against the live endpoint and report the real rows — a summary of the reference does not answer the request.
 
-In `operations`, name the `queryinsights` view each figure came from right next to it (for example `2,140 ms (queryinsights.long_running_queries)`), **including when the answer is zero rows**. Re-run the query in the turn you report it rather than restating an earlier turn's output — "I already ran the diagnostics" is not a source. A fresh warehouse can legitimately have captured nothing; say so explicitly rather than silently dropping the section. Never fabricate, assume or infer diagnostic numbers.
+In `operations`, name the source view, catalog, or procedure each figure came from right next to it (for example `2,140 ms (queryinsights.long_running_queries)` or `268 files (sys.sp_get_table_health_metrics)`), **including when the answer is zero rows**. Re-run the diagnostic in the turn you report it rather than restating an earlier turn's output. Never fabricate, assume or infer diagnostic numbers.
 
 ## Shared essentials (all modes)
 
@@ -65,7 +80,7 @@ All T-SQL runs through the `fabric-sqlendpoint-execute_query` MCP tool. **For SQ
 fabric-sqlendpoint-execute_query(workspaceId, itemId, query)
 ```
 
-- **Preflight, before the first operation of any mode:** confirm a tool whose name ends in `execute_query` is in your tool list. It comes from the `fabric-sqlendpoint` MCP server, registered by a Fabric skills **plugin** or this repo's `.mcp.json`. The concrete name may be prefixed (`fabric-sqlendpoint-execute_query`, `sqlendpoint-global-execute_query`) — invoke the name you actually see. If none is present, say so, then fall back to the Legacy CLI Fallback (TDS client) documented in the mode reference; tell the user they can register the server for the primary path — see [mcp-setup/](../../mcp-setup/).
+- **Preflight, before the first operation of any mode:** confirm a tool whose name ends in `execute_query` is in your tool list. It comes from the `fabric-sqlendpoint` MCP server, registered by a Fabric skills **plugin** or this repo's `.mcp.json`. The concrete name may be prefixed (`fabric-sqlendpoint-execute_query`, `sqlendpoint-global-execute_query`) — invoke the name you actually see. If none is present, say so, then fall back to the Legacy CLI Fallback (TDS client) documented in the mode reference; tell the user they can register the server for the primary path — see [mcp-setup/](../../mcp-setup/). **Exception:** the Capacity Metrics correlation workflow is intentionally limited to the existing FabricIQ and SQL Endpoint MCP surfaces; if SQL Endpoint MCP is unavailable, report that phase as blocked and do not use the legacy fallback.
 - **`itemId` is a GUID, never an FQDN or `-d <DatabaseName>`.** For a Warehouse or a Mirrored Database use the item id; for a **Lakehouse** use `properties.sqlEndpointProperties.id`, **not** the Lakehouse item id.
 - **One T-SQL batch per call.** No `GO` separators, no sqlcmd meta-commands (`:setvar`, `:r`, `-i`). Split multi-batch work into separate calls. Only the last result set comes back.
 - **Results cap at 10,000 rows** and queries time out at 300s, with a 20 requests/min rate limit. Use `TOP N`, `WHERE` or aggregation; exactly 10,000 rows means the result was truncated. These are observed defaults, not a documented contract.
@@ -89,6 +104,7 @@ fabric-sqlendpoint-execute_query(workspaceId, itemId, query)
 
 - Select exactly one mode from the table above before doing anything else.
 - Read `references/<mode>.md` end to end, as your FIRST tool call, before the first command of that mode. Read it ONCE, in a single full read: do not re-open it, do not grep it again, and do not page through it. You already have it.
+- For a focused operations request, read its one matching leaf after `references/operations.md`. For a composite request, read `references/operations/scenarios.md`, then each focused leaf named by that scenario; read every file once in full.
 - Resolve workspace and item ids by listing and filtering, never by guessing a GUID.
 - Execute T-SQL through `fabric-sqlendpoint-execute_query` whenever that tool is available; drop to the Legacy CLI Fallback documented in the mode reference only when it is not.
 - Announce a mode switch explicitly when the request crosses a boundary.
@@ -98,7 +114,7 @@ fabric-sqlendpoint-execute_query(workspaceId, itemId, query)
 ### PREFER
 
 - The narrowest mode that satisfies the request.
-- Reading exactly ONE mode reference. Load a second only when the request genuinely spans modes, and say so before you do.
+- Reading exactly one mode reference plus the minimum directly indexed operations leaves required by the selected focused or composite scenario.
 - Reporting the mode you chose in your first response so the user can correct you.
 - Labelling queries with `OPTION (LABEL = '...')` so the run is traceable in Query Insights.
 - Consolidating related statements into fewer calls — the rate limit is per identity, not per query.

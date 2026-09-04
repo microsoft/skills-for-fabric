@@ -314,7 +314,6 @@ cultureInfo fr-FR
 - `translations` -> `model Model` -> table/column/measure nesting
 - Use `caption:` for display name, `description:` for tooltips
 - In `model.tmdl`, add `ref cultureInfo <locale>` for each culture
-- Do **not** include `linguisticMetadata` - it is auto-managed
 
 ---
 

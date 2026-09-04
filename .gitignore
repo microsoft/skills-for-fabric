@@ -46,3 +46,5 @@ quality-report.json
 Fabric-Skills-Weekly-*.pptx
 generate-weekly-*.py
 !.github/skills/weekly-status-pptx/generate-weekly-summary.py
+skills/synapse-migration/scripts/dedicated-pool-tool/bin/
+skills/synapse-migration/scripts/dedicated-pool-tool/obj/

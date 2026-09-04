@@ -3,12 +3,12 @@
 > **MODE-CRITICAL NOTES (operations mode)**
 > 1. `queryinsights.*` views exist on **both a Warehouse and a Lakehouse SQL analytics endpoint**, and reading them needs **Contributor or higher** on the workspace. Query Insights is always on — there is no setting to enable. A completed query lands in the `queryinsights` of the item it ran against.
 > 2. **Every figure comes from a query you ran in the turn you report it, cited inline** — `2,140 ms (queryinsights.long_running_queries)`. Do not carry numbers forward from an earlier turn: re-run the query. "I already ran the diagnostics" is not a source, and an uncited number reads as invented. Zero rows is a valid finding; never fill the gap from this reference.
-> 3. **Read-only:** `SELECT` only. Do not issue `ALTER`, `CREATE`, `DROP`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, or a `SET` that changes warehouse configuration — including a tuning change you are confident in, such as `ALTER DATABASE ... SET RESULT_SET_CACHING ON`. Applying the change yourself is never the answer here.
+> 3. **Read-only:** use `SELECT` diagnostics. The only allowed non-`SELECT` statement is `EXEC sys.sp_get_table_health_metrics` on a Lakehouse SQL analytics endpoint. Do not issue `ALTER`, `CREATE`, `DROP`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, or a `SET` that changes warehouse configuration — including `ALTER DATABASE ... SET RESULT_SET_CACHING ON`.
 > 4. **A vague optimisation request ("just make my warehouse faster") is a new diagnostic question, not a summary request.** Re-run the queries backing the levers you are about to name — in that same turn — then **ask which target to pursue**. Recommend only what those queries showed; never answer from earlier turns' output, and never list every knob that could be tuned.
 
-# sqldw-cli operations mode — Fabric Warehouse Performance and Diagnostics
+# sqldw-cli operations mode — Fabric SQL Endpoint Performance and Diagnostics
 
-This skill provides performance analysis, deep diagnostics, and optimization guidance for Microsoft Fabric Data Warehouse via the **`fabric-sqlendpoint-execute_query` MCP tool** and the built-in **`queryinsights`** views. All queries are read-only.
+This skill provides performance analysis, deep diagnostics, and optimization guidance for Fabric Warehouse and Lakehouse SQL analytics endpoints via the **`fabric-sqlendpoint-execute_query` MCP tool** and built-in diagnostics. All queries are read-only.
 
 ## Prerequisites
 
@@ -19,24 +19,13 @@ For workspace/item discovery via `az rest`, see [COMMON-CLI.md § Fabric Control
 **Monitoring-specific requirements:**
 - **Workspace role**: Contributor or higher on the target workspace (required for `queryinsights` views)
 - **A Warehouse or Lakehouse SQL analytics endpoint must exist** with recent query activity (`queryinsights` views retain 30 days; data appears with up to 15 min delay)
+- **Lakehouse table health only**: `VIEW DEFINITION` on the target SQL analytics endpoint
 
 ## Table of Contents
 
 | Task | Reference | Notes |
 |---|---|---|
 | Finding Workspaces and Items in Fabric | [COMMON-CLI.md § Finding Workspaces and Items in Fabric](../../../common/COMMON-CLI.md#finding-workspaces-and-items-in-fabric) | **Mandatory** — *READ link first* [needed for finding workspace id by its name or item id by its name, item type, and workspace id] |
-| Fabric Topology & Key Concepts | [COMMON-CORE.md § Fabric Topology & Key Concepts](../../../common/COMMON-CORE.md#fabric-topology--key-concepts) ||
-| Environment URLs | [COMMON-CORE.md § Environment URLs](../../../common/COMMON-CORE.md#environment-urls) ||
-| Authentication & Token Acquisition | [COMMON-CORE.md § Authentication & Token Acquisition](../../../common/COMMON-CORE.md#authentication--token-acquisition) | Wrong audience = 401; read before any auth issue |
-| Core Control-Plane REST APIs | [COMMON-CORE.md § Core Control-Plane REST APIs](../../../common/COMMON-CORE.md#core-control-plane-rest-apis) | Includes pagination, LRO polling, and rate-limiting patterns |
-| Capacity Management | [COMMON-CORE.md § Capacity Management](../../../common/COMMON-CORE.md#capacity-management) ||
-| Gotchas, Best Practices & Troubleshooting (Platform) | [COMMON-CORE.md § Gotchas, Best Practices & Troubleshooting](../../../common/COMMON-CORE.md#gotchas-best-practices--troubleshooting) ||
-| Tool Selection Rationale | [COMMON-CLI.md § Tool Selection Rationale](../../../common/COMMON-CLI.md#tool-selection-rationale) ||
-| Authentication Recipes | [COMMON-CLI.md § Authentication Recipes](../../../common/COMMON-CLI.md#authentication-recipes) | `az login` flows and token acquisition |
-| Fabric Control-Plane API via `az rest` | [COMMON-CLI.md § Fabric Control-Plane API via az rest](../../../common/COMMON-CLI.md#fabric-control-plane-api-via-az-rest) | **Always pass `--resource`**; includes pagination and LRO helpers |
-| SQL / TDS Data-Plane Access | [COMMON-CLI.md § SQL / TDS Data-Plane Access](../../../common/COMMON-CLI.md#sql--tds-data-plane-access) | Legacy `sqlcmd` reference (MCP is primary — see Tool Stack) |
-| Gotchas & Troubleshooting (CLI-Specific) | [COMMON-CLI.md § Gotchas & Troubleshooting (CLI-Specific)](../../../common/COMMON-CLI.md#gotchas--troubleshooting-cli-specific) | `az rest` audience, shell escaping, token expiry |
-| Quick Reference | [COMMON-CLI.md § Quick Reference](../../../common/COMMON-CLI.md#quick-reference) | `az rest` template + token audience/tool matrix |
 | Connection Fundamentals | [SQLDW-CONSUMPTION-CORE.md § Connection Fundamentals](../../../common/SQLDW-CONSUMPTION-CORE.md#connection-fundamentals) | TDS, port 1433, Entra-only, no MARS |
 | Monitoring and Diagnostics | [SQLDW-CONSUMPTION-CORE.md § Monitoring and Diagnostics](../../../common/SQLDW-CONSUMPTION-CORE.md#monitoring-and-diagnostics) | Query labels; DMVs (live) + `queryinsights.*` (30-day history) |
 | Performance: Best Practices and Troubleshooting | [SQLDW-CONSUMPTION-CORE.md § Performance: Best Practices and Troubleshooting](../../../common/SQLDW-CONSUMPTION-CORE.md#performance-best-practices-and-troubleshooting) | Statistics, caching, clustering, query tips |
@@ -52,9 +41,7 @@ For workspace/item discovery via `az rest`, see [COMMON-CLI.md § Fabric Control
 | Deep Diagnostics | [SKILL.md § Deep Diagnostics](#deep-diagnostics) | Pressure windows, cache warmth, cluster keys |
 | Fabric DW Constraints | [SKILL.md § Fabric DW Constraints](#fabric-dw-constraints) | **NEVER recommend unsupported features** |
 | Best Practices | [SKILL.md § Best Practices](#best-practices) | Monitoring-specific guidance |
-| Agentic Workflows | [SKILL.md § Agentic Workflows](#agentic-workflows) | Common investigation patterns |
 | Gotchas, Rules, Troubleshooting | [SKILL.md § Gotchas, Rules, Troubleshooting](#gotchas-rules-troubleshooting) | **MUST DO / AVOID / PREFER** checklists |
-| Examples | [SKILL.md § Examples](#examples) | Prompt/response pairs |
 
 ---
 
@@ -90,8 +77,8 @@ fabric-sqlendpoint-execute_query(workspaceId, itemId, query)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `workspaceId` | string (UUID) | The workspace GUID containing the target Warehouse |
-| `itemId` | string (UUID) | The GUID of the Warehouse item |
+| `workspaceId` | string (UUID) | The workspace GUID containing the target SQL endpoint item |
+| `itemId` | string (UUID) | Warehouse/Mirrored Database item ID, or a Lakehouse's `properties.sqlEndpointProperties.id` |
 | `query` | string | T-SQL query text (single batch — no `GO` separators) |
 
 **Returns:** CSV resource (RFC 4180) with tabular results + metadata text.
@@ -104,7 +91,7 @@ fabric-sqlendpoint-execute_query(workspaceId, itemId, query)
 
 ### Discover workspaceId and itemId
 
-You need the workspace GUID and warehouse GUID to call `fabric-sqlendpoint-execute_query`:
+You need the workspace GUID and target SQL endpoint item GUID to call `fabric-sqlendpoint-execute_query`. For a Lakehouse, use `properties.sqlEndpointProperties.id`, not the Lakehouse item ID:
 
 ```bash
 # 1. Find workspace ID by name (capture into WS_ID for the next call)
@@ -137,7 +124,7 @@ fabric-sqlendpoint-execute_query(
 
 ## Performance Analysis
 
-All SQL queries, parameters, return fields, and response formatting are in [query-reference.md](operations/query-reference.md).
+General-purpose SQL queries remain in [query-reference.md](operations/query-reference.md). Focused workflows use the leaf selected by the dispatcher, including `queryinsights.exec_requests_history` for request evidence and `queryinsights.sql_pool_insights` for pressure state events.
 
 ### Long-Running Queries Summary
 
@@ -145,13 +132,7 @@ Find the slowest queries from `queryinsights.long_running_queries`. See [query-r
 
 ### Top Resource Consumers
 
-Find CPU- and storage-heavy queries from `queryinsights.exec_requests_history`. See [query-reference.md § Top Resource Consumers](operations/query-reference.md#top-resource-consumers) for SQL, thresholds, and formatting.
-
-**Recommendation thresholds:**
-- Remote scans > 1,000 MB → review data layout, consider clustering
-- CPU > 5,000,000 ms → review query logic
-- Elapsed > 300,000 ms → check joins, filters, statistics
-- Reference: [Performance guidelines](https://learn.microsoft.com/fabric/data-warehouse/guidelines-warehouse-performance)
+Use the directly indexed `references/operations/resource-consumers.md` leaf for CPU concentration, baseline comparison, expensive executions, and cache interpretation.
 
 ### Top Users Insights
 
@@ -173,11 +154,13 @@ Search historical query patterns by table name, column, or keyword. See [query-r
 
 ## Deep Diagnostics
 
-All SQL queries for diagnostics are in [query-reference.md](operations/query-reference.md).
+Use the focused leaf selected by the dispatcher when one exists; use [query-reference.md](operations/query-reference.md) only for the remaining general diagnostics.
 
-### Analyze Long-Running Query Plans
+### Analyze Long-Running Query Runtime Profile
 
 See [query-reference.md § Long-Running Query Analysis](operations/query-reference.md#long-running-query-analysis) for SQL.
+
+Query Insights supplies runtime metrics, not an operator-level actual plan. Analyze a separate plan artifact only when the user supplies one.
 
 **Analysis guidance** — when reviewing slow queries, check:
 - High `data_scanned_remote_storage_mb` → data layout issues (run OPTIMIZE, consider clustering)
@@ -186,27 +169,11 @@ See [query-reference.md § Long-Running Query Analysis](operations/query-referen
 
 ### Analyze Pressure Window Queries
 
-Identify SQL pool pressure events using `queryinsights.sql_pool_insights` and correlate with the heaviest queries running during those windows. See [query-reference.md § Pressure Window Analysis](operations/query-reference.md#pressure-window-analysis) for the two-step SQL.
-
-**Usage:** Step 1 returns pressure windows with `window_start` and `window_end` timestamps. Substitute those actual timestamp values into Step 2's WHERE clause to find overlapping queries.
-
-**Global recommendations** — based on aggregate pressure analysis:
-- If SELECT pool has more pressure → read-heavy workload, suggest caching and column pruning
-- If NONSELECT pool has more pressure → write-heavy, suggest batching and COPY INTO
-- If total pressure > 60 min → suggest scaling capacity or staggering workloads
+Read the directly indexed `references/operations/pool-pressure.md` leaf. It builds intervals from all state events with `LEAD`, preserves the pressure-off boundary, and correlates requests by both time and `sql_pool_name`.
 
 ### Analyze Query Cache Warmth
 
-See [query-reference.md § Cache Warmth Analysis](operations/query-reference.md#cache-warmth-analysis) for SQL.
-
-**Classification logic** — for each execution, compute `total_mb = remote + memory + disk`:
-- `result_cache_hit = 1` → **cached**
-- `remote_mb / total_mb > 0.8` → **cold** (>80% from remote storage)
-- `(memory_mb + disk_mb) / total_mb > 0.8` → **warm** (>80% from cache)
-
-**Recommendations:**
-- Over 50% cold runs → Enable result set caching: `ALTER DATABASE SET RESULT_SET_CACHING ON;`
-- Always-cold patterns → Check for `GETDATE()`/`GETUTCDATE()` or volatile functions that bust the cache key
+Read the directly indexed `references/operations/resource-consumers.md` leaf. It handles zero-scan rows before ratios and records `result_cache_hit` values correctly. Result set caching is currently disabled due to a known issue, so use those fields only for historical interpretation and do not recommend enabling it unless current Microsoft documentation confirms the limitation is resolved.
 
 ### Recommend Cluster Keys
 
@@ -231,7 +198,7 @@ See [query-reference.md § Cluster Key Recommendations](operations/query-referen
 | Do NOT Recommend | Why | Recommend Instead |
 |------------------|-----|-------------------|
 | Nonclustered indexes | Not supported | V-Order, column pruning, predicate pushdown |
-| Materialized views | Not supported | Standard views or result set caching |
+| Materialized views | Not supported | Standard views; result set caching is currently unavailable |
 | Index hints (FORCESEEK/FORCESCAN) | Not supported | Simplify query structure |
 | Multi-column statistics | Not supported | Single-column statistics on key columns |
 | `ALTER TABLE SET DATA_CLUSTERING_KEY` | Not supported | CTAS with `WITH (CLUSTER BY (...))` |
@@ -246,32 +213,7 @@ See [query-reference.md § Cluster Key Recommendations](operations/query-referen
 
 ## Agentic Workflows
 
-### Workflow 1: "Why is my warehouse slow?"
-
-1. **Check for pressure events** → Run the pressure window analysis query (last 24h)
-2. **Find the heaviest queries** → Run top resource consumers query (last 1h)
-3. **Analyze slow queries** → Run long-running queries analysis
-4. **Check cache behavior** → Run cache warmth analysis (last 24h)
-5. **Recommend clustering** → Run cluster key recommendation queries
-
-### Workflow 2: "Has performance degraded?"
-
-1. **Compare against baseline** → Run recent vs baseline comparison (1h vs 7-day)
-2. **Identify new slow queries** → Run long-running queries summary (top 5)
-3. **Check user patterns** → Run top users insights (last 24h)
-
-### Workflow 3: "Optimize my warehouse"
-
-1. **Review best practices** → See [SQLDW-CONSUMPTION-CORE.md § Performance: Best Practices and Troubleshooting](../../../common/SQLDW-CONSUMPTION-CORE.md#performance-best-practices-and-troubleshooting)
-2. **Find optimization targets** → Run top resource consumers (last 24h)
-3. **Recommend clustering** → Run cluster key recommendation queries
-4. **Analyze cold-start queries** → Run cache warmth analysis
-
-### Workflow 4: "What are people running?"
-
-1. **Recent activity** → Run recent queries (top 10)
-2. **User patterns** → Run top users insights (last 24h)
-3. **Search for specific patterns** → Run query pattern search with search term
+Start with the dispatcher-selected leaf, run only evidence required by the question, and expand to another directly indexed workflow only when the first result establishes that dependency.
 
 ---
 
@@ -307,7 +249,6 @@ For T-SQL/platform gotchas: see [SQLDW-CONSUMPTION-CORE.md § Gotchas and Troubl
 ### PREFER
 - Start with high-level queries (long-running summary, baseline comparison) before drilling into diagnostics
 - Use the pressure window analysis for root-cause analysis rather than guessing at bottlenecks
-- Combine multiple queries in the [Agentic Workflows](#agentic-workflows) for comprehensive investigations
 - Adjust time windows (`DATEADD` parameters) based on what the user asks for
 - Consolidate related diagnostic queries into fewer calls to respect rate limits
 
@@ -333,63 +274,3 @@ For generic connection/auth troubleshooting, see [COMMON-CLI.md § Gotchas & Tro
 | `fabric-sqlendpoint-execute_query` tool not available | MCP server not registered | User must add Fabric SQL Endpoint MCP server |
 | HTTP 429 rate limit | Too many calls in 1 min | Wait 60s; consolidate queries |
 | Query timeout (300s) | Complex diagnostics | Narrow time window with tighter DATEADD |
-
----
-
-## Examples
-
-### Find Slow Queries
-
-**User:** "What are the slowest queries in my warehouse?"
-
-**Agent:** Runs the long-running queries summary via `fabric-sqlendpoint-execute_query`:
-
-```text
-fabric-sqlendpoint-execute_query(workspaceId, itemId,
-  "SELECT TOP 5
-      left(last_run_command, 80) AS query_preview,
-      number_of_runs,
-      last_run_total_elapsed_time_ms,
-      median_total_elapsed_time_ms
-   FROM queryinsights.long_running_queries
-   ORDER BY median_total_elapsed_time_ms DESC")
-```
-
-> The top 5 slowest queries are:
-> 1. `SELECT * FROM FactSales JOIN DimCustomer...` — ran 12 times, last took 45,200 ms (median 38,500 ms)
-> 2. `SELECT region, SUM(amount)...` — ran 8 times, last took 32,100 ms (median 29,000 ms)
-> ...
-
-### Diagnose Performance Degradation
-
-**User:** "Is my warehouse slower than last week?"
-
-**Agent:** Runs the baseline comparison query and presents:
-
-> **Performance Comparison (last 1h vs 7-day baseline):**
-> - Elapsed time: 2,450 ms avg → 4,100 ms avg (+67.3%)
-> - CPU consumption: 1,200 ms → 2,800 ms (+133.3%)
-> - Data scanned: 450 MB → 480 MB (+6.7%)
->
-> Significant regression detected. Let me check for pressure events and analyze the heaviest queries...
-
-Then follows up with pressure window and resource consumer queries.
-
-### Get Clustering Recommendations
-
-**User:** "Which tables should I cluster and on what columns?"
-
-**Agent:** Runs the cluster key recommendation queries and presents:
-
-> **Recommended Clustering Keys:**
-> | Table | Recommended Columns | Row Count | Total Scanned MB |
-> |-------|-------------------|-----------|-----------------|
-> | dbo.FactSales | SaleDate, Region | 50M | 12,500 MB |
-> | dbo.FactInventory | ProductID, WarehouseID | 12M | 3,200 MB |
->
-> To apply clustering, use CTAS:
-> ```sql
-> CREATE TABLE dbo.FactSales_clustered
-> WITH (CLUSTER BY (SaleDate, Region))
-> AS SELECT * FROM dbo.FactSales;
-> ```

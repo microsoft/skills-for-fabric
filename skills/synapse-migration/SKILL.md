@@ -1,6 +1,6 @@
 ---
 name: synapse-migration
-description: "Ports Azure Synapse workloads to Fabric, converting mssparkutils to notebookutils including the env to runtime namespace change, Linked Services to Fabric connections and OneLake shortcuts, and Spark Pools, Lake Databases and Spark Job Definitions to their equivalents. Also migrates Dedicated SQL Pool schema and code to a Lakehouse via T-SQL to Spark SQL, without moving source rows. For Synapse pipelines use pipeline-migration."
+description: "Ports Azure Synapse workloads to Microsoft Fabric: Spark pools/notebooks, Lake Databases, Linked Services, and Dedicated SQL Pool schema and stored procedure code to Lakehouse Spark SQL from live or offline DACPAC/SQL-project artifacts, without moving source rows. Use for 'Dedicated SQL Pool schema and code to Lakehouse' and Synapse-to-Fabric migration. For pipelines use pipeline-migration."
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -12,11 +12,18 @@ description: "Ports Azure Synapse workloads to Fabric, converting mssparkutils t
 > 2. To find item details (including its ID) from workspace ID, item type, and item name: list all items of that type in that workspace, then use JMESPath filtering
 > 3. `mssparkutils` and `notebookutils` share the same API surface in most cases — the namespace is the primary change
 > 4. Linked Services have no direct REST API equivalent in Fabric — they are replaced by Data Connections (for external sources) and OneLake Shortcuts (for storage mounts)
-> 5. The Dedicated SQL Pool-to-Fabric-Lakehouse path is source- and feature-driven. After DACPAC and catalog discovery, assess feature-wise compatibility, migration risk, and projected target workspace item demand. Present `1:1`, `N:1`, and `N:N` stored-procedure-to-notebook strategies and require the user to provide and explicitly approve the complete mapping, target names, dependency grouping, and workspace placement before conversion. Preserve every procedure as an independently traceable source decision under any approved strategy. Stored-procedure transformation logic must use readable Spark SQL `%%sql` cells, not PySpark or the DataFrame API. Generated notebooks are outputs, not orchestration dependencies.
+> 5. The Dedicated SQL Pool-to-Fabric-Lakehouse path is source- and feature-driven. **You MUST complete these phases in strict order:**
+>    1. **Gap Assessment (MANDATORY FIRST)**: Run compatibility assessment using `dedicated-pool-gap-assessment.md` to identify unsupported features, blockers, and migration risks BEFORE attempting any conversion.
+>    2. **User Approval (REQUIRED)**: After assessment, present `1:1`, `N:1`, and `N:N` stored-procedure-to-notebook mapping strategies and require the user to explicitly approve the complete mapping, target names, dependency grouping, and workspace placement. Wait for explicit approval before proceeding.
+>    3. **Manifest Creation (REQUIRED)**: Create `migration-manifest.json` to track all objects, approved mappings, conversion status, and deployment checkpoints. Update manifest atomically after every phase.
+>    4. **Conversion**: Generate artifacts only after approval is recorded in manifest.
+>    **The `1:1`, `N:1`, and `N:N` mapping applies ONLY to stored procedures, NOT to views. Views are schema objects like tables and are deployed via Livy as SQL view definitions; they never convert to notebooks.** Preserve every procedure as an independently traceable source decision under any approved strategy. Stored-procedure transformation logic must use readable Spark SQL `%%sql` cells, not PySpark or the DataFrame API. Generated notebooks are outputs, not orchestration dependencies.
 > 6. Treat the source Dedicated Pool as read-only. Never create sample or synthetic data, schemas, tables, views, procedures, users, roles, or grants in the source. Do not run source DDL, DML, or stored procedures. Source operations in this workflow are limited to metadata discovery and metadata-based validation; route any requested source mutation to a separate, explicitly scoped workflow.
 > 7. Dedicated Pool data migration is out of scope. Never export, stage, copy, upload, shortcut, transfer, or load source table rows, and never run row-level or business-result equivalence queries. This skill migrates schema and executable code artifacts only.
 > 8. Print regular migration status. Announce every step before it starts, report each object or checkpoint as it completes or fails, emit a concise heartbeat at least every 30-60 seconds during long-running operations, and close every phase with completed/failed/skipped/pending counts. Include the phase, step, object, state, elapsed time, and next action. Status output must exclude credentials, tokens, connection strings, and sensitive data values.
 > 9. For large or complex stored procedures, prove conversion coverage with a deterministic source-block ledger and publish only from a hash-verified immutable deployment package. Every block must be converted, explicitly excluded with approval, or manually reviewed and approved; notebook syntax success alone is insufficient.
+> 10. Before generating Dedicated Pool artifacts, read both `resources/dedicated-pool-to-lakehouse.md` and `resources/dedicated-pool-conversion.md`. In manifest `parameterMappings`, use `sourceParameter` for the discovered source name; `parameterName` is reserved for object-valued `conf` entries inside notebook `%%configure`.
+> 11. A local or offline Dedicated Pool artifact request still requires this skill. For a large or complex procedure, also read `resources/dedicated-pool-large-procedure-audit.md` before generating artifacts.
 
 # Synapse Analytics → Microsoft Fabric Migration
 
@@ -74,7 +81,8 @@ These companion documents provide general Fabric REST patterns. **Do NOT read th
 | When | Read This File | Lines |
 |---|---|---|
 | User asks to migrate a workspace (full orchestration) | [migration-orchestrator.md](resources/migration-orchestrator.md) | ~1264 |
-| **User asks to migrate Dedicated SQL Pool → Lakehouse** | **[dedicated-pool-to-lakehouse.md](resources/dedicated-pool-to-lakehouse.md)** | **~78** |
+| **User asks to migrate Dedicated SQL Pool → Lakehouse** | **[dedicated-pool-to-lakehouse.md](resources/dedicated-pool-to-lakehouse.md) + [dedicated-pool-conversion.md](resources/dedicated-pool-conversion.md)** | **~190** |
+| Post-discovery Dedicated Pool risk report or target-design approval | [dedicated-pool-gap-assessment.md](resources/dedicated-pool-gap-assessment.md) | ~180 |
 | Large or complex stored-procedure conversion | [dedicated-pool-large-procedure-audit.md](resources/dedicated-pool-large-procedure-audit.md) | ~130 |
 | Phase 0: Spark Pools → Environments | [spark-pool-migration.md](resources/spark-pool-migration.md) | ~290 |
 | Phase 1: Databases → Lakehouses (built-in HMS) | [lake-database-migration.md](resources/lake-database-migration.md) | ~574 |
@@ -143,7 +151,7 @@ Use this table to determine the correct Fabric target for each Synapse component
 | Synapse Component | Fabric Target | Notes |
 |---|---|---|
 | **Spark Pool** (notebooks, jobs) | **Fabric Environment + Notebook or Spark Job Definition** | Migrate Spark configuration, libraries, and code using the Spark-specific resources in this skill. |
-| **Dedicated SQL Pool** | **Fabric Lakehouse** (T-SQL to Spark SQL notebooks) or **Fabric Warehouse** | **Lakehouse path**: extract metadata with SqlPackage/catalog queries, assess projected workspace item demand, require the user to provide and approve a `1:1`, `N:1`, or `N:N` procedure-notebook mapping, then convert schema and code artifacts. Source table rows are not migrated; see [dedicated-pool-to-lakehouse.md](resources/dedicated-pool-to-lakehouse.md). **Warehouse path**: delegate T-SQL authoring to `sqldw-cli`. |
+| **Dedicated SQL Pool** | **Fabric Lakehouse** (stored procedures → Spark SQL notebooks; tables/views → Lakehouse objects) or **Fabric Warehouse** | **Lakehouse path**: extract metadata with SqlPackage/catalog queries, assess projected workspace item demand, require the user to provide and approve a `1:1`, `N:1`, or `N:N` procedure-notebook mapping (applies ONLY to stored procedures, NOT views), then convert schema and code artifacts. Tables and views are deployed as Lakehouse schema objects via Livy; only stored procedures convert to notebooks. Source table rows are not migrated; see [dedicated-pool-to-lakehouse.md](resources/dedicated-pool-to-lakehouse.md). **Warehouse path**: delegate T-SQL authoring to `sqldw-cli`. |
 | **Serverless SQL Pool** | **Lakehouse SQL Endpoint** | Read-only Delta/Parquet queries; no DDL required |
 | **Synapse Pipelines** | **Fabric Data Pipelines** | Activity types, triggers, and expressions are broadly compatible. *Pipeline migration resource not yet available — separate migration track.* |
 | **Synapse Link for Cosmos DB / SQL** | **Fabric Mirroring** | Native mirroring replaces the Synapse Link connector pattern. *Not covered by this skill.* |
