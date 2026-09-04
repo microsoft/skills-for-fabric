@@ -550,7 +550,7 @@ GROUP BY query_hash
 ORDER BY total_scanned_mb DESC;
 ```
 
-**Check result set cache hit**: query `result_cache_hit` in `exec_requests_history` — `1` = hit, `0` = miss, negative = reason caching was skipped.
+**Check result set cache status**: query `result_cache_hit` in `exec_requests_history` — `2` = cache hit, `1` = this execution created a cache entry, `0` = not applicable for cache creation or use.
 
 ### Query Activity & Capacity Metrics
 
@@ -605,7 +605,7 @@ WHERE label = 'MY_REPORT_QUERY'
 ORDER BY submit_time DESC;
 ```
 
-`result_cache_hit = 1` means cache hit; `0` means miss; negative values indicate reasons why caching was not used.
+`result_cache_hit = 2` means cache hit; `1` means this execution created a cache entry; `0` means the query was not applicable for cache creation or use.
 
 ### Data Clustering (DW Only — Preview)
 
@@ -686,7 +686,7 @@ This is expected behavior. Subsequent runs of the same or similar queries benefi
 |---|---|---|
 | Query runs longer than expected | Check `queryinsights.exec_requests_history` for `total_elapsed_time_ms` and `data_scanned_remote_storage_mb` | Reduce columns selected; add WHERE predicates; check statistics |
 | High `data_scanned_remote_storage_mb` | Query is scanning too many files | Optimize Delta tables (OPTIMIZE/VACUUM in Spark); consider data clustering (DW); improve WHERE predicates |
-| `result_cache_hit = 0` on repeated queries | Cache invalidated or non-deterministic functions used | Remove `GETDATE()` etc. from queries; ensure data hasn't changed between runs |
+| `result_cache_hit = 0` on repeated queries | Query is not eligible for result-cache creation/use, or its inputs prevent reuse | Check eligibility; remove non-deterministic functions such as `GETDATE()` where appropriate; check whether underlying data changes between runs |
 | Query rejected (status = `Rejected`) | Capacity resource limits reached | Reduce concurrent load; upgrade capacity SKU; stagger workloads |
 | Token size limit error | Too many warehouses/SQLEPs in workspace or too many Entra groups | Reduce items to ≤ 40 per workspace; consolidate Entra group memberships |
 

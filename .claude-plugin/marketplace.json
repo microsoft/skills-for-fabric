@@ -2,7 +2,7 @@
   "name": "fabric-collection",
   "metadata": {
     "description": "Microsoft Skills for Fabric collection for GitHub Copilot CLI",
-    "version": "0.3.14"
+    "version": "0.3.15"
   },
   "owner": {
     "name": "Microsoft",
@@ -13,7 +13,7 @@
       "name": "fabric-skills",
       "source": "./plugins/fabric-skills",
       "description": "Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.14",
+      "version": "0.3.15",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -27,6 +27,7 @@
         "./skills/azmon-mirroredcatalogs-operations-cli",
         "./skills/dataflows-cli",
         "./skills/search-consumption-cli",
+        "./skills/onelake-catalog-govern-cli",
         "./skills/fabriciq-ontology-cli",
         "./skills/variable-library-cli",
         "./skills/deployment-pipelines-authoring-cli",
@@ -81,7 +82,7 @@
       "name": "skills-for-fabric",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 pre-0.3.0 users only; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.14",
+      "version": "0.3.15",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -95,6 +96,7 @@
         "./skills/azmon-mirroredcatalogs-operations-cli",
         "./skills/dataflows-cli",
         "./skills/search-consumption-cli",
+        "./skills/onelake-catalog-govern-cli",
         "./skills/fabriciq-ontology-cli",
         "./skills/variable-library-cli",
         "./skills/deployment-pipelines-authoring-cli",
@@ -149,7 +151,7 @@
       "name": "fabric-authoring",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.14",
+      "version": "0.3.15",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -163,6 +165,7 @@
         "./skills/azmon-mirroredcatalogs-operations-cli",
         "./skills/dataflows-cli",
         "./skills/search-consumption-cli",
+        "./skills/onelake-catalog-govern-cli",
         "./skills/fabriciq-ontology-cli",
         "./skills/variable-library-cli",
         "./skills/deployment-pipelines-authoring-cli",
@@ -217,7 +220,7 @@
       "name": "fabric-consumption",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.14",
+      "version": "0.3.15",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -231,6 +234,7 @@
         "./skills/azmon-mirroredcatalogs-operations-cli",
         "./skills/dataflows-cli",
         "./skills/search-consumption-cli",
+        "./skills/onelake-catalog-govern-cli",
         "./skills/fabriciq-ontology-cli",
         "./skills/variable-library-cli",
         "./skills/deployment-pipelines-authoring-cli",
@@ -285,7 +289,7 @@
       "name": "fabric-operations",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.14",
+      "version": "0.3.15",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -299,6 +303,7 @@
         "./skills/azmon-mirroredcatalogs-operations-cli",
         "./skills/dataflows-cli",
         "./skills/search-consumption-cli",
+        "./skills/onelake-catalog-govern-cli",
         "./skills/fabriciq-ontology-cli",
         "./skills/variable-library-cli",
         "./skills/deployment-pipelines-authoring-cli",
@@ -353,7 +358,7 @@
       "name": "powerbi-authoring",
       "source": "./plugins/powerbi-authoring",
       "description": "Developer skills for authoring Microsoft Power BI solutions.",
-      "version": "0.3.14",
+      "version": "0.3.15",
       "skills": [
         "./skills/semantic-model-authoring",
         "./skills/powerbi-report-planning",

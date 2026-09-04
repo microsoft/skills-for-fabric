@@ -41,7 +41,7 @@ env:
       {"option":"Event Schema Set / Real-Time Intelligence","slug":"eventschemaset","label":"area:eventschemaset","color":"1f6feb","skills":["eventschemaset-cli"]},
       {"option":"Eventstream / Real-Time Intelligence","slug":"eventstream","label":"area:eventstream","color":"b60205","skills":["eventstream-cli"]},
       {"option":"Activator / Reflex","slug":"activator","label":"area:activator","color":"c2e0c6","skills":["activator-cli"]},
-      {"option":"OneLake Catalog (search / discovery)","slug":"catalog","label":"area:catalog","color":"d93f0b","skills":["search-consumption-cli"]},
+      {"option":"OneLake Catalog (search / discovery / governance)","slug":"catalog","label":"area:catalog","color":"d93f0b","skills":["onelake-catalog-govern-cli","search-consumption-cli"]},
       {"option":"Power BI semantic models","slug":"powerbi","label":"area:powerbi","color":"1d76db","skills":["semantic-model-authoring"]},
       {"option":"Ananke / FabricIQ (Power BI data exploration)","slug":"ananke","label":"area:ananke","color":"006b75","skills":["fabriciq"]},
       {"option":"Power BI Reports","slug":"powerbi-report","label":"area:powerbi-report","color":"d4c5f9","skills":["powerbi-report-authoring","powerbi-report-design","powerbi-report-management","powerbi-report-planning"]},

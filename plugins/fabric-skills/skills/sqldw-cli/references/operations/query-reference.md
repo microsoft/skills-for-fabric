@@ -195,6 +195,40 @@ ORDER BY user_rank;
 
 ---
 
+### Recent Warehouse Activity
+
+**Purpose:** Explain who is running which query shapes, through which applications and SQL pools, while excluding prior agent monitoring statements.
+
+```sql
+-- Ready-to-use (defaults: top 100, last 24 hours):
+SELECT TOP 100
+    start_time,
+    login_name,
+    program_name,
+    statement_type,
+    query_hash,
+    sql_pool_name,
+    status,
+    total_elapsed_time_ms,
+    allocated_cpu_time_ms,
+    command
+FROM queryinsights.exec_requests_history
+WHERE start_time >= DATEADD(HOUR, -24, GETUTCDATE())
+  AND command NOT LIKE '%queryinsights%'
+  AND (label IS NULL OR label NOT LIKE 'AGENTCLI_MONITOR_%')
+ORDER BY start_time DESC
+OPTION (LABEL = 'AGENTCLI_MONITOR_ACTIVITY');
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `TOP N` | 100 | Max requests to return (replace the number) |
+| `DATEADD(HOUR, -N, ...)` | 24 | Time window in hours (replace N) |
+
+Group the results by `login_name`, `program_name`, `statement_type`, `query_hash`, and `sql_pool_name`. Report execution count and resource concentration separately; do not identify a user or application as expensive from request count alone.
+
+---
+
 ### Compare Recent vs Baseline
 
 **Purpose:** Detect performance regressions by comparing recent window against historical baseline.
@@ -334,169 +368,19 @@ ORDER BY total_elapsed_time_ms DESC;
 - High `data_scanned_remote_storage_mb` → data layout issues
 - High `allocated_cpu_time_ms` relative to elapsed → CPU-bound query
 - High elapsed but low CPU → resource contention (check pressure windows)
-- `result_cache_hit = 0` on repeated queries → cache not effective
+- `result_cache_hit = 0` on repeated queries → no result-cache creation or use; check eligibility before calling it a miss
 
 ---
 
 ### Pressure Window Analysis
 
-**Purpose:** Identify SQL pool pressure events from `queryinsights.sql_pool_insights` and find the heaviest queries running during those windows.
-
-**Step 1** — Find pressure windows by consolidating consecutive pressure events:
-
-```sql
--- Ready-to-use (default: last 24 hours):
-WITH PressureEvents AS (
-    SELECT
-        timestamp,
-        sql_pool_name,
-        max_resource_percentage,
-        is_pool_under_pressure,
-        current_workspace_capacity,
-        LAG(timestamp) OVER (PARTITION BY sql_pool_name ORDER BY timestamp) AS prev_timestamp
-    FROM queryinsights.sql_pool_insights
-    WHERE timestamp > DATEADD(HOUR, -24, GETUTCDATE())
-      AND is_pool_under_pressure = 1
-),
-WindowBoundaries AS (
-    SELECT
-        timestamp, sql_pool_name, max_resource_percentage, current_workspace_capacity,
-        CASE
-            WHEN prev_timestamp IS NULL
-              OR DATEDIFF(SECOND, prev_timestamp, timestamp) > 120
-            THEN 1
-            ELSE 0
-        END AS is_window_start
-    FROM PressureEvents
-),
-WindowGroups AS (
-    SELECT
-        timestamp, sql_pool_name, max_resource_percentage, current_workspace_capacity,
-        SUM(is_window_start) OVER (
-            PARTITION BY sql_pool_name ORDER BY timestamp ROWS UNBOUNDED PRECEDING
-        ) AS window_id
-    FROM WindowBoundaries
-)
-SELECT
-    sql_pool_name,
-    window_id,
-    MIN(timestamp) AS window_start,
-    MAX(timestamp) AS window_end,
-    DATEDIFF(SECOND, MIN(timestamp), MAX(timestamp)) AS duration_seconds,
-    COUNT(*) AS pressure_data_points,
-    MAX(max_resource_percentage) AS peak_resource_pct,
-    MAX(current_workspace_capacity) AS capacity_sku
-FROM WindowGroups
-GROUP BY sql_pool_name, window_id
-ORDER BY MIN(timestamp) DESC;
-```
-
-**Step 2** — For each pressure window, find overlapping queries (substitute actual `window_start`/`window_end` timestamps from Step 1):
-
-```sql
--- Replace timestamps with actual values from Step 1:
-SELECT TOP 5
-    command,
-    login_name,
-    start_time,
-    end_time,
-    total_elapsed_time_ms,
-    allocated_cpu_time_ms,
-    data_scanned_remote_storage_mb,
-    data_scanned_memory_mb,
-    data_scanned_disk_mb,
-    status,
-    result_cache_hit,
-    query_hash
-FROM queryinsights.exec_requests_history
-WHERE start_time <= '<window_end>'
-  AND end_time >= '<window_start>'
-  AND command IS NOT NULL
-  AND LEN(command) > 20
-ORDER BY allocated_cpu_time_ms DESC;
-```
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `DATEADD(HOUR, -N, ...)` in Step 1 | 24 | Hours back to analyze (replace N) |
-| `TOP N` in Step 2 | 5 | Max queries per pressure window |
-| `'<window_start>'`/`'<window_end>'` | _(from Step 1)_ | Substitute actual timestamps from Step 1 results |
-
-**Response formatting** — for each overlapping query, classify problems:
-- CPU > 5M ms → "Extremely high CPU", >1M → "Very high CPU", >100K → "High CPU"
-- Remote storage > 1,000 MB → "Heavy remote storage scans (cold data)"
-- Total data > 5 GB → "Massive data scan", > 1 GB → "Large data scan"
-- Elapsed > 5 min → "Very long running", > 1 min → "Long running"
-- `result_cache_hit = 0` and elapsed > 30s → "Cache miss on slow query"
-- `SELECT *` detected → "Uses SELECT * (missing column pruning)"
-
-**Global recommendations** — based on aggregate analysis:
-- If SELECT pool has more pressure → read-heavy workload, suggest caching and column pruning
-- If NONSELECT pool has more pressure → write-heavy, suggest batching and COPY INTO
-- If total pressure > 60 min → suggest scaling capacity or staggering workloads
+The event-based pressure query is now isolated in the directly indexed `references/operations/pool-pressure.md` leaf. Use that version; it calculates `LEAD` across all state events and matches overlapping requests by both interval and `sql_pool_name`.
 
 ---
 
 ### Cache Warmth Analysis
 
-**Purpose:** Compare cold (remote storage) vs warm (memory/disk) reads for repeated queries using a CTE with hash-level grouping.
-
-```sql
--- Ready-to-use (defaults: last 24 hours, min 2 runs per hash):
-WITH hash_stats AS (
-    SELECT
-        query_hash,
-        COUNT(*) AS run_count
-    FROM queryinsights.exec_requests_history
-    WHERE query_hash IS NOT NULL
-      AND status = 'Succeeded'
-      AND start_time > DATEADD(HOUR, -24, GETUTCDATE())
-    GROUP BY query_hash
-    HAVING COUNT(*) >= 2
-)
-SELECT TOP 500
-    e.query_hash,
-    e.start_time,
-    e.total_elapsed_time_ms,
-    e.allocated_cpu_time_ms,
-    e.data_scanned_remote_storage_mb,
-    e.data_scanned_memory_mb,
-    e.data_scanned_disk_mb,
-    e.result_cache_hit,
-    e.row_count,
-    LEFT(e.command, 200) AS command_snippet,
-    e.login_name,
-    h.run_count
-FROM queryinsights.exec_requests_history e
-INNER JOIN hash_stats h ON e.query_hash = h.query_hash
-WHERE e.status = 'Succeeded'
-  AND e.start_time > DATEADD(HOUR, -24, GETUTCDATE())
-ORDER BY h.run_count DESC, e.query_hash, e.start_time;
-```
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `DATEADD(HOUR, -N, ...)` | 24 | Time window in hours (replace N) |
-| `HAVING COUNT(*) >= N` | 2 | Minimum executions per query_hash |
-
-**Classification logic** — for each execution, compute `total_mb = remote + memory + disk`:
-- `result_cache_hit = 1` → **cached**
-- `total_mb = 0` → **no-scan**
-- `remote_mb / total_mb > 0.8` → **cold** (>80% from remote storage)
-- `(memory_mb + disk_mb) / total_mb > 0.8` → **warm** (>80% from cache)
-- Otherwise → **mixed**
-
-**Overall pattern per query_hash:**
-- `always-cold`: Every run is cold — never benefits from caching
-- `always-warm`: Every run is warm — well cached
-- `warming-up`: Started cold, latest run is warm
-- `inconsistent`: Mix of cold and warm runs
-- `always-cached`: Result set cache hit every time
-
-**Recommendations:**
-- Over 50% cold runs → Enable result set caching: `ALTER DATABASE SET RESULT_SET_CACHING ON;`
-- Always-cold patterns → Check for `GETDATE()`/`GETUTCDATE()` or volatile functions that bust the cache key
-- Compare avg cold elapsed vs avg warm elapsed to calculate warm speedup ratio
+Use the directly indexed `references/operations/resource-consumers.md` leaf. It preserves the distinct meanings of `result_cache_hit = 1` (entry creation) and `result_cache_hit = 2` (cache hit), handles zero-scan rows before ratios, and records the current result-set-caching limitation.
 
 ---
 

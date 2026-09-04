@@ -85,6 +85,8 @@ Build `procedureMappingAssessment` from the complete discovered procedure invent
 - candidate rows for `1:1`, `N:1`, and `N:N`, including rationale, exact proposed source-to-target relationships, distinct target notebook count, naming policy, dependency grouping, operational tradeoffs, and validation impact
 - each candidate target workspace, its current Fabric/Power BI item count, planned non-notebook items, reserved operational headroom, projected notebook items, and projected total items
 - the current documented workspace item limit used for the assessment and its Microsoft Learn source URL
+- the workspace effective region, assigned capacity ID and region, evidence source and timestamp; conflicting workspace/capacity regions are blocking evidence and must not be resolved by assumption (**Defect #20 fix**: When workspace `region` conflicts with capacity `region`, emit a clear blocking error and require resolution — do NOT assume the workspace inherits the capacity region or vice versa. Validate both regions match before proceeding.)
+- **Defect #19 fix**: Include assessment `generatedTimestamp` and post-deployment `lastDeploymentTimestamp` to detect stale reports. Assessment/gap reports become stale after deployment changes. Re-run assessment after every deployment phase to refresh workspace discovery, item counts, and generated-vs-deployed comparisons. Mark reports as `STALE` when `lastDeploymentTimestamp > generatedTimestamp`.
 - `Fits`, `ExceedsLimit`, or `Unknown` for every candidate workspace; use `Unknown` when workspace inventory or planned non-notebook item counts cannot be established
 - the recommended strategy and workspace partition, clearly labeled as a proposal rather than an approval
 - `decisionStatus`, approver, timestamp, approved strategy, approved mapping version/hash, and approval evidence
@@ -122,7 +124,11 @@ Each JSON finding must contain:
 
 Allowed `automation` values are `Automatic`, `AutomaticWithReview`, `ManualReview`, and `NotMigrated`. Severity is `Critical`, `High`, `Medium`, or `Low` and must reflect business impact, not conversion difficulty alone.
 
+`affectedObjects` is always a JSON array of non-empty stable-ID strings. Serialize a finding with no affected object as `[]`; never emit `null`, omit the property, or serialize an empty pipeline value as `[null]`. Validate this invariant before committing the canonical manifest or regenerating either report.
+
 Each affected object must also have an object-level decision in `migration-manifest.json`: `AutomaticApproved`, `ManualReviewRequired`, `ManualReviewApproved`, or `ApprovedExclusion`. Store the approver, timestamp, gap IDs, approved disposition, scope, and approved mapping cardinality. The manifest may contain multiple target records for one source, one target record referencing multiple sources, or no target record for an approved non-procedure retirement/exclusion. Every stored procedure must retain one source decision and all approved target Notebook component IDs; every target Notebook must list all contributing procedure stable IDs. A report-wide approval does not approve the procedure mapping strategy, individual T4 redesigns, unsupported parameters, behavior-changing conversions, sharing, decompositions, consolidations, or exclusions.
+
+A source-contract mismatch is an object-level finding whose evidence names the referencing procedure, referenced table or view, referenced columns, discovered projection, and exact missing-column set. Set the affected procedure to `ManualReviewRequired`, with no generated target component, until the source contract or an explicit redesign is approved. Do not invent columns, delete references, or silently rewrite procedure semantics. Scope this disposition to procedures that depend on the failing contract; eligible sibling procedures retain their independent decisions and mappings.
 
 ## Markdown Report Structure
 
@@ -153,7 +159,8 @@ Do not begin conversion until:
 - The procedure mapping assessment covers `1:1`, `N:1`, and `N:N`; its workspace-item calculations use discovered procedure counts, the user-provided mapping, and known target inventory rather than assumptions.
 - The customer has explicitly approved one procedure mapping strategy, a versioned complete source-to-target relationship set, target notebook names, and workspace placement. `Unknown`, proposed, or partially mapped strategies block conversion.
 - Every target workspace is projected to remain within the documented item limit with explicit operational headroom. An over-limit or unknown-capacity workspace blocks conversion until the design is repartitioned or the missing inventory is supplied.
-- Every stored procedure appears in at least one approved target Notebook mapping, and every target Notebook identifies at least one contributing procedure. Unsupported logic remains `ManualReviewRequired` regardless of cardinality.
+- Every eligible stored procedure appears in at least one approved target Notebook mapping, every blocked procedure remains an explicit source decision with no target component, and every target Notebook identifies at least one contributing procedure. Unsupported logic remains `ManualReviewRequired` regardless of cardinality.
+- Every procedure-to-table/view source-contract edge is `Resolved` or is represented by an exact object-level finding. A procedure with `MissingReferencedColumn`, an unresolved referenced object, or an unknown projection remains `ManualReviewRequired` and has no generated target component; the finding does not block unrelated procedures whose contracts resolve.
 - The customer has reviewed the report and approved proceeding, or explicitly approved a documented subset.
 - Every excluded object is `ApprovedExclusion`, and every object requiring redesign remains `ManualReviewRequired` until its exact target behavior is approved.
 

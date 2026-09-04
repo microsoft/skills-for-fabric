@@ -106,6 +106,10 @@ rules:
     description: Use POST /v1/catalog/search to find items across workspaces by name, description, or type
     reference: skills/search-consumption-cli/SKILL.md
 
+  - name: onelake_catalog_governance
+    description: Audit and remediate OneLake catalog governance through permission-aware admin and data-owner modes
+    reference: skills/onelake-catalog-govern-cli/SKILL.md
+
   - name: powerbi_report_planning
     description: Plan and gather requirements before authoring PBIR — use for "build a new dashboard" intents
     reference: skills/powerbi-report-planning/SKILL.md

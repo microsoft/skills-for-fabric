@@ -42,6 +42,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 | Event Schema Set | https://learn.microsoft.com/en-us/rest/api/fabric/eventschemaset/items/ |
 | Activator | https://learn.microsoft.com/en-us/fabric/real-time-intelligence/data-activator/activator-introduction |
 | Catalog Search | https://learn.microsoft.com/en-us/rest/api/fabric/core/catalog/search |
+| OneLake Catalog Governance | https://learn.microsoft.com/en-us/fabric/governance/onelake-catalog-govern |
 | Semantic Models | https://learn.microsoft.com/en-us/power-bi/connect-data/service-datasets-understand |
 | Power BI Reports | https://learn.microsoft.com/en-us/power-bi/developer/projects/projects-report |
 | Data Agents | https://learn.microsoft.com/en-us/fabric/data-science/concept-data-agent |
@@ -79,6 +80,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - Parameterize everything for reusability
 - Warehouse operations skill: `skills/sqldw-cli/SKILL.md` — performance diagnostics, slow queries, query insights
 - Azure Monitor observability operations skill: `skills/azmon-mirroredcatalogs-operations-cli/SKILL.md` — onboard Azure Monitor / App Insights / Log Analytics observability data into Fabric and correlate telemetry with business data for business-impact insights, an optional Real-Time (KQL) dashboard, and opt-in Operations Agent instructions
+- OneLake catalog governance skill: `skills/onelake-catalog-govern-cli/SKILL.md` — audit and remediate domain, workspace, capacity, protection, and curation posture through permission-aware modes
 
 ### Git Integration (ALM / CI-CD)
 - Operations skill: `skills/git-integration-operations-cli/SKILL.md` — automate the Git integration lifecycle from CLI (connect to Azure DevOps/GitHub, commit, update/pull, sync status, resolve conflicts, disconnect, service-principal sync) via the Fabric CLI (`fab api`) with `az rest` fallback

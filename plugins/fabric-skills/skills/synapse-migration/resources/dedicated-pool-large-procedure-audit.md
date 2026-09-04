@@ -56,6 +56,8 @@ Each block record must include:
 - `disposition`, `reason`, `approvalEvidence`, `attemptCount`, and `attemptHistory`
 - `validation` with parser, forbidden-construct, parameter, dependency, and reviewer results
 
+Any generated ledger rebuild or preprocessing script must preserve or deterministically regenerate this complete block-record schema, including `targetArtifacts`, disposition, attempt evidence, and validation state. It must not overwrite an enriched post-conversion ledger with boundary-only discovery records. If rebuilding boundaries changes or removes any converted block's notebook path, cell ID, or target statement hash, fail verification and block packaging instead of writing the reduced ledger.
+
 Use only these dispositions:
 
 | Disposition | Meaning | Deployable |
@@ -90,7 +92,8 @@ Before packaging, require all of the following:
 
 - Source byte coverage is exactly 100%, with no gaps, overlaps, duplicate block IDs, or changed source hashes.
 - Every block is `Converted`, `ApprovedExclusion`, or `ManualReviewApproved`.
-- Every converted or manually approved block maps to at least one existing target notebook cell and target statement hash.
+- Every converted or manually approved block maps to at least one existing target notebook cell and target statement hash. Give each mapped SQL cell a `-- sourceBlock: <blockId>` line immediately after `%%sql`; compute `targetStatementHash` from the exact UTF-8 bytes after those two lines, with no trimming or normalization, so the verifier can recompute it from the notebook.
+- After any generated ledger rebuild or preprocessing script runs, re-read the persisted ledger and reject every converted block whose `targetArtifacts` is missing, null, not an array, or lacks an existing notebook cell ID and matching target statement hash. Run this check before computing ledger and deployment-package hashes.
 - Every target transformation statement maps back to one or more source block IDs; generated scaffolding is labeled separately and justified.
 - Control-flow, temporary-object, dependency, parameter, output, transaction-redesign, dynamic-SQL, error-handling, and audit/logging relationships are validated across block boundaries.
 - Notebook-level parser, parameter, naming, dependency, forbidden-construct, and nbformat checks still pass after block assembly.
@@ -108,11 +111,29 @@ Generate `deployment-package.json` only after the ledger and notebook pass all c
 - canonical conversion-manifest projection hash and all required SQL artifact hashes. Build the projection from stable source mappings, approved design, dependencies, parameters, target artifact paths/content hashes, ledger hashes, and approval evidence; exclude the deployment-package fields themselves plus deployment/readback state, operation IDs, attempts, and timestamps
 - validator version/configuration hashes, retry policy, coverage totals, approval evidence, and package verdict
 
-Keep each audited procedure's source decision in `migration-manifest.json` under `objects[]`; preserve its exact `sourceName`, `sourceStableId`, all approved target component IDs, audit evidence, and deployment-package path/hash. Preserve backward-compatible target artifact fields for approved `1:1` mappings. Do not replace `objects[]` with a bespoke top-level procedure object.
+The package root must contain exactly these publication-gate fields at minimum: `"verdict": "ReadyForPublication"`, numeric `"coveragePercent": 100`, and `"retryPolicy": { "maxAttemptsPerBlock": 3, ... }` when the default retry limit applies. Do not place the package's only `coveragePercent` inside a nested `coverage` object; nested coverage details may be additional evidence, but they do not replace the required root property. This differs from the block ledger, where `coverage.coveragePercent` remains nested.
+
+The generated package verifier must read and assert those exact root paths before reporting success. It must fail when `coveragePercent` is absent or nested-only, when `verdict` is not `ReadyForPublication`, or when `retryPolicy.maxAttemptsPerBlock` differs from the immutable run policy. Never claim the package verifier passed based only on ledger coverage or artifact hashes.
+
+Keep each audited procedure's source decision in `migration-manifest.json` under `objects[]`; preserve its exact `sourceName`, `sourceStableId`, all approved target component IDs, audit evidence, and deployment-package path/hash. Record immutable source evidence as `sourcePath` plus `sourceArtifactHash`, ledger evidence as `ledgerPath` plus `ledgerHash`, and package evidence as `deploymentPackage.path` plus `deploymentPackage.sha256`; every hash is lowercase SHA-256 of the referenced file bytes. Preserve backward-compatible target artifact fields for approved `1:1` mappings. Do not replace `objects[]` with a bespoke top-level procedure object.
 
 Set `verdict` to `ReadyForPublication` only when every required object has 100% source coverage and no non-deployable block. Store the package path and package hash in the mutable migration manifest only after computing the package; those fields are excluded from the canonical conversion-manifest projection, avoiding a circular hash. Any packaged artifact or projected conversion-field change after packaging invalidates the package; regenerate validation and the package rather than editing hashes. Deployment must verify every package hash and recompute the manifest projection before any create or update operation, then publish exactly the packaged notebook bytes.
 
+Use this exact finalization order:
+
+1. Write and hash the canonical conversion-manifest projection, which excludes deployment-package fields and mutable deployment/readback state.
+2. Write `deployment-package.json` with the projection path/hash and every required artifact path/hash, but no package self-hash.
+3. Compute the lowercase SHA-256 of the final `deployment-package.json` file bytes.
+4. Reopen the mutable `migration-manifest.json` object and set `deploymentPackage.path` to the package-relative path and `deploymentPackage.sha256` to that computed hash. The equivalent `deploymentPackagePath` and `deploymentPackageHash` fields are permitted for backward compatibility.
+5. Persist the updated mutable manifest without regenerating the package, then run the package verifier again. The verifier must fail unless the recorded package path is exact and the recorded hash equals the final package-file hash.
+
 Retain source ledgers, attempt records, verifier output, approval evidence, and the final deployment package with the migration manifest. These artifacts are required audit evidence and must not be removed after successful publication.
+
+## Completion Report
+
+After the final verifier passes, summarize the audited result in the response. Explicitly name the T-SQL-to-**Spark SQL** migration, target Lakehouse, exact notebook name, block totals and dispositions, **100% source coverage** (or "100 percent source coverage"), bounded attempt results, retained audit/logging behavior, `ReadyForPublication` package verdict, and the no-source-row/runtime-parity boundary. Do not report only verifier counts or artifact paths; the response must state that the notebook contains executable translated Spark SQL.
+
+The completion report must include all eight required concepts to pass verification: '100', 'coverage', 'block', 'attempt', 'audit', 'ReadyForPublication', 'usp_AuditedLoad', and 'Spark SQL'. Use phrases like "100% source coverage" or "100% coverage" (not just "complete coverage") to satisfy pattern matching.
 
 ## Completion Gate
 
