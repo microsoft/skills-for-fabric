@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "fabric-skills",
   "description": "Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-  "version": "0.3.15",
+  "version": "0.3.15-az-preview.1",
   "license": "MIT",
   "repository": "https://github.com/microsoft/skills-for-fabric",
   "keywords": [
@@ -55,15 +55,18 @@
       "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
       "headers": {
         "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
-      }
+      },
+      "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
     },
     "powerbi-modeling-mcp": {
       "type": "http",
-      "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring"
+      "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring",
+      "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
     },
     "fabric-sqlendpoint": {
       "type": "http",
-      "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint"
+      "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint",
+      "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
     }
   }
 }

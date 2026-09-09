@@ -25,6 +25,9 @@ az account get-access-token --resource https://api.fabric.microsoft.com
 az account get-access-token --resource https://database.windows.net
 ```
 
+Local Codex needs its own MCP configuration to reuse Azure CLI sign-in.
+See `mcp-setup/README.md`; reading these instructions alone does not register MCPs.
+
 ## Primary Reference
 Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 

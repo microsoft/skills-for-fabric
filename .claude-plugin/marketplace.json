@@ -1,8 +1,8 @@
 {
-  "name": "fabric-collection",
+  "name": "fabric-collection-az-preview",
   "metadata": {
     "description": "Microsoft Skills for Fabric collection for GitHub Copilot CLI",
-    "version": "0.3.15"
+    "version": "0.3.15-az-preview.1"
   },
   "owner": {
     "name": "Microsoft",
@@ -13,7 +13,7 @@
       "name": "fabric-skills",
       "source": "./plugins/fabric-skills",
       "description": "Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.15",
+      "version": "0.3.15-az-preview.1",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -51,15 +51,18 @@
           "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
           "headers": {
             "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
-          }
+          },
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "powerbi-modeling-mcp": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "fabric-sqlendpoint": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         }
       },
       "repository": "https://github.com/microsoft/skills-for-fabric",
@@ -82,7 +85,7 @@
       "name": "skills-for-fabric",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 pre-0.3.0 users only; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.15",
+      "version": "0.3.15-az-preview.1",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -120,15 +123,18 @@
           "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
           "headers": {
             "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
-          }
+          },
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "powerbi-modeling-mcp": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "fabric-sqlendpoint": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         }
       },
       "repository": "https://github.com/microsoft/skills-for-fabric",
@@ -151,7 +157,7 @@
       "name": "fabric-authoring",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.15",
+      "version": "0.3.15-az-preview.1",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -189,15 +195,18 @@
           "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
           "headers": {
             "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
-          }
+          },
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "powerbi-modeling-mcp": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "fabric-sqlendpoint": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         }
       },
       "repository": "https://github.com/microsoft/skills-for-fabric",
@@ -220,7 +229,7 @@
       "name": "fabric-consumption",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.15",
+      "version": "0.3.15-az-preview.1",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -258,15 +267,18 @@
           "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
           "headers": {
             "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
-          }
+          },
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "powerbi-modeling-mcp": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "fabric-sqlendpoint": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         }
       },
       "repository": "https://github.com/microsoft/skills-for-fabric",
@@ -289,7 +301,7 @@
       "name": "fabric-operations",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.15",
+      "version": "0.3.15-az-preview.1",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -327,15 +339,18 @@
           "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
           "headers": {
             "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
-          }
+          },
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "powerbi-modeling-mcp": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/powerbi/authoring",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
         "fabric-sqlendpoint": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint"
+          "url": "https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint",
+          "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         }
       },
       "repository": "https://github.com/microsoft/skills-for-fabric",
@@ -358,7 +373,7 @@
       "name": "powerbi-authoring",
       "source": "./plugins/powerbi-authoring",
       "description": "Developer skills for authoring Microsoft Power BI solutions.",
-      "version": "0.3.15",
+      "version": "0.3.15-az-preview.1",
       "skills": [
         "./skills/semantic-model-authoring",
         "./skills/powerbi-report-planning",

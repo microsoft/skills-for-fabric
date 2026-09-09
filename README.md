@@ -1,5 +1,8 @@
 # Microsoft Fabric Skills
 
+> **Preview branch:** this is not a release. Use [PREVIEW.md](PREVIEW.md) to test
+> Azure CLI authentication with the separate preview marketplace.
+
 Microsoft Fabric Skills are reusable AI assistant instructions for working with Microsoft Fabric. They help GitHub Copilot CLI and compatible AI coding tools understand Fabric workloads, APIs, query patterns, and operational best practices.
 
 ## Install with GitHub Copilot CLI
@@ -119,6 +122,9 @@ SQL, Spark, Power BI, and KQL workflows may require workload-specific endpoints 
 Skills provide guidance and patterns. MCP servers provide live tool access to data sources and APIs. Some bundles include MCP configuration where supported, and you can register additional Fabric MCP servers if your environment provides them.
 
 See [MCP setup](mcp-setup/README.md).
+
+Local Claude Code's bundled remote MCPs reuse an existing Azure CLI sign-in.
+The setup guide covers Codex configuration and older registrations that override the plugin.
 
 ## Other AI coding tools
 

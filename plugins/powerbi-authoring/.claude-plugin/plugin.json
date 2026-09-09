@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "powerbi-authoring",
   "description": "Developer skills for authoring Microsoft Power BI solutions.",
-  "version": "0.3.15",
+  "version": "0.3.15-az-preview.1",
   "license": "MIT",
   "repository": "https://github.com/microsoft/skills-for-fabric",
   "keywords": [

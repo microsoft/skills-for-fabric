@@ -1,6 +1,6 @@
 # Microsoft Fabric Development Instructions
 
-> **Updates**: `fabric-collection` is a third-party marketplace, so enable auto-update once: run `/plugin`, open **Marketplaces**, select `fabric-collection`, and choose **Enable auto-update**. Administrators can instead set `"autoUpdate": true` on its `extraKnownMarketplaces` entry in managed settings. To update on demand, run `claude plugin update <plugin>@fabric-collection`. If these files were copied in loosely rather than installed as a plugin, compare the local `package.json` version against the remote (`git fetch origin main --quiet && git show origin/main:package.json`) and re-copy if it is newer.
+> **Preview:** follow `PREVIEW.md` for installation and rollback. This branch does not update the production marketplace.
 
 This project uses Microsoft Fabric for data engineering, warehousing, and analytics.
 
@@ -24,6 +24,9 @@ az account get-access-token --resource https://api.fabric.microsoft.com
 # Get token for SQL connections (Warehouse, Lakehouse SQL Endpoint)
 az account get-access-token --resource https://database.windows.net
 ```
+
+The `fabric-skills` plugin reuses Azure CLI sign-in for its remote MCPs.
+See `mcp-setup/README.md` for prerequisites and older registrations overriding the plugin; never print tokens.
 
 ## Fabric REST APIs
 

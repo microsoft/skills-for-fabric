@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/skills-for-fabric",
-  "version": "0.3.15",
+  "version": "0.3.15-az-preview.1",
   "description": "AI coding assistant skills for Microsoft Fabric developers and consumers",
   "repository": {
     "type": "git",
@@ -30,6 +30,6 @@
     "mcp-setup/**"
   ],
   "scripts": {
-    "postinstall": "node -e \"console.log('\\n✅ Skills for Fabric installed. Use the GitHub Copilot CLI plugin marketplace, or copy the relevant skills/ folder into your AI tool configuration.\\n')\""
+    "postinstall": "node -e \"console.log('\\n\u2705 Skills for Fabric installed. Use the GitHub Copilot CLI plugin marketplace, or copy the relevant skills/ folder into your AI tool configuration.\\n')\""
   }
 }
