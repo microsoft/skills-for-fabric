@@ -2,7 +2,7 @@
 
 This is an opt-in test branch, not a release. The production branch and
 marketplace are unchanged. The preview uses marketplace
-`fabric-collection-az-preview` and version `0.3.15-az-preview.1`.
+`fabric-collection-az-preview` and version `0.3.15-az-preview.2`.
 
 ## Claude Code
 
@@ -30,6 +30,15 @@ claude mcp list
 No build step or private-repository access is needed. Start a new Claude
 process in your normal project, not inside the skills checkout. Use `/plugin`
 to confirm that only the preview variant of `fabric-skills` is enabled.
+
+If installation failed with `Unrecognized key: "$schema"`, update the clone
+and retry the project-scope installation:
+
+```powershell
+git -C .\fabric-mcp-preview pull --ff-only
+claude plugin marketplace update fabric-collection-az-preview
+claude plugin install fabric-skills@fabric-collection-az-preview --scope project
+```
 
 Expect the three `plugin:fabric-skills:` MCPs to connect. An older local,
 user or project registration can override them. Review the scope shown by
