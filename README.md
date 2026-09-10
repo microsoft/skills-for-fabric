@@ -123,7 +123,7 @@ Skills provide guidance and patterns. MCP servers provide live tool access to da
 
 See [MCP setup](mcp-setup/README.md).
 
-Local Claude Code's bundled remote MCPs reuse an existing Azure CLI sign-in.
+When running Claude Code locally, the bundled remote Fabric MCPs reuse your existing Azure CLI sign-in.
 The setup guide covers Codex configuration and older registrations that override the plugin.
 
 ## Other AI coding tools
