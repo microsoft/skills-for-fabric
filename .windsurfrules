@@ -110,21 +110,9 @@ rules:
     description: Audit and remediate OneLake catalog governance through permission-aware admin and data-owner modes
     reference: skills/onelake-catalog-govern-cli/SKILL.md
 
-  - name: powerbi_report_planning
-    description: Plan and gather requirements before authoring PBIR — use for "build a new dashboard" intents
-    reference: skills/powerbi-report-planning/SKILL.md
-
-  - name: powerbi_report_design
-    description: Produce the design brief (tone, archetype, layout, theme) before PBIR edits
-    reference: skills/powerbi-report-design/SKILL.md
-
-  - name: powerbi_report_authoring
-    description: Edit PBIR/PBIP files (pages, visuals, formatting, themes) and validate via the CLI
-    reference: skills/powerbi-report-authoring/SKILL.md
-
-  - name: powerbi_report_management
-    description: Manage Fabric Power BI report items (create/get/update/delete) via az rest
-    reference: skills/powerbi-report-management/SKILL.md
+  - name: powerbi_report_skills
+    description: One powerbi-report-cli skill; planning, design, authoring and management are modes covering requirements, design brief, PBIR/PBIP edits, and Fabric report item CRUD
+    reference: skills/powerbi-report-cli/SKILL.md
 
   # Warehouse Operations
   - name: sqldw_skills

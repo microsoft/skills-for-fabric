@@ -70,10 +70,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - Activator for Reflex alerts, notifications, and automated actions over Fabric events and data, including Power BI-backed metrics
 - DAX for Semantic Model measures
 - Semantic model development (see `semantic-model-authoring`)
-- Power BI report planning skill: `skills/powerbi-report-planning/SKILL.md` — requirements, page plan, approval gate
-- Power BI report design skill: `skills/powerbi-report-design/SKILL.md` — archetype routing, layout, theme, accessibility
-- Power BI report authoring skill: `skills/powerbi-report-authoring/SKILL.md` — PBIR/PBIP file mechanics, Desktop reload/screenshot
-- Power BI report management skill: `skills/powerbi-report-management/SKILL.md` — Fabric report item CRUD via `az rest`
+- Power BI report skill: `skills/powerbi-report-cli/SKILL.md` — one skill for reports; `planning` (requirements, page plan, approval gate), `design` (archetype routing, layout, theme, accessibility), `authoring` (PBIR/PBIP file mechanics, Desktop reload/screenshot) and `management` (Fabric report item CRUD via `az rest`) are modes
 - Spark skill: `skills/spark-cli/SKILL.md` — notebook authoring and runs, Livy analysis, read-only diagnostics, and MLV lifecycle operations
 - Variable Library (CI/CD): parameterize workspaces across environments — author definitions, value sets, and active value set item state, and wire consumers to Variable Library references (see `skills/variable-library-cli/SKILL.md`)
 

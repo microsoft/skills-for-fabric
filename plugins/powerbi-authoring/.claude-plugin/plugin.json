@@ -1,7 +1,7 @@
 {
   "name": "powerbi-authoring",
   "description": "Developer skills for authoring Microsoft Power BI solutions.",
-  "version": "0.3.16",
+  "version": "0.3.17",
   "license": "MIT",
   "repository": "https://github.com/microsoft/skills-for-fabric",
   "keywords": [
@@ -17,10 +17,7 @@
   ],
   "skills": [
     "./skills/semantic-model-authoring",
-    "./skills/powerbi-report-planning",
-    "./skills/powerbi-report-design",
-    "./skills/powerbi-report-authoring",
-    "./skills/powerbi-report-management"
+    "./skills/powerbi-report-cli"
   ],
   "agents": [],
   "mcpServers": {

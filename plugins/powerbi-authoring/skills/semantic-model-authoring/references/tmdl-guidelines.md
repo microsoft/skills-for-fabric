@@ -161,6 +161,69 @@ table Sales
 			expressionSource: DL_Lakehouse
 ```
 
+### Field parameter calculated tables
+
+A field parameter is a calculated table with one
+`(label, NAMEOF(reference), order)` tuple per selectable field. It has exactly
+three calculated columns bound to `[Value1]` (label), `[Value2]` (field), and
+`[Value3]` (order). Columns and measures can be mixed in one parameter.
+
+```tmdl
+table 'Slice by'
+
+	column 'Slice by Order'
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+	column 'Slice by Fields'
+		dataType: string
+		isHidden
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'Slice by Order'
+
+		extendedProperty ParameterMetadata = {"version":3,"kind":2}
+
+	column 'Slice by'
+		dataType: string
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'Slice by Order'
+
+		relatedColumnDetails
+			groupByColumn: 'Slice by Fields'
+
+	partition 'Slice by' = calculated
+		mode: import
+		source =
+				{
+				    ("Product Name", NAMEOF('Product'[Product Name]), 0),
+				    ("Revenue", NAMEOF('Internet Sales'[Total Sales Amount]), 1)
+				}
+```
+
+Given a parameter named `<P>`, preserve this shape:
+
+| Column | Source | Visibility | Purpose |
+| --- | --- | --- | --- |
+| `<P>` | `[Value1]` | visible | Display label; sorted by the order column and grouped by the fields column |
+| `<P> Fields` | `[Value2]` | hidden | Carries `ParameterMetadata` with `"kind": 2`; sorted by the order column |
+| `<P> Order` | `[Value3]` | hidden | Dense zero-based order; `dataType: int64`, `summarizeBy: sum`, `formatString: 0` |
+
+For each tuple:
+
+- Keep `<order>` zero-based and dense, in field order.
+- Use `NAMEOF` for both columns and measures.
+- Escape `"` as `""` in label string literals.
+- Escape `'` as `''` in single-quoted table references.
+- Escape `]` as `]]` in bracketed object references.
+
+Desktop recognizes the table as a field parameter only when the fields column
+carries `ParameterMetadata` whose JSON contains `"kind": 2`.
+
 ---
 
 ## Relationships

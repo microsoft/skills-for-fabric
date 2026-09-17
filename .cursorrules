@@ -133,10 +133,7 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 
 ### Power BI Reports (PBIR/PBIP)
 - Keep planning, design, local PBIR edits, and Fabric item management as separate phases
-- Planning: `skills/powerbi-report-planning/SKILL.md`
-- Design: `skills/powerbi-report-design/SKILL.md`
-- Authoring: `skills/powerbi-report-authoring/SKILL.md`
-- Management: `skills/powerbi-report-management/SKILL.md`
+- Power BI report skill: `skills/powerbi-report-cli/SKILL.md` (planning, design, authoring and management are modes)
 
 ### Data Agents
 - Use Python SDK within Fabric notebooks for rapid prototyping

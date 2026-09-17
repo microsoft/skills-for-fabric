@@ -4,11 +4,11 @@
   
   "mcpServers": {
     "FabricIQ": {
-      "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
+      "url": "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq",
       "transport": "http",
       "description": "FabricIQ MCP server for Power BI data analysis -- artifact discovery, schema inspection, DAX generation, and query execution",
       "headers": {
-        "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
+        "X-VARIANTS": "Fabric.Routing.FabricIQ.V1"
       },
       "auth": {
         "type": "bearer",

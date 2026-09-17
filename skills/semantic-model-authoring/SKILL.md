@@ -1,6 +1,6 @@
 ---
 name: semantic-model-authoring
-description: "Manages Power BI semantic models, including tables, columns, measures, relationships, DAX authoring and tuning, Import, DirectQuery and Direct Lake designs, sources, connections, permissions, refresh, and deployment. Load this skill before acting on a semantic model, unless it is part of publishing a PBIP project, which powerbi-report-management owns. For natural-language data questions use fabriciq; for visuals use powerbi-report-authoring."
+description: "Manages Power BI semantic models, including tables, columns, measures, relationships, field parameters, DAX, Import, DirectQuery and Direct Lake designs, sources, connections, permissions, refresh, and deployment. Load this skill before acting on a semantic model, unless it is part of publishing a PBIP project, which powerbi-report-cli owns. For natural-language data questions use fabriciq; for visuals use powerbi-report-cli."
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -24,6 +24,7 @@ Use this decision tree to route to the correct workflow based on user intent:
 | Inspect or discover model metadata (tables, columns, measures, relationships)   | [Discover Semantic Model Metadata](#workflow-discover-semantic-model-metadata)      |
 | Add/edit semantic model objects (e.g. measures, tables, columns, relationships) | [Modify an Existing Model](#workflow-modify-an-existing-model)                       |
 | Write or refactor DAX code                                                      | [Modify an Existing Model](#workflow-modify-an-existing-model)                       |
+| Create/edit a field parameter                                                   | [Author a Field Parameter](#workflow-author-a-field-parameter)                       |
 | Improve DAX query or measure performance                                        | [Optimize DAX Performance](#workflow-optimize-dax-performance)                       |
 | Analyze semantic model against best practices                                   | [Analyze Best Practices](#workflow-analyze-best-practices)                           |
 | Prepare a semantic model for AI consumption (Copilot / Data Agents)             | [Semantic Model AI Readiness](#workflow-semantic-model-ai-readiness)                 |
@@ -45,6 +46,7 @@ Load these references on demand when a workflow step requires them. Do not load 
 | TMDL Editing                     | [tmdl-guidelines.md](./references/tmdl-guidelines.md)                              | Before generating or editing any TMDL file                                                  |
 | PBIP Projects                    | [pbip.md](./references/pbip.md)                                                    | When working with PBIP folders                                                              |
 | DAX Language                     | [dax-guidelines.md](./references/dax-guidelines.md)                                | When writing or reviewing any DAX code                                                      |
+| Field Parameters                 | [field-parameters.md](./references/field-parameters.md)                            | When creating/editing a field-parameter table (metric selector, dynamic view)   |
 | Metadata Discovery (DAX INFO functions) | [metadata-discovery.md](./references/metadata-discovery.md)                 | When discovering model metadata via DAX INFO functions (see [Workflow: Discover Semantic Model Metadata](#workflow-discover-semantic-model-metadata)) |
 | DAX Performance Decision Guide   | [dax-perf-decision-guide.md](./references/dax-perf-decision-guide.md)              | Start here when optimizing DAX                                                             |
 | DAX Performance Pattern Catalog  | [dax-perf-patterns.md](./references/dax-perf-patterns.md)                          | Load on demand after the decision guide identifies candidate patterns                       |
@@ -154,6 +156,23 @@ Steps:
    - **Adding relationships** - ensure key columns exist on both sides with matching data types;
    - **Adding measures** - verify referenced columns/tables exist;
 5. **Save & validate** - per [Saving Changes to a Semantic Model](#saving-changes-to-a-semantic-model) and [Validation Checklist](#validation-checklist).
+
+---
+
+## Workflow: Author a Field Parameter
+
+**When this applies:** User asks to create, edit, reorder, rename, or delete a field parameter. This is a self-contained model-side calculated table; the matching report slicer and visual are separate report work and out of scope here.
+
+Load [field-parameters.md](./references/field-parameters.md) before starting and follow the workflow it defines.
+
+Steps:
+
+1. **Connect & discover** - per [Connecting to a Semantic Model](#connecting-to-a-semantic-model). Detect any existing field parameter (a column carrying `ParameterMetadata` `"kind": 2`) before creating a duplicate.
+2. **Route to the matching sub-workflow** in [field-parameters.md](./references/field-parameters.md):
+   - **Create** a new parameter -> [Workflow: Create a field parameter](./references/field-parameters.md#workflow-create-a-field-parameter) (`table_operations` `CreateFieldParameter` at Tier 1).
+   - **Edit** an existing parameter (add / remove / reorder / relabel fields) -> [Workflow: Edit a field parameter](./references/field-parameters.md#workflow-edit-a-field-parameter) (partition rewrite via `partition_operations`; there is **no** `UpdateFieldParameter` operation).
+   - **Rename or delete** -> [Workflow: Rename or delete a field parameter](./references/field-parameters.md#workflow-rename-or-delete-a-field-parameter).
+3. **Save & validate** - per [Saving Changes to a Semantic Model](#saving-changes-to-a-semantic-model) and [Validation Checklist](#validation-checklist). Confirm the three columns and `ParameterMetadata` `"kind": 2` are intact so Desktop recognizes the table as a field parameter.
 
 ---
 

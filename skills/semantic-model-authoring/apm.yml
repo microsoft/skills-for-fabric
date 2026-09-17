@@ -3,8 +3,8 @@
 #     apm install microsoft/skills-for-fabric --skill semantic-model-authoring
 
 name: semantic-model-authoring
-version: 0.1.0
-description: "Manages Power BI semantic models, including tables, columns, measures, relationships, DAX authoring and tuning, Import, DirectQuery and Direct Lake designs, sources, connections, permissions, refresh, and deployment."
+version: 0.1.2
+description: "Manages Power BI semantic models, including tables, columns, measures, relationships, field parameters, DAX, Import, DirectQuery and Direct Lake designs, sources, connections, permissions, refresh, and deployment."
 author: Microsoft Fabric
 license: MIT
 

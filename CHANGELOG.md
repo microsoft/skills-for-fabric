@@ -2,6 +2,27 @@
 
 User-facing changes for the public Microsoft Fabric Skills release.
 
+## [0.3.17] - 2026-09-17
+
+### Added
+- **`skills/semantic-model-authoring`** -- adds guidance for creating, editing, reordering, renaming, and deleting Power BI field parameters through the modeling MCP or TMDL.
+- **`powerbi-report-cli`** -- one Power BI report skill covering the whole report item. It picks the right mode from your request: planning for requirements, scope and the approval gate; design for tone, page archetype, chart choice, layout, colour, typography and accessibility; authoring for local PBIR/PBIP page, visual, filter, slicer, theme and formatting edits plus PBIR validation and Power BI Desktop verification; and management for publishing, rebinding and updating report items in Fabric.
+
+### Changed
+- **`powerbi-authoring` bundle** -- now ships the single `powerbi-report-cli` skill in place of the four separate Power BI report skills. Existing report prompts keep working and you no longer need to pick a skill per phase; ask for the report outcome you want and the skill selects the mode.
+- **FabricIQ MCP server** -- the endpoint moved from `https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365` to `https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq`, and the required routing header changed from `X-VARIANTS: Fabric.Routing.PowerBIDataExploration` to `X-VARIANTS: Fabric.Routing.FabricIQ.V1`. Your existing token keeps working: the new endpoint accepts both the Power BI audience (`https://analysis.windows.net/powerbi/api`) and the Fabric audience (`https://api.fabric.microsoft.com`), so nothing needs re-minting. The bundled configuration is already updated; if you registered FabricIQ by hand in your own MCP client config, re-register it with the new URL and header — the MCP setup instructions have the updated commands.
+- **FabricIQ skill and agent** -- the `ResolveReportIdFromUrl(url)` tool is replaced by `ResolveFabricItem(fabricItemId=<guid-or-url>)` on the new endpoint. It accepts a bare item GUID (preferred) as well as a supported Fabric or Power BI artifact URL, and returns the canonical `fabricItemId`, `itemType`, `workspaceId` when known, plus optional next-step instructions. The other FabricIQ tools (`DiscoverArtifacts`, `GetReportMetadata`, `GetSemanticModelSchema`, `ValueSearch`, `ExecuteQuery`) are unchanged, so the rest of the documented workflow is unaffected.
+- **APM packaging** -- installing the collection, or the FabricIQ skill on its own, now registers the new endpoint and routing header.
+
+### Removed
+- **`powerbi-report-authoring`**, **`powerbi-report-design`**, **`powerbi-report-management`** and **`powerbi-report-planning`** -- replaced by the matching modes of `powerbi-report-cli`. This is a **rename as well as a merge**: the four skills carried no access-method suffix and the merged skill adds the `-cli` discriminator, so if you pin any of those four skills by name, switch to `powerbi-report-cli`.
+
+### Fixed
+- **FabricIQ lost automatic Azure CLI sign-in in Claude Code** — the bundled plugin attaches a native Azure CLI `headersHelper` to its remote MCP servers by matching the Fabric API host. Because FabricIQ now answers on its own service host, it no longer matched and was shipped as the only remote server in the bundle with no way to authenticate, so its tools failed to connect after install. Host detection now covers the FabricIQ endpoint as well, and all three bundled remote MCP servers again sign in from your existing `az login` with no extra prompt.
+- **Claude Desktop registration was broken for every MCP server, not just FabricIQ** -- the provided registration scripts wrote a bridge entry invoking `@anthropic/mcp-proxy`, which is not a published npm package, so the generated configuration could never start. They now write a pinned `mcp-remote` entry and forward the routing header and bearer token through its `--header` flag, which is what FabricIQ needs to authenticate.
+- **The registration scripts no longer write a Claude credential that cannot work** -- when asked for API-key authentication they produced `Authorization: api-key <key>`, which is not a real authentication scheme, and when asked for bearer authentication without a token they wrote the literal text `${FABRIC_MCP_TOKEN}` as the credential, because Claude passes those values through unchanged instead of substituting them. Both cases now skip the header and tell you exactly what to re-run, so a broken sign-in surfaces immediately instead of as a confusing connection failure later.
+- **Manual VS Code setup instructions** -- the example used the legacy `github.copilot.chat.mcpServers` setting and omitted the routing header and token, so following it produced a server that connected and then failed on every call. It now shows the current `mcp.json` `servers` shape with a `headers` object and a prompted, password-masked token input.
+
 ## [0.3.16] - 2026-09-10
 
 ### Added

@@ -1,4 +1,4 @@
-# Fabric MCP setup for local Claude Code and Codex
+# Fabric MCP setup for local Claude Code, Codex and VS Code
 
 The remote Fabric MCPs accept tokens from an existing Azure CLI sign-in.
 Azure CLI must be installed in the same environment as the client. Check
@@ -52,8 +52,8 @@ plugin configuration, and `AGENTS.md` alone does not register MCPs.
 
 ```toml
 [mcp_servers.FabricIQ]
-url = "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365"
-http_headers = { "X-VARIANTS" = "Fabric.Routing.PowerBIDataExploration" }
+url = "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq"
+http_headers = { "X-VARIANTS" = "Fabric.Routing.FabricIQ.V1" }
 http_headers_helper = '''az account get-access-token --resource https://api.fabric.microsoft.com --query "{Authorization: join(' ', ['Bearer', accessToken])}" --output json --only-show-errors'''
 
 [mcp_servers.powerbi-modeling-mcp]
@@ -69,11 +69,57 @@ Keep an existing working stdio Power BI modeling server rather than replacing
 it with the remote entry above. Trusted project or managed configuration can
 take precedence over user settings.
 
+All three helpers above request the same Fabric resource, so one `az login`
+covers every server. FabricIQ also accepts a Power BI token
+(`https://analysis.windows.net/powerbi/api`) — both audiences are valid against
+its endpoint, so an existing Power BI-audience token keeps working and there is
+no need to mint a second one.
+
 When intentionally switching an existing HTTP entry to this helper, remove
 its conflicting static bearer/Authorization settings. Stored OAuth credentials
 can also take precedence; clear only that MCP's credentials with
 `codex mcp logout <server-name>`, with user approval. Restart Codex and check
 `/mcp`; `codex mcp list` alone shows configuration, not successful tool discovery.
+
+## VS Code
+
+VS Code has no header-helper equivalent, so the token is supplied through a
+prompted input rather than minted per request. Create `.vscode/mcp.json` in the
+workspace, or run **MCP: Open User Configuration** for a profile-wide entry:
+
+```json
+{
+  "servers": {
+    "FabricIQ": {
+      "type": "http",
+      "url": "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq",
+      "headers": {
+        "X-VARIANTS": "Fabric.Routing.FabricIQ.V1",
+        "Authorization": "Bearer ${input:fabric-token}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "id": "fabric-token",
+      "type": "promptString",
+      "description": "Fabric access token",
+      "password": true
+    }
+  ]
+}
+```
+
+Both the routing header and the token are required; a URL-only entry connects
+and then fails on every call. Mint the token with the command below and paste it
+at the prompt — VS Code stores it for subsequent sessions, so update the saved
+input when it expires (Entra access tokens are short-lived).
+
+```bash
+az account get-access-token --resource https://api.fabric.microsoft.com --query accessToken --output tsv
+```
+
+Do not commit a token: keep it in the prompted input, never inline in `headers`.
 
 ## Authentication failures
 

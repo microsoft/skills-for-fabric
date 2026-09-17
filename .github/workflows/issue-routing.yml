@@ -44,7 +44,7 @@ env:
       {"option":"OneLake Catalog (search / discovery / governance)","slug":"catalog","label":"area:catalog","color":"d93f0b","skills":["onelake-catalog-govern-cli","search-consumption-cli"]},
       {"option":"Power BI semantic models","slug":"powerbi","label":"area:powerbi","color":"1d76db","skills":["semantic-model-authoring"]},
       {"option":"Ananke / FabricIQ (Power BI data exploration)","slug":"ananke","label":"area:ananke","color":"006b75","skills":["fabriciq"]},
-      {"option":"Power BI Reports","slug":"powerbi-report","label":"area:powerbi-report","color":"d4c5f9","skills":["powerbi-report-authoring","powerbi-report-design","powerbi-report-management","powerbi-report-planning"]},
+      {"option":"Power BI Reports","slug":"powerbi-report","label":"area:powerbi-report","color":"d4c5f9","skills":["powerbi-report-cli"]},
       {"option":"Fabric IQ / Ontology","slug":"fabriciq","label":"area:fabriciq","color":"0969da","skills":["fabriciq-ontology-cli"]},
       {"option":"Fabric CI/CD","slug":"cicd","label":"area:cicd","color":"1f6feb","skills":["deployment-pipelines-authoring-cli","git-integration-operations-cli","variable-library-cli"]},
       {"option":"Azure Monitor into Fabric","slug":"azmon","label":"area:azmon","color":"0e8a16","skills":["azmon-mirroredcatalogs-operations-cli"]},
