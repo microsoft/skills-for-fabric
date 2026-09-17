@@ -22,7 +22,7 @@
     Which tool to configure: copilot, claude, vscode, all (default: all).
 
 .PARAMETER Headers
-    Hashtable of custom HTTP headers to include in the MCP server config (e.g., @{"X-VARIANTS"="Fabric.Routing.PowerBIDataExploration"}).
+    Hashtable of custom HTTP headers to include in the MCP server config (e.g., @{"X-VARIANTS"="Fabric.Routing.FabricIQ.V1"}).
 
 .EXAMPLE
     .\register-fabric-mcp.ps1 -ServerUrl "https://fabric-mcp.example.com" -ServerName "fabric"
@@ -33,9 +33,9 @@
 .EXAMPLE
     # Register FabricIQ with live token and required headers
     $token = az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv
-    .\register-fabric-mcp.ps1 -ServerUrl "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365" `
+    .\register-fabric-mcp.ps1 -ServerUrl "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq" `
       -ServerName "FabricIQ" -AuthType bearer -Token $token `
-      -Headers @{ "X-VARIANTS" = "Fabric.Routing.PowerBIDataExploration" }
+      -Headers @{ "X-VARIANTS" = "Fabric.Routing.FabricIQ.V1" }
 #>
 
 param(
@@ -103,8 +103,13 @@ if ($Headers.Count -gt 0) {
     $serverConfig["headers"] = $Headers
 }
 
+# Copilot's mcp.json expands ${VAR} placeholders itself, so a token-less run can
+# still write a usable entry there. Claude's bridge cannot -- see the Claude
+# block below -- so remember whether a concrete token was actually supplied.
+$hasConcreteToken = -not [string]::IsNullOrEmpty($Token)
+
 if ($AuthType -ne "none") {
-    if ([string]::IsNullOrEmpty($Token)) {
+    if (-not $hasConcreteToken) {
         Write-Warning "AuthType is '$AuthType' but no token provided. Using environment variable reference."
         $Token = "`${FABRIC_MCP_TOKEN}"
     }
@@ -121,23 +126,58 @@ if ($Tool -eq "copilot" -or $Tool -eq "all") {
 }
 
 if ($Tool -eq "claude" -or $Tool -eq "all") {
-    if ($Headers.Count -gt 0 -or $AuthType -ne "none") {
-        Write-Warning "Claude Desktop uses mcp-proxy and does not support custom headers or auth config directly. Headers/auth will not be applied to this target."
-    }
     $claudeConfig = Join-Path $env:APPDATA "Claude\claude_desktop_config.json"
-    # Claude uses a different format with command/args for remote servers
-    # Version pinned for security and reproducibility
-    $mcpProxyVersion = "0.1.0"  # Update this when upgrading
+
+    # Claude Desktop speaks stdio, so a remote HTTP server needs a bridge.
+    # mcp-remote forwards arbitrary headers with a repeatable --header flag,
+    # which is what carries X-VARIANTS and the bearer token. Pinned so the
+    # generated config is reproducible and not silently upgraded by npx.
+    $mcpRemoteVersion = "0.8.3"  # Update this when upgrading
+    $claudeArgs = @("-y", "mcp-remote@$mcpRemoteVersion", $ServerUrl)
+    $claudeEnv = @{}
+
+    foreach ($key in $Headers.Keys) {
+        # No space after the colon: Claude Desktop on Windows (and Cursor)
+        # mangles arguments that contain spaces.
+        $claudeArgs += @("--header", "${key}:$($Headers[$key])")
+    }
+
+    if ($AuthType -eq "bearer" -and $hasConcreteToken) {
+        # The token contains a space after "Bearer", so it goes through env
+        # rather than inline in the argument vector.
+        $claudeArgs += @("--header", 'Authorization:${FABRIC_MCP_AUTH}')
+        $claudeEnv["FABRIC_MCP_AUTH"] = "Bearer $Token"
+    }
+    elseif ($AuthType -eq "bearer") {
+        # Claude's JSON "env" values are passed to the child process verbatim --
+        # they are not shell-expanded -- so baking the ${FABRIC_MCP_TOKEN}
+        # placeholder in here would send that literal string as the credential.
+        # Copilot's mcp.json does expand it, which is why only this path opts out.
+        Write-Warning "No -Token was supplied, so no Authorization header was written for Claude Desktop. Unlike Copilot's mcp.json, Claude does not expand `${FABRIC_MCP_TOKEN} placeholders. Re-run with -Token `$(az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv)."
+    }
+    elseif ($AuthType -ne "none") {
+        # Only bearer can be bridged automatically. "Authorization: api-key <key>"
+        # is not a real auth scheme, and there is no universal API-key header name
+        # to guess -- services use X-API-Key, api-key, Ocp-Apim-Subscription-Key
+        # and others. Writing a wrong header silently is worse than writing none,
+        # so point at -Headers, which the loop above forwards verbatim.
+        Write-Warning "AuthType '$AuthType' cannot be bridged to Claude Desktop automatically; no Authorization header was written. Re-run with -Headers @{ '<YourKeyHeader>' = '<key>' } to send the key under the header your service expects."
+    }
+
     $claudeServerConfig = @{
         command = "npx"
-        args = @("-y", "@anthropic/mcp-proxy@$mcpProxyVersion", $ServerUrl)
+        args    = $claudeArgs
     }
+    if ($claudeEnv.Count -gt 0) {
+        $claudeServerConfig["env"] = $claudeEnv
+    }
+
     Add-McpServer $claudeConfig "Claude Desktop" $claudeServerConfig
 }
 
 if ($Tool -eq "vscode" -or $Tool -eq "all") {
     if ($Headers.Count -gt 0 -or $AuthType -ne "none") {
-        Write-Warning "VS Code MCP config supports URL only. Headers/auth will not be applied to this target."
+        Write-Warning "This script writes a URL-only entry for VS Code; headers/auth will NOT be applied and FabricIQ will fail to authenticate. VS Code does support headers -- see mcp-setup/README.md for a working hand-written mcp.json."
     }
     $vscodeConfig = Join-Path $env:APPDATA "Code\User\settings.json"
     if (Test-Path $vscodeConfig) {

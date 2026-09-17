@@ -9,7 +9,7 @@
 # materialises, so a single installed skill keeps every shared reference.
 
 name: skills-for-fabric
-version: 0.3.16
+version: 0.3.17
 description: Microsoft Fabric skills for AI coding agents, with shared reference material.
 author: Microsoft Fabric
 license: MIT
@@ -24,9 +24,9 @@ dependencies:
     - name: FabricIQ
       registry: false
       transport: http
-      url: https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365
+      url: https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq
       headers:
-        X-VARIANTS: "Fabric.Routing.PowerBIDataExploration"
+        X-VARIANTS: "Fabric.Routing.FabricIQ.V1"
       tools:
         - "*"
     - name: fabric-sqlendpoint

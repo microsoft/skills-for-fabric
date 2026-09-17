@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft-07/schema",
   "name": "fabric-skills",
   "description": "Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-  "version": "0.3.16",
+  "version": "0.3.17",
   "license": "MIT",
   "repository": "https://github.com/microsoft/skills-for-fabric",
   "keywords": [
@@ -52,9 +52,9 @@
   "mcpServers": {
     "FabricIQ": {
       "type": "http",
-      "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
+      "url": "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq",
       "headers": {
-        "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
+        "X-VARIANTS": "Fabric.Routing.FabricIQ.V1"
       },
       "tools": [
         "*"

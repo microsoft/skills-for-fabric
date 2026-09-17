@@ -2,7 +2,7 @@
   "name": "fabric-collection",
   "metadata": {
     "description": "Microsoft Skills for Fabric collection for GitHub Copilot CLI",
-    "version": "0.3.16"
+    "version": "0.3.17"
   },
   "owner": {
     "name": "Microsoft",
@@ -13,7 +13,7 @@
       "name": "fabric-skills",
       "source": "./plugins/fabric-skills",
       "description": "Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.16",
+      "version": "0.3.17",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -48,9 +48,9 @@
       "mcpServers": {
         "FabricIQ": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
+          "url": "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq",
           "headers": {
-            "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
+            "X-VARIANTS": "Fabric.Routing.FabricIQ.V1"
           },
           "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
@@ -85,7 +85,7 @@
       "name": "skills-for-fabric",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 pre-0.3.0 users only; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.16",
+      "version": "0.3.17",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -120,9 +120,9 @@
       "mcpServers": {
         "FabricIQ": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
+          "url": "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq",
           "headers": {
-            "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
+            "X-VARIANTS": "Fabric.Routing.FabricIQ.V1"
           },
           "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
@@ -157,7 +157,7 @@
       "name": "fabric-authoring",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.16",
+      "version": "0.3.17",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -192,9 +192,9 @@
       "mcpServers": {
         "FabricIQ": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
+          "url": "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq",
           "headers": {
-            "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
+            "X-VARIANTS": "Fabric.Routing.FabricIQ.V1"
           },
           "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
@@ -229,7 +229,7 @@
       "name": "fabric-consumption",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.16",
+      "version": "0.3.17",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -264,9 +264,9 @@
       "mcpServers": {
         "FabricIQ": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
+          "url": "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq",
           "headers": {
-            "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
+            "X-VARIANTS": "Fabric.Routing.FabricIQ.V1"
           },
           "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
@@ -301,7 +301,7 @@
       "name": "fabric-operations",
       "source": "./plugins/fabric-skills",
       "description": "[DEPRECATED ALIAS of fabric-skills@fabric-collection \u2014 the persona-axis bundles were retired; new installs should use fabric-skills.] Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-      "version": "0.3.16",
+      "version": "0.3.17",
       "skills": [
         "./skills/fabriciq",
         "./skills/semantic-model-authoring",
@@ -336,9 +336,9 @@
       "mcpServers": {
         "FabricIQ": {
           "type": "http",
-          "url": "https://api.fabric.microsoft.com/v1/mcp/fabricaihub/integrations/m365",
+          "url": "https://fabriciq.svc.cloud.microsoft/v1/mcp/fabriciq",
           "headers": {
-            "X-VARIANTS": "Fabric.Routing.PowerBIDataExploration"
+            "X-VARIANTS": "Fabric.Routing.FabricIQ.V1"
           },
           "headersHelper": "az account get-access-token --resource https://api.fabric.microsoft.com --query \"{Authorization: join(' ', ['Bearer', accessToken])}\" --output json --only-show-errors"
         },
@@ -373,13 +373,10 @@
       "name": "powerbi-authoring",
       "source": "./plugins/powerbi-authoring",
       "description": "Developer skills for authoring Microsoft Power BI solutions.",
-      "version": "0.3.16",
+      "version": "0.3.17",
       "skills": [
         "./skills/semantic-model-authoring",
-        "./skills/powerbi-report-planning",
-        "./skills/powerbi-report-design",
-        "./skills/powerbi-report-authoring",
-        "./skills/powerbi-report-management"
+        "./skills/powerbi-report-cli"
       ],
       "agents": [],
       "mcpServers": {

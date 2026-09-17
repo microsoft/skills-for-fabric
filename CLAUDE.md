@@ -143,10 +143,11 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - **Power BI Reports**: PBIR/PBIP report projects, visual design, Desktop validation, and Fabric report item management
   - Docs: https://learn.microsoft.com/en-us/power-bi/developer/projects/projects-report
   - Skill docs: https://aka.ms/Report_Authoring_skill_LearnDocs
-  - Planning skill: `skills/powerbi-report-planning/SKILL.md` — requirements, page plan, approval gate
-  - Design skill: `skills/powerbi-report-design/SKILL.md` — archetype routing, layout, theme, accessibility
-  - Authoring skill: `skills/powerbi-report-authoring/SKILL.md` — PBIR/PBIP file mechanics, Desktop reload/screenshot
-  - Management skill: `skills/powerbi-report-management/SKILL.md` — Fabric report item CRUD via `az rest`
+  - Power BI report skill: `skills/powerbi-report-cli/SKILL.md` -- one skill covering the whole report item
+    - Planning mode: requirements, page plan, approval gate
+    - Design mode: archetype routing, layout, theme, accessibility
+    - Authoring mode: PBIR/PBIP file mechanics, Desktop reload/screenshot
+    - Management mode: Fabric report item CRUD via `az rest`
 
 ### Data Science
 - **Data Agents**: Conversational AI over Fabric data sources
