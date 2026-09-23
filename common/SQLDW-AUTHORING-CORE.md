@@ -304,8 +304,8 @@ WITH (FILE_TYPE = 'PARQUET');
 ```
 
 **Rules**:
-- Formats: **PARQUET**, **CSV**. Sources: **ADLS Gen2**, **Azure Blob Storage**, **OneLake** (preview).
-- Authenticates as the executing Entra ID user by default. Alternatives: SAS token in CREDENTIAL clause, or workspace identity for firewall-protected storage.
+- Formats: **PARQUET**, **CSV**, and *JSONL*. Sources: **ADLS Gen2**, **Azure Blob Storage**, **OneLake** (preview).
+- Authenticates as the executing Entra ID user by default. Alternatives: SAS token or storage account key in CREDENTIAL clause, or workspace identity for firewall-protected storage.
 - Files ≥ 4 MB for optimal performance. ADLS Gen2 preferred over legacy Blob Storage.
 
 ### OPENROWSET (Read + Transform + Ingest)
