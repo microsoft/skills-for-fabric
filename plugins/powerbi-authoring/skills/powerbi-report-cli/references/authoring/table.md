@@ -1,5 +1,23 @@
 # Table & Matrix Visual Authoring Guide
 
+## Contents
+
+- [Default Rule — Grow to Fit](#default-rule--grow-to-fit)
+- [Table (`tableEx`)](#table-tableex)
+- [Matrix (`pivotTable`)](#matrix-pivottable)
+- [Theme Approach](#theme-approach)
+- [Row Banding (Table & Matrix)](#row-banding-table--matrix)
+  - [Values Object Properties](#values-object-properties)
+  - [Table/Matrix Formatting Regions](#tablematrix-formatting-regions)
+  - [Style Presets for Tables](#style-presets-for-tables)
+  - [`backColor` vs `backColorPrimary` — Different Purposes](#backcolor-vs-backcolorprimary--different-purposes)
+  - [`fontColor` vs `fontColorPrimary` — Different Purposes (pivotTable)](#fontcolor-vs-fontcolorprimary--different-purposes-pivottable)
+  - [Full Table Example with Custom Styling](#full-table-example-with-custom-styling)
+- [Conditional Formatting](#conditional-formatting)
+- [Column width (static)](#column-width-static)
+- [References](#references)
+
+
 Tables (`tableEx`) and matrices (`pivotTable`) in PBIR format.
 
 ## Default Rule — Grow to Fit
@@ -340,9 +358,95 @@ inherits from `rowHeaders.fontColor` instead.
 
 ---
 
+## Conditional Formatting
+
+Data-driven cell formatting for tables and matrices — gradients, rule-based
+colors, icon sets, data bars, web-URL links, field-driven colors, image field
+values, and totals/subtotal targeting — is documented centrally in
+conditional-formatting.md (see `conditional-formatting.md`). See the
+Tables/matrices formatting options (see `conditional-formatting.md`, section `tablesmatrices`)
+for the full menu of supported CF types, their objects, and selectors.
+
+For **static** total/subtotal colors (not data-driven), use `rowTotal` /
+`columnTotal` / `subTotals` as described in
+[Table/Matrix Formatting Regions](#tablematrix-formatting-regions) above.
+
+## Column width (static)
+
+Column width is a **static layout value, not conditional formatting** — Power BI
+has no measure-driven/conditional column width (there is no **fx** /
+"Format by field value" / rules / gradient entry for width on `tableEx` or
+`pivotTable`). A column has only two width states: an **authored literal** pixel
+width, or the **Desktop default** (auto-fit / grow-to-fit) when no literal is
+set. There is no "width scales with the data" state.
+
+Static per-column widths live in the **`columnWidth`** object — one array entry
+per column, each with a numeric `value` and a **`metadata`** selector whose
+queryRef matches that column's projection. Auto-sizing must be **off** for custom
+widths to take effect, which is the explicit opt-out from
+[Default Rule — Grow to Fit](#default-rule--grow-to-fit) above — only do this when
+the user explicitly wants fixed widths.
+
+```json
+"objects": {
+  "columnHeaders": [{
+    "properties": {
+      "columnAdjustment": { "expr": { "Literal": { "Value": "'fixedWidth'" } } },
+      "autoSizeColumnWidth": { "expr": { "Literal": { "Value": "false" } } }
+    }
+  }],
+  "columnWidth": [
+    {
+      "properties": { "value": { "expr": { "Literal": { "Value": "180D" } } } },
+      "selector": { "metadata": "Sum(Sales.Amount)" }
+    },
+    {
+      "properties": { "value": { "expr": { "Literal": { "Value": "240D" } } } },
+      "selector": { "metadata": "Product.Category" }
+    }
+  ]
+}
+```
+
+- **`columnWidth.value`** — numeric, decimal-suffixed (`180D`); one entry per
+  column to pin. Pinned widths only apply with auto-sizing off (this section sets
+  `autoSizeColumnWidth: false` + `columnAdjustment: 'fixedWidth'`, since
+  grow-to-fit otherwise recomputes every column from its content and ignores
+  `columnWidth`). In that fixed mode a column with **no** `columnWidth` entry is
+  **not** sized to its content — it falls back to the **default fixed width
+  (90px)**. So pin every column whose width you care about; leaving one out gives
+  it 90px, not an auto fit. Only a static
+  `Literal` is valid — a data-bound expression
+  (`Measure`/`Column`/`Aggregation`/`Conditional`/`FillRule`) is rejected by
+  `powerbi-report-author validate` with
+  **`PBIR_COLUMN_WIDTH_DATA_BOUND_UNSUPPORTED`**, because Desktop cannot resolve a
+  pixel width from data and reverts to the default width.
+- **Selector** — `{ "metadata": "<column queryRef>" }` (e.g. `Sum(Sales.Amount)`
+  for a measure column, `Product.Category` for a column). `metadata`-only — **no**
+  `dataViewWildcard`.
+- **`autoSizeColumnWidth` must be `false`** — while `true` (the grow-to-fit
+  default), Desktop recomputes widths and discards custom `columnWidth` entries.
+- **`columnHeaders.columnAdjustment` must be `'fixedWidth'`** — valid values are
+  `fitToContent`, `growToFit`, and `fixedWidth`; only `fixedWidth` honors
+  per-column `columnWidth`. (`validate` rejects any other string, e.g. `'none'`,
+  with `PBIR_FORMATTING_ENUM_INVALID`.)
+- **`columnHeaders.defaultColumnWidth`** sets one fixed width for *all* columns (a
+  static fallback), independent of per-column `columnWidth`.
+
+If a user asks for widths that change with the data ("make the column wider when
+the value is large"), tell them Power BI does not support conditional column
+width and offer the supported alternatives: static per-column widths (above),
+grow-to-fit auto-sizing, or an in-cell
+data bar (see `conditional-formatting.md`, section `type-4-data-bars`) to convey magnitude inside
+a fixed-width column.
+
+**Measure-driven cell text** is not conditional formatting either: a measure that
+returns text (e.g. `IF(...,"On track","At risk")`) is shown by binding it as a
+normal **Values** projection — no `objects`/selector.
+
 ## References
 
-- [formatting.md](formatting.md) — selectors, encoding, conditional formatting, VCO cascade
-- [theming.md § Visual Styles](theming.md#6-visual-styles-visualstyles) — theme-level defaults
+- formatting.md (see `formatting.md`) — selectors, encoding, conditional formatting, VCO cascade
+- theming.md § Visual Styles (see `theming.md`, section `6-visual-styles-visualstyles`) — theme-level defaults
 - `powerbi-report-author formatting list-objects tableEx` — discover all formatting objects
 - `powerbi-report-author formatting describe-object tableEx columnHeaders` — inspect column header properties

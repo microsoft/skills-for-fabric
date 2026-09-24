@@ -1,5 +1,29 @@
 # Accessibility for Data Visualization
 
+## Contents
+
+- [Core Principles](#core-principles)
+- [WCAG 2.1 / 2.2 Checklist for Dashboards](#wcag-21--22-checklist-for-dashboards)
+- [Alt Text Patterns](#alt-text-patterns)
+  - [1. Headline + Trend](#1-headline--trend)
+  - [2. Chart Structure + Notable Finding](#2-chart-structure--notable-finding)
+  - [3. Comparison Framing](#3-comparison-framing)
+  - [4. Data-as-Table Fallback](#4-data-as-table-fallback)
+- [Keyboard Navigation Reference](#keyboard-navigation-reference)
+- [WCAG Contrast Requirements](#wcag-contrast-requirements)
+  - [Ratio Formula](#ratio-formula)
+  - [Thresholds](#thresholds)
+  - [Worked Examples](#worked-examples)
+- [Contrast Checking Workflow](#contrast-checking-workflow)
+  - [Tools](#tools)
+  - [Worked Examples](#worked-examples)
+- [Color Vision Deficiency (CVD) Section](#color-vision-deficiency-cvd-section)
+- [Power BI Accessibility Grounding](#power-bi-accessibility-grounding)
+- [Archetype Accessibility Priorities](#archetype-accessibility-priorities)
+- [Accessibility Testing Checklist](#accessibility-testing-checklist)
+- [DAX-Driven Alt Text](#dax-driven-alt-text)
+
+
 ## Core Principles
 
 1. **Color is never the sole signal** (WCAG 1.4.1) — always pair color with shape, label, icon, or pattern.

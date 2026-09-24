@@ -1,5 +1,33 @@
 # Narrative / Data Story
 
+## Contents
+
+- [Job To Be Done](#job-to-be-done)
+- [Core Principles](#core-principles)
+- [Structural Patterns (Segel & Heer)](#structural-patterns-segel--heer)
+  - [Decision Table: Which Pattern?](#decision-table-which-pattern)
+- [Layout Variants](#layout-variants)
+  - [Variant A — 7/5 Split (default, balanced argument)](#variant-a--75-split-default-balanced-argument)
+  - [Variant B — Single-Column-Scroll](#variant-b--single-column-scroll)
+  - [Variant C — Annotated-Hero](#variant-c--annotated-hero)
+- [Chart Selection](#chart-selection)
+  - [Choosing the Anchor Chart](#choosing-the-anchor-chart)
+  - [Do NOT Use](#do-not-use)
+- [Annotation Techniques](#annotation-techniques)
+  - [Annotation Z-Order](#annotation-z-order)
+- [Color & Typography](#color--typography)
+  - [Highlight + Grey Context Palette](#highlight--grey-context-palette)
+  - [Typography](#typography)
+- [Interaction Design](#interaction-design)
+  - [Do NOT Use on Narrative Pages](#do-not-use-on-narrative-pages)
+- [PBI Formatting Reference](#pbi-formatting-reference)
+  - [Text & Annotation Visuals](#text--annotation-visuals)
+  - [Navigation](#navigation)
+  - [Narrative Intelligence](#narrative-intelligence)
+  - [Page-Level](#page-level)
+- [Decision Checklist](#decision-checklist)
+
+
 > **Archetype**: Narrative / Data Story
 > **Theme**: for generated reports, preserve `references/design/assets/base.json` safeguards while adapting `dataColors` to domain; for brownfield, preserve the existing theme unless a theme swap is requested
 > **Canvas**: greenfield default FHD 1920 x 1080; preserve existing size for brownfield unless resize is approved · 7/5 asymmetric layout

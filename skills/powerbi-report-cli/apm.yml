@@ -3,8 +3,8 @@
 #     apm install microsoft/skills-for-fabric --skill powerbi-report-cli
 
 name: powerbi-report-cli
-version: 0.1.0
-description: "Plan, design, author and publish Power BI reports: requirements, scope, page archetypes, layout and charts, local PBIR/PBIP page and visual edits, and report item publish and rebind."
+version: 0.2.8
+description: "Plan, design, author, preview, publish, and manage Power BI reports across requirements, page design, local PBIR/PBIP edits, validation, screenshots, Fabric upload/download, and rebinding."
 author: Microsoft Fabric
 license: MIT
 

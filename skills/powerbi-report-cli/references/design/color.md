@@ -1,5 +1,26 @@
 # Color Strategy
 
+## Contents
+
+- [Core Principles](#core-principles)
+- [Palette Reference Tables](#palette-reference-tables)
+  - [Sequential Palettes](#sequential-palettes)
+  - [Diverging Palettes](#diverging-palettes)
+  - [Categorical Palettes](#categorical-palettes)
+- [Color Vision Deficiency (CVD) and WCAG Contrast](#color-vision-deficiency-cvd-and-wcag-contrast)
+- [Semantic Color Rules](#semantic-color-rules)
+- [Power BI Theme Grounding](#power-bi-theme-grounding)
+- [Color Assignment Strategy](#color-assignment-strategy)
+  - [Rules](#rules)
+  - [Example (4 cards + 3 charts on one page)](#example-4-cards--3-charts-on-one-page)
+  - [Implementation](#implementation)
+- [Archetype Calibration](#archetype-calibration)
+- [Highlight Pattern](#highlight-pattern)
+- [Conditional Formatting Techniques](#conditional-formatting-techniques)
+- [Color Assignment Rules](#color-assignment-rules)
+- [Palette Selection Decision Tree](#palette-selection-decision-tree)
+
+
 ## Core Principles
 
 1. **Palette family matches data family** — sequential for ordered, diverging for ±, categorical for nominal.

@@ -32,6 +32,7 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 - Use mssparkutils for Fabric-specific operations (fs, credentials, notebook)
 - Include partition columns for large tables
 - Run OPTIMIZE and VACUUM for table maintenance
+- Use `skills/project-osmos/SKILL.md` when a local agent should carry a complex Lakehouse, OneLake, notebook, or Spark outcome end to end; Fabric portal Copilot returns availability guidance without Project Osmos API calls.
 - Use `skills/spark-cli/SKILL.md` for notebook authoring and runs, Livy analysis, Spark diagnostics, and the full Materialized Lake View lifecycle.
 - MLV authoring resources: `skills/spark-cli/references/authoring/resources/materialized-lake-view-patterns.md` and `skills/spark-cli/references/authoring/resources/mlv-incremental-refresh-patterns.md`.
 
@@ -41,6 +42,7 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 - Prefer stored procedures for reusable logic
 - Always include TOP/LIMIT when exploring data
 - Skill: `skills/sqldw-cli/SKILL.md` - one skill with authoring, consumption and operations modes
+- Synapse Dedicated SQL Pool-to-Warehouse migration: use `skills/synapse-migration/SKILL.md`; run source Dedicated Pool SQL with `sqlcmd` and target Fabric Warehouse SQL with the Fabric SQL Endpoint MCP `execute_query` tool. Use `sqldw-cli` for standalone Warehouse work outside that migration.
 
 ### SQL Database (in Fabric, OLTP)
 - OLTP database with an enforced T-SQL surface (PK/FK/constraints), Query Store, and DMVs - distinct from the Warehouse

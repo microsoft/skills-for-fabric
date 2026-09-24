@@ -1,11 +1,21 @@
 # Pre-Flight Checklist
 
+## Contents
+
+- [Identity (Step 1)](#identity-step-1)
+- [Routing (Steps 2–3)](#routing-steps-23)
+- [Theme & propagation (Step 1 → Step 5)](#theme--propagation-step-1--step-5)
+- [Page-level layout (Step 6)](#page-level-layout-step-6)
+- [Accessibility (Step 7)](#accessibility-step-7)
+- [Final visual audit (after build)](#final-visual-audit-after-build)
+
+
 Walk through this before handing off the report spec/design contract to
 the `authoring` mode. Fix any failures first — the authoring skill will
 faithfully implement what you give it, including its flaws.
 
 For brownfield mode, also walk
-[`brownfield.md`](brownfield.md) §
+`brownfield.md` (see `brownfield.md`) §
 *Brownfield-specific Pre-Flight items*.
 
 ## Identity (Step 1)
@@ -21,12 +31,12 @@ For brownfield mode, also walk
 
 - [ ] **Tone committed** — the brief's `design_identity.tone` is a
       named catalog entry from
-      [`tone-catalog.md`](tone-catalog.md), OR a short elaboration
+      `tone-catalog.md` (see `tone-catalog.md`), OR a short elaboration
       that pins down the feel. One-word tones like "modern" or
       "professional" are not enough; replace.
 - [ ] **Signature committed** — the brief's `design_identity.signature`
       names a single concrete move from
-      [`signatures.md`](signatures.md) or an authored equivalent. The
+      `signatures.md` (see `signatures.md`) or an authored equivalent. The
       signature recurs on every page (or every relevant page).
 - [ ] **Tone and signature are coherent** — the signature pick fits
       the tone (see signatures.md § Composing tone + signature). If the
@@ -53,7 +63,7 @@ For brownfield mode, also walk
       `layout_variant` (A/B/C) AND a one-sentence `variant_rationale`
       citing the data signal that drove the pick. Same-archetype
       pages should rotate variants where data signals support it
-      (see [`archetype-composition.md`](archetype-composition.md) §
+      (see `archetype-composition.md` (see `archetype-composition.md`) §
       Cross-page variant rotation).
 
 ## Theme & propagation (Step 1 → Step 5)

@@ -1,3 +1,22 @@
+
+## Contents
+
+- [Must/Prefer/Avoid](#mustpreferavoid)
+  - [MUST](#must)
+  - [PREFER](#prefer)
+  - [AVOID](#avoid)
+- [Topic Files and Examples](#topic-files-and-examples)
+- [Workflow](#workflow)
+  - [Step 0 — Data-First Investigation](#step-0--data-first-investigation)
+  - [Step 1 — Design Identity](#step-1--design-identity)
+  - [Step 2 — Archetype Router](#step-2--archetype-router)
+  - [Step 3 — Chart Selection](#step-3--chart-selection)
+  - [Step 4 — Visual Configuration](#step-4--visual-configuration)
+  - [Step 5 — Theme](#step-5--theme)
+  - [Step 6 — Canonical Design Contract](#step-6--canonical-design-contract)
+  - [Step 7 — Review and Handoff](#step-7--review-and-handoff)
+- [Gotchas](#gotchas)
+
 <!-- Mode reference for the `powerbi-report-cli` skill. Loaded on demand from `skills/powerbi-report-cli/SKILL.md` when the request matches the `design` mode. -->
 
 # powerbi-report-cli design mode -- Power BI Report Visual Design
@@ -85,11 +104,11 @@ analytical question. If the semantic model lacks the needed derived insight
 dynamic explanatory text), drop or repurpose that zone rather than filling it
 with a duplicate absolute measure.
 
-For multi-page reports, see [`references/design/archetype-composition.md`](design/archetype-composition.md) — common compositions (Executive + Drill, Ops + Detail, Story + Evidence, Multi-domain) + cross-page variant rotation rules. Avoid mono-archetype reports; same-archetype pages must rotate variants where data signals support it.
+For multi-page reports, see `references/design/archetype-composition.md` (see `design/archetype-composition.md`) — common compositions (Executive + Drill, Ops + Detail, Story + Evidence, Multi-domain) + cross-page variant rotation rules. Avoid mono-archetype reports; same-archetype pages must rotate variants where data signals support it.
 
 ### Step 3 — Chart Selection
 
-Read [`references/design/chart-selection.md`](design/chart-selection.md) to match each analytical question to the right visual type. Respect the encoding hierarchy: position → length → angle → area → hue. Sample the data first — a line chart with flat lines or a bar chart with two bars indicates the wrong visual choice.
+Read `references/design/chart-selection.md` (see `design/chart-selection.md`) to match each analytical question to the right visual type. Respect the encoding hierarchy: position → length → angle → area → hue. Sample the data first — a line chart with flat lines or a bar chart with two bars indicates the wrong visual choice.
 
 ### Step 4 — Visual Configuration
 
@@ -106,8 +125,8 @@ wildcard `visualStyles["*"]["*"].padding` / background unless every affected
 visual type is checked and overridden. If the report already has a theme,
 preserve it unless the user asked for a theme swap or brand refresh. For full
 mechanics of theme registration — including how to choose the `$schema`
-version when adapting `references/design/assets/base.json` — use the `authoring`
-mode.
+version when adapting `references/design/assets/base.json` — use the `authoring` mode
+skill.
 
 ### Step 6 — Canonical Design Contract
 
@@ -132,12 +151,14 @@ Design Brief:
   contract_version: 1
   mode: greenfield
   design_identity: { tone: <tone>, signature: <signature> }
+  navigation_model: <page_navigator | buttons | bookmark_navigator | none>  # primary report-wide nav (see references/design/interactivity.md § Navigation Model Decision)
   pages:
     - name: <descriptive insight title>
       role: <landing | detail | drillthrough | tooltip>
       archetype: <Executive | Analytical | Operational | Narrative | Comparative>
       layout_variant: <A | B | C>
       variant_rationale: <one sentence: which data signal drove this pick>
+      navigation: []   # nav elements/actions on this page; [] if none. Each: { element: <page_navigator|button|bookmark_navigator>, action: <PageNavigation|Back|Bookmark|Drillthrough|ApplyAllSlicers|ClearAllSlicers|WebUrl|Qna>, target: <page name|bookmark|url> }
       layout_contract:
         canvas: { width: 1920, height: 1080, margin: 32, gutter: 24, snap: 8 }
         grid:

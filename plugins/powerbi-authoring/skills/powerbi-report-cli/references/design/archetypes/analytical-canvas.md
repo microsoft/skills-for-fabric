@@ -1,5 +1,31 @@
 # Analytical Canvas
 
+## Contents
+
+- [Job To Be Done](#job-to-be-done)
+- [Core Principles](#core-principles)
+- [Layout Variants](#layout-variants)
+  - [Variant A — Filter-Rail (default for dense exploration)](#variant-a--filter-rail-default-for-dense-exploration)
+  - [Variant B — Inline-Slicers (1–3 slicers, content gets full width)](#variant-b--inline-slicers-13-slicers-content-gets-full-width)
+  - [Variant C — Small-Multiples-Grid](#variant-c--small-multiples-grid)
+- [Chart Selection](#chart-selection)
+  - [Use](#use)
+  - [Do NOT Use](#do-not-use)
+- [Filter Rail Design](#filter-rail-design)
+  - [Control Selection Table](#control-selection-table)
+- [Color & Typography](#color--typography)
+  - [Palette Strategy](#palette-strategy)
+  - [Focus + Context](#focus--context)
+  - [Typography](#typography)
+- [Interaction Design](#interaction-design)
+  - [Interaction Precedence](#interaction-precedence)
+- [PBI Formatting Reference](#pbi-formatting-reference)
+  - [Slicers](#slicers)
+  - [Analytical Visuals](#analytical-visuals)
+  - [Page-Level Settings](#page-level-settings)
+- [Decision Checklist](#decision-checklist)
+
+
 > **Archetype**: Analytical Canvas
 > **Theme**: for generated reports, preserve `references/design/assets/base.json` safeguards while adapting `dataColors` to domain; for brownfield, preserve the existing theme unless a theme swap is requested
 > **Canvas**: greenfield default FHD 1920 x 1080; preserve existing size for brownfield unless resize is approved · F-pattern
@@ -247,6 +273,10 @@ This is the richest-interaction archetype. All patterns below are expected.
 | Page tooltips | Rich detail on hover | 320 × 240 tooltip pages |
 | Edit interactions | Customize cross-filter behavior | Remove noisy cross-filter links |
 | Sync slicers | `syncGroup` across pages | Consistent filter context across pages |
+
+**Navigation model**: Analytical pages lean on **custom buttons** for drill-through and slicer
+actions (reset/apply), plus drill-down — the richest budget. See
+interactivity.md § Navigation Model Decision (see `../interactivity.md`, section `navigation-model-decision`).
 
 ### Interaction Precedence
 

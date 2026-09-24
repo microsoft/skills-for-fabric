@@ -23,7 +23,13 @@ new), **ask** before proceeding.
 ## Entry workflow (6 steps)
 
 1. **Load the report** — confirm the existing PBIP path with the user.
-2. **Screenshot all pages** via `powerbi-desktop screenshot-all --pid <pid>`
+2. **Screenshot all pages** — first open the report in Desktop with
+   `powerbi-report-author preview <path> --host desktop` (only a bare preview can
+   launch Desktop; run
+   `powerbi-report-author preview <path> --host desktop --status` first, because
+   a bare preview re-reads PBIR into a window that already holds the report and
+   discards its unsaved edits), then capture with
+   `powerbi-report-author preview <path> --host desktop --screenshot <dir> --all-pages`
    — these become the "before" evidence.
 3. **Diagnose** the existing report against:
    - `references/design/anti-patterns.md`

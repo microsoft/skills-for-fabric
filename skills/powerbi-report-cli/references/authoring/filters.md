@@ -1,5 +1,19 @@
 # Filters authoring Workflows & Examples
 
+## Contents
+
+- [Add a Filter](#add-a-filter)
+  - [Filter Types](#filter-types)
+  - [Categorical Filter (In-list)](#categorical-filter-in-list)
+  - [Inverted Selection (Exclude)](#inverted-selection-exclude)
+  - [Exclude/Include Filter](#excludeinclude-filter)
+  - [Range Filter](#range-filter)
+  - [Advanced Filter](#advanced-filter)
+  - [TopN Filter](#topn-filter)
+  - [Relative Date/Time filter](#relative-datetime-filter)
+- [References](#references)
+
+
 > Referenced from SKILL.md. Read this when creating or modifying filters
 > For reference of expressions, see **references/authoring/expressions.md**
 >
@@ -7,7 +21,7 @@
 > fonts, Applied/Available state styling, pane width) — these are stored in
 > `page.json → objects.outspacePane` / `filterCard`, separate from the
 > `filterConfig` definitions covered below. See
-> [`filter-pane.md`](filter-pane.md).
+> `filter-pane.md` (see `filter-pane.md`).
 
 ## Add a Filter
 

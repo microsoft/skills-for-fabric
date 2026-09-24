@@ -1,6 +1,14 @@
 # Screenshot Review
 
-Use this file after `powerbi-desktop` screenshot capture and before reporting completion for any rendered-output change.
+Use this file after mandatory screenshot capture through the host-specific
+workflow in preview.md (see `preview.md`) and before reporting completion for every
+rendered-output change. Capturing and reviewing every affected page is part of
+the authoring completion gate, even when the user did not explicitly request a
+screenshot.
+
+Keep every validation capture and retry in the workflow-owned directory
+selected through preview.md (see `preview.md`). Delete that directory only after the
+complete review loop finishes.
 
 ## Review workflow
 
@@ -10,9 +18,10 @@ Perform an independent screenshot review using:
 2. A short description of what changed and what should be visible.
 3. The checklist and troubleshooting table below.
 
-Do not rely only on structural validation. Fix any issue found in screenshots, then repeat the PBIR validate → Desktop reload → screenshot review loop.
+Do not rely only on structural validation. Fix any issue found in screenshots,
+then repeat the PBIR validate -> preview -> screenshot review loop.
 
-> **Screenshot scope:** Each screenshot captures the report page **AND** the right-hand filter pane (`outspacePane`) when the filter pane is enabled and expanded. Filter pane and filter card (`filterCard`) chrome are formattable surfaces — review them alongside on-page visuals (background color, border, font color, search/checkbox treatment, applied vs available states). See [filter-pane.md](filter-pane.md) for the formatting model.
+> **Screenshot scope:** Each screenshot captures the report page **AND** the right-hand filter pane (`outspacePane`) when the filter pane is enabled and expanded. Filter pane and filter card (`filterCard`) chrome are formattable surfaces — review them alongside on-page visuals (background color, border, font color, search/checkbox treatment, applied vs available states). See filter-pane.md (see `filter-pane.md`) for the formatting model.
 
 ## Checklist
 

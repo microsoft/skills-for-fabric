@@ -1,6 +1,8 @@
 ---
 name: powerbi-report-cli
-description: "Plan, design, author and publish Power BI reports: requirements, scope, page archetypes, layout and charts, local PBIR/PBIP page and visual edits, and report item publish and rebind. Model and DAX work is semantic-model-authoring; natural-language data questions are fabriciq. Triggers:plan Power BI report,gather report requirements,design Power BI report page,choose chart type,add PBIR report page,validate PBIR,publish PBIP,rebind report"
+description: "Plan, design, author, preview, publish, and manage Power BI reports across requirements, page design, local PBIR/PBIP edits, validation, screenshots, Fabric upload/download, and rebinding. Use for report lifecycle work; use semantic-model-authoring for model or DAX changes and fabriciq for data questions. Triggers: plan Power BI report, design report page, edit PBIR, preview PBIP, publish report, rebind report"
+metadata:
+  version: 1.0.4
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -8,104 +10,231 @@ description: "Plan, design, author and publish Power BI reports: requirements, s
 > including every LRO poll, `fabric_lro` and retry. Snippets omit it — add it anyway.
 
 > **CRITICAL NOTES**
-> 1. To find the workspace details (including its ID) from workspace name: list all workspaces and, then, use JMESPath filtering
-> 2. To find the item details (including its ID) from workspace ID, item type, and item name: list all items of that type in that workspace and, then, use JMESPath filtering
-> 3. **Skill disambiguation**: use `powerbi-report-cli` for the report artefact -- requirements, design, PBIR/PBIP page and visual edits, and publishing. Semantic model, measure and DAX work is `semantic-model-authoring`; natural-language questions about report data are `fabriciq`.
+> 1. To find workspace details, including its ID, from a workspace name: list
+>    all workspaces, then use JMESPath filtering.
+> 2. To find item details, including its ID, from a workspace ID, item type,
+>    and item name: list all items of that type in that workspace, then use
+>    JMESPath filtering.
+> 3. Use `powerbi-report-cli` for the report artifact: requirements, design,
+>    PBIR/PBIP page and visual edits, preview, and publishing. Semantic model,
+>    measure, and DAX work belongs to a semantic-model skill. Natural-language
+>    questions about report data belong to `fabriciq`.
 
-# Power BI Reports -- CLI Skill
+# Power BI Reports - CLI Skill
 
-This one skill owns Power BI reports end to end: requirements and scope, visual design, local PBIR/PBIP page and visual edits, and publishing/rebinding of report items in Fabric.
+This skill owns the Power BI report lifecycle end to end: requirements and
+scope, visual design, local PBIR/PBIP authoring and preview, and report-item
+transport to and from Microsoft Fabric.
 
-It is a **mode dispatcher** and contains NO procedures. Pick the mode that matches the request from the table below, then **read the matching `references/<mode>.md` file end to end with your file-reading tool BEFORE issuing a single command**. That file holds the endpoints, payload shapes, templates and gotchas; acting without it produces wrong PBIR JSON and wrong results.
+It is a **mode dispatcher** and intentionally contains no detailed procedures.
+Select the mode that matches the request, then read the matching mode reference
+end to end before acting. The mode file holds the required workflow, commands,
+payloads, templates, and failure rules.
 
-## Mode selection
+## Mode Selection
 
-| Mode | Use when the request ... | Example triggers | Read this first |
+| Mode | Use when the request... | Existing route examples | Read first |
 |---|---|---|---|
-| `planning` | asks for a NEW report end to end and needs requirements, scope, dependency checks, a page plan and an approval gate before anything is built | build me a dashboard, create a new report, plan then implement, walk me through creating a report | [references/planning.md](references/planning.md) |
-| `design` | asks what a report should LOOK like, before any file exists or as advice only: tone, page archetype, chart choice, layout, color, typography, brand/theme direction, accessibility, or a critique of an existing design | design the page, choose chart type, make this look professional, apply our brand, redesign this report, WCAG contrast | [references/design.md](references/design.md) |
-| `authoring` | edits LOCAL PBIR/PBIP files: add or change pages, visuals, filters, slicers, bookmarks, themes, formatting; restyle or emphasise an existing visual; validate PBIR; reload Power BI Desktop and take screenshots | add report page, edit PBIR, add visual to PBIP, format report visual, make this card stand out, validate PBIR, reload Desktop screenshot | [references/authoring.md](references/authoring.md) |
-| `management` | moves a report item to or from a Fabric workspace: publish/upload a PBIP, list reports, get or update a report definition, rebind, delete | publish PBIP, upload PBIR definition, download report definition, list workspace reports, rebind report | [references/management.md](references/management.md) |
+| `planning` | creates a new report/dashboard and needs requirements, model/dependency inspection, scope, a page plan, and approval before implementation | create a report, build a dashboard, create from a semantic model, plan then implement, walk me through creating a report | [references/planning.md](references/planning.md), then [references/planning-part-02.md](references/planning-part-02.md) |
+| `design` | decides what a report should look like: tone, signature, page archetype, chart type, layout, color, typography, theme direction, accessibility, brand application, redesign, or critique | design a Power BI report, make the dashboard professional, choose a chart, apply a brand, redesign the report, create a design brief | [references/design.md](references/design.md) |
+| `authoring` | reads or edits local PBIR/PBIP files, validates them, previews the report, or captures screenshots | edit PBIR, create/add a report page or visual, format a visual, add filters/slicers/bookmarks/themes, validate PBIR, preview/reload/screenshot in Desktop or service | [references/authoring.md](references/authoring.md) |
+| `management` | moves a report definition to or from Fabric or manages the workspace report item | publish/upload/download PBIR or PBIP, list reports, get/update/delete a report, rebind a report | [references/management.md](references/management.md) |
 
-### Mode boundary rule
+## Mode Boundary Rules
 
-Classify by **intent**, not by which file is open.
+- Classify by **intent**, not by which file or tool is already open.
+- `design` decides what the report should look like; `authoring` writes the
+  PBIR that realizes it. Choosing a chart type is `design`; encoding it into
+  `visual.json` is `authoring`.
+- Restyling or reformatting an existing local report is `authoring`, even when
+  the request uses design language. Use `design` when the user wants advice or
+  a design contract rather than a file change.
+- `authoring` changes local files and performs preview/validation. It does not
+  publish to Fabric.
+- `management` transports definitions and manages Fabric report items. It does
+  not invent or directly author PBIR content.
+- `planning` owns the guided requirements-to-approval flow for a new report. A
+  focused edit to an existing report goes directly to `authoring`.
 
-- `design` decides *what* the report should look like; `authoring` writes the PBIR that realises it. Choosing a chart type is `design`; encoding that chart into `visual.json` is `authoring`.
-- Restyling, emphasising or reformatting a visual that ALREADY EXISTS in a local PBIP is `authoring`, not `design` -- it is a formatting-only file edit. "Make this card stand out", "without re-authoring it" and "without rebuilding it" mean *change the formatting rather than recreate the visual*; they do NOT mean stop touching files. Route such a request to `design` only when there is no project to edit, or the user explicitly asks for advice instead of a change.
-- `authoring` touches LOCAL files only and never calls the Fabric REST API. `management` is the only mode that transports a definition to or from a workspace; it never authors PBIR content.
-- `planning` owns the guided requirements-to-approval workflow for a NEW report. A small, surgical edit to an existing report is `authoring`, not `planning`.
+A greenfield request can span modes in this order:
 
-A greenfield build legitimately spans modes in the order `planning` -> `design` -> `authoring` -> `management`. Handle them one at a time, announce each switch, and read that mode's reference before you start that part. If the mode is still ambiguous after this table, ask one short clarifying question instead of guessing.
+```text
+planning -> design -> authoring -> management
+```
 
-## Terminal write -- the step you must not skip
+Handle one mode at a time. Announce each switch and read the new mode reference
+before starting that part. The `planning` approval gate is a turn boundary:
+never build or publish until the user explicitly approves the locked spec in a
+later reply.
 
-Reading the reference and planning the change is NOT completing the task. Each mode ends with a concrete deliverable. If you did not produce it, nothing was persisted -- say so explicitly rather than reporting success.
+## Required Deliverable by Mode
 
-| Mode | Terminal write |
+| Mode | Completion requirement |
 |---|---|
-| `planning` | Persist the locked spec to `_brief/report-spec.md` (or the path the user named) covering requirements, page plan, dependencies and an approval gate. Emitting it in chat only is not the deliverable -- unless the user explicitly said not to write files yet, in which case emit the full spec and name the path it will be persisted to. Do not build or publish before the user explicitly approves. |
-| `design` | Emit the `Design Brief:` YAML block, including `archetype` per page and `design_identity`. This mode edits nothing: no PBIR files, no `theme.json`, no Fabric calls. |
-| `authoring` | Write the PBIR files, then run `powerbi-report-author validate <path-to-.Report-dir>` after each logical batch and report the result. For rendered-output changes also reload Power BI Desktop and review the screenshot. Do not publish to Fabric from this mode. |
-| `management` | `POST /v1/workspaces/{ws}/reports` to create (or `POST .../reports/{id}/updateDefinition` with **every** definition part to update), then poll the LRO to completion. Downloading with `POST .../reports/{id}/getDefinition?format=PBIR` is read-only and persists nothing. |
-
-Before you report the task done, confirm the terminal call or file write succeeded and, where the reference documents a readback, read the artefact back to prove the change landed.
-
-### `design` reporting
-
-`design` has no terminal write, so its deliverable is the brief itself. State the page archetype you routed to and the design identity you committed, and hand the brief to `authoring` rather than starting to edit files.
-
-## Shared essentials (all modes)
-
-Resolve the workspace and item first whenever the request touches Fabric; the `management` mode depends on it.
-
-| Task | Reference | Notes |
-|---|---|---|
-| Finding Workspaces and Items in Fabric | [COMMON-CLI.md](../../common/COMMON-CLI.md#finding-workspaces-and-items-in-fabric) | **Mandatory** -- read before resolving any workspace or item id |
-| Fabric Topology & Key Concepts | [COMMON-CORE.md](../../common/COMMON-CORE.md#fabric-topology--key-concepts) | Item types, workspaces, capacities |
-| Environment URLs | [COMMON-CORE.md](../../common/COMMON-CORE.md#environment-urls) | Sovereign / non-public cloud hosts |
-| Authentication & Token Acquisition | [COMMON-CORE.md](../../common/COMMON-CORE.md#authentication--token-acquisition) | Wrong audience = 401; read before any auth issue |
-| Authentication Recipes | [COMMON-CLI.md](../../common/COMMON-CLI.md#authentication-recipes) | `az login` flows and token acquisition |
-| Core Control-Plane REST APIs | [COMMON-CORE.md](../../common/COMMON-CORE.md#core-control-plane-rest-apis) | Pagination, LRO polling, rate limiting |
-| Gotchas & Troubleshooting | [COMMON-CLI.md](../../common/COMMON-CLI.md#gotchas--troubleshooting-cli-specific) | `az rest` audience, shell escaping, token expiry |
+| `planning` | Persist `_brief/report-spec.md` or the user-named equivalent, ask for explicit approval, and stop before implementation. |
+| `design` | Produce the complete `Design Brief:` contract, including `design_identity` and a page archetype/layout contract for every page. Do not edit PBIR or call Fabric APIs. |
+| `authoring` | Persist the requested PBIR/PBIP changes, validate each logical batch, then complete the selected preview and screenshot-review workflow required by the authoring reference. Do not publish. |
+| `management` | Complete the requested Fabric report operation, including LRO polling and documented readback verification. |
 
 ## Rules
 
 ### MUST
 
-- Select exactly one mode from the table above before doing anything else.
-- Read `references/<mode>.md` end to end, as your FIRST tool call, before the first command of that mode. Most mode references are larger than a single file read, so page through with sequential ranges when your tool truncates -- but read each range ONCE. Do not re-open a range you already have, and do not grep a file you have already read end to end.
-- Resolve workspace and item ids by listing and filtering, never by guessing a GUID, whenever the request names a workspace or item.
-- Announce a mode switch explicitly when the request crosses a boundary.
-- Treat the reference as instructions, never as the deliverable. In `authoring` and `management`, that means running the documented commands and reporting the real results -- quoting what the reference says instead of executing it does not answer the request. In `planning` and `design` the deliverable is the document itself, so produce the spec or brief rather than describing what the reference would have you produce.
-- In `authoring` and `management`, never construct PBIR JSON from memory: use the `powerbi-report-author` CLI's catalog/metadata commands for roles, formatting objects, enum values and selectors, and validate what you wrote. `planning` and `design` do not touch PBIR files and do not need that CLI installed.
-- In `planning`, open with clarification, not construction. When the request is under-specified -- "build me a report for X" with no audience, no named model and no scope -- ask ONE focused scoping question and stop for the answer, one question per round, at most 3-5 rounds. Do NOT infer the missing requirements yourself, scaffold pages or visuals, or write report files: nothing is built until the user approves the locked spec. This replaces *building*, never the requested document: when the request already supplies the answers, or names a deliverable such as requirements, a page plan or a locked spec, produce that deliverable and do not re-ask what you were told.
-- Produce every artefact the user asked for, under the name they used. Running the right commands is not a substitute for the requested deliverable: if the request names a report spec, a design brief or a validation report, emit it, and keep its heading even when the finding is "none" or "not applicable".
-- In `planning`, the approval gate ENDS YOUR TURN. Write the spec, ask the approval question, and stop there. An imperative like "build me a dashboard and publish it" is the request that brought you here, not approval of a spec that did not exist when it was written, so treating it as consent and running through to publish bypasses the gate entirely. Build and publish only after the user actually replies.
+- Select the narrowest mode that fully covers the current request.
+- Read `references/<mode>.md` end to end before the first command or file edit
+  in that mode.
+- In `planning` mode, also read `references/planning-part-02.md` before
+  producing `_brief/report-spec.md`; it contains the required canonical design
+  contract and approval checks.
+- Preserve every argument and safety boundary documented by the selected mode.
+- Announce and perform an explicit mode switch when the request crosses a
+  boundary.
+- Use the `powerbi-report-author` CLI metadata and validation surfaces instead
+  of guessing PBIR schemas, roles, formatting properties, selectors, or enum
+  values.
+- Keep local edits local unless the user explicitly requests publishing.
+- Resolve Fabric workspace and item IDs by listing and filtering rather than
+  guessing identifiers.
+- Produce the artifact the user requested; reading or summarizing a reference
+  is not task completion.
 
 ### PREFER
 
-- The narrowest mode that satisfies the request.
-- Reading exactly ONE mode reference. Load a second only when the request genuinely spans modes, and say so before you do.
-- Reporting the mode you chose in your first response so the user can correct you.
-- Inferring answers already given in the prompt, the semantic model or existing PBIP files instead of re-asking them.
+- Infer facts already present in the prompt, semantic model, existing PBIP, or
+  prior approved spec instead of asking again.
+- Load only the selected mode and its directly relevant topic references.
+- Preserve the user's existing project structure, schemas, host, operation,
+  binding, and delivery target unless the selected mode explicitly requires a
+  change.
 
 ### AVOID
 
-- Acting from this dispatcher alone -- it intentionally omits the operational detail.
-- Answering with a summary of the reference instead of doing the mode's work.
-- Re-reading a range of a reference you already loaded, or grepping a file you have already read end to end; it costs turns and tokens.
-- Installing or invoking the `powerbi-report-author` / `powerbi-desktop` CLIs in `design` or `planning`; neither writes PBIR, so neither needs them. Inspecting the semantic model and writing the spec file are still expected in `planning`.
-- Editing PBIR files or calling the Fabric REST API while in `design` or `planning`.
-- Publishing to Fabric from `authoring`, or authoring PBIR content from `management`.
-- Building or publishing before the user approves the locked spec in `planning`.
-- Loading a different skill for work this skill already owns (see CRITICAL NOTES 3).
+- Acting from this dispatcher without reading the selected mode reference.
+- Loading a retired sibling skill name; planning, design, authoring, and
+  management are modes of this skill.
+- Editing PBIR or calling Fabric APIs in `planning` or `design`.
+- Publishing from `authoring`, or authoring PBIR content from `management`.
+- Bypassing the planning approval gate because the original request also asked
+  to build or publish.
+
+<!-- BEGIN GENERATED REFERENCE INDEX -->
+## Complete Reference Index
+
+Open every relevant reference directly from this index. Files named `part-XX` continue the named topic.
+
+### Authoring
+
+- [`authoring/authoring-workflows`](references/authoring/authoring-workflows.md)
+- [`authoring/bookmark`](references/authoring/bookmark.md)
+- [`authoring/button-part-02`](references/authoring/button-part-02.md)
+- [`authoring/button-part-03`](references/authoring/button-part-03.md)
+- [`authoring/button`](references/authoring/button.md)
+- [`authoring/card-part-02`](references/authoring/card-part-02.md)
+- [`authoring/card-part-03`](references/authoring/card-part-03.md)
+- [`authoring/card`](references/authoring/card.md)
+- [`authoring/cartesian-part-02`](references/authoring/cartesian-part-02.md)
+- [`authoring/cartesian-part-03`](references/authoring/cartesian-part-03.md)
+- [`authoring/cartesian-part-04`](references/authoring/cartesian-part-04.md)
+- [`authoring/cartesian`](references/authoring/cartesian.md)
+- [`authoring/color-strategy`](references/authoring/color-strategy.md)
+- [`authoring/conditional-formatting-part-02`](references/authoring/conditional-formatting-part-02.md)
+- [`authoring/conditional-formatting-part-03`](references/authoring/conditional-formatting-part-03.md)
+- [`authoring/conditional-formatting-part-04`](references/authoring/conditional-formatting-part-04.md)
+- [`authoring/conditional-formatting-part-05`](references/authoring/conditional-formatting-part-05.md)
+- [`authoring/conditional-formatting-part-06`](references/authoring/conditional-formatting-part-06.md)
+- [`authoring/conditional-formatting-part-07`](references/authoring/conditional-formatting-part-07.md)
+- [`authoring/conditional-formatting`](references/authoring/conditional-formatting.md)
+- [`authoring/custom-visuals`](references/authoring/custom-visuals.md)
+- [`authoring/expressions`](references/authoring/expressions.md)
+- [`authoring/field-parameters`](references/authoring/field-parameters.md)
+- [`authoring/filter-pane`](references/authoring/filter-pane.md)
+- [`authoring/filters`](references/authoring/filters.md)
+- [`authoring/formatting-overview`](references/authoring/formatting-overview.md)
+- [`authoring/formatting-part-02`](references/authoring/formatting-part-02.md)
+- [`authoring/formatting`](references/authoring/formatting.md)
+- [`authoring/image`](references/authoring/image.md)
+- [`authoring/kpi`](references/authoring/kpi.md)
+- [`authoring/map`](references/authoring/map.md)
+- [`authoring/model-binding`](references/authoring/model-binding.md)
+- [`authoring/page-formatting`](references/authoring/page-formatting.md)
+- [`authoring/powerbi-desktop`](references/authoring/powerbi-desktop.md)
+- [`authoring/powerbi-report-author-cli-part-02`](references/authoring/powerbi-report-author-cli-part-02.md)
+- [`authoring/powerbi-report-author-cli`](references/authoring/powerbi-report-author-cli.md)
+- [`authoring/preview-part-02`](references/authoring/preview-part-02.md)
+- [`authoring/preview-part-03`](references/authoring/preview-part-03.md)
+- [`authoring/preview-part-04`](references/authoring/preview-part-04.md)
+- [`authoring/preview`](references/authoring/preview.md)
+- [`authoring/re-theming-part-02`](references/authoring/re-theming-part-02.md)
+- [`authoring/re-theming-part-03`](references/authoring/re-theming-part-03.md)
+- [`authoring/re-theming`](references/authoring/re-theming.md)
+- [`authoring/screenshot-review`](references/authoring/screenshot-review.md)
+- [`authoring/shape`](references/authoring/shape.md)
+- [`authoring/slicers-part-02`](references/authoring/slicers-part-02.md)
+- [`authoring/slicers`](references/authoring/slicers.md)
+- [`authoring/table`](references/authoring/table.md)
+- [`authoring/textbox`](references/authoring/textbox.md)
+- [`authoring/theming-part-02`](references/authoring/theming-part-02.md)
+- [`authoring/theming`](references/authoring/theming.md)
+- [`authoring/version-control`](references/authoring/version-control.md)
+
+### Design
+
+- [`design/accessibility`](references/design/accessibility.md)
+- [`design/anti-patterns`](references/design/anti-patterns.md)
+- [`design/archetype-composition`](references/design/archetype-composition.md)
+- [`design/archetypes/analytical-canvas`](references/design/archetypes/analytical-canvas.md)
+- [`design/archetypes/comparative-benchmark-part-02`](references/design/archetypes/comparative-benchmark-part-02.md)
+- [`design/archetypes/comparative-benchmark`](references/design/archetypes/comparative-benchmark.md)
+- [`design/archetypes/executive-summary`](references/design/archetypes/executive-summary.md)
+- [`design/archetypes/narrative-story`](references/design/archetypes/narrative-story.md)
+- [`design/archetypes/operational-monitor`](references/design/archetypes/operational-monitor.md)
+- [`design/brownfield`](references/design/brownfield.md)
+- [`design/chart-selection`](references/design/chart-selection.md)
+- [`design/color`](references/design/color.md)
+- [`design/design-brief-part-02`](references/design/design-brief-part-02.md)
+- [`design/design-brief`](references/design/design-brief.md)
+- [`design/interactivity`](references/design/interactivity.md)
+- [`design/layout`](references/design/layout.md)
+- [`design/pre-flight-checklist`](references/design/pre-flight-checklist.md)
+- [`design/signatures`](references/design/signatures.md)
+- [`design/tone-catalog`](references/design/tone-catalog.md)
+- [`design/typography`](references/design/typography.md)
+- [`design/visual-cookbook-part-02`](references/design/visual-cookbook-part-02.md)
+- [`design/visual-cookbook`](references/design/visual-cookbook.md)
+
+### Mode Guides
+
+- [`authoring-part-02`](references/authoring-part-02.md)
+- [`authoring-part-03`](references/authoring-part-03.md)
+- [`authoring-part-04`](references/authoring-part-04.md)
+- [`authoring`](references/authoring.md)
+- [`design`](references/design.md)
+- [`management-part-02`](references/management-part-02.md)
+- [`management-part-03`](references/management-part-03.md)
+- [`management-part-04`](references/management-part-04.md)
+- [`management`](references/management.md)
+- [`planning-part-02`](references/planning-part-02.md)
+- [`planning`](references/planning.md)
+
+<!-- END GENERATED REFERENCE INDEX -->
 
 ## Examples
 
-| User request | Mode | Reference to read |
-|---|---|---|
-| "Plan a Power BI executive sales report from this semantic model; don't build anything yet." | `planning` | [references/planning.md](references/planning.md) |
-| "I'm building an executive sales overview page -- design it and give me the design brief." | `design` | [references/design.md](references/design.md) |
-| "Add a Sales Overview page with KPI cards to ./sales-pbip and validate the PBIR." | `authoring` | [references/authoring.md](references/authoring.md) |
-| "Publish the local PBIP in ./sales-pbip to my workspace as SalesDashboard." | `management` | [references/management.md](references/management.md) |
+| User request | Mode |
+|---|---|
+| "Create a new executive report from this semantic model." | `planning` |
+| "Design an operational page and choose the right charts." | `design` |
+| "Add a KPI page to this PBIP, validate it, and take screenshots." | `authoring` |
+| "Publish this local PBIP to my Fabric workspace and rebind it." | `management` |
+
+## Route Compatibility
+
+The merged skill preserves the four previous route surfaces. Treat the
+following phrases as explicit aliases for the corresponding mode:
+
+| Mode | Preserved route phrases |
+|---|---|
+| `planning` | create a report; build a report; create a dashboard; create a new report from scratch; create a report from a semantic model or dataset link; build a report for this model; make me a dashboard; plan then implement; walk me through creating a report |
+| `design` | design Power BI report; make dashboard look professional; choose chart type; apply brand to report; redesign report; create design brief; Power BI report design archetype |
+| `authoring` | edit PBIR; create Power BI report page; add visual to PBIP; format report visual; validate Power BI report; preview Power BI report; Power BI Desktop preview status; preview report in service; preview report in browser; screenshot report page; screenshot all report pages; list preview hosts; implement dashboard in PBIP; add dashboard visuals to report; implement an approved PBIP report spec; edit PBIR pages/visuals; edit a Power BI report |
+| `management` | upload PBIR report definition; upload Power BI report; download PBIR definition; publish PBIR definition; publish Power BI report to Fabric; manage Power BI reports; list workspace reports |

@@ -2,6 +2,29 @@
 
 User-facing changes for the public Microsoft Fabric Skills release.
 
+## [Unreleased]
+
+## [0.3.18] - 2026-09-24
+
+### Added
+- **`skills/powerbi-report-cli`** -- added detailed guidance for same-report
+  drillthrough, bookmarks, buttons and actions, custom visuals, field parameters,
+  KPI visuals, semantic-model binding, and Desktop or service preview workflows.
+- **`project-osmos`** — run complex, long-running Fabric and OneLake data-engineering outcomes from local agents with safe intake, continuation, and task lifecycle guidance; Fabric portal Copilot explains current availability and how to install the Skills for Fabric marketplace in GitHub Copilot CLI.
+
+### Changed
+- **`powerbi-report-cli`** -- strengthened planning, design, authoring, validation, screenshot review, and Fabric publishing guidance, including safer preview routing and pre-publish model-binding checks
+- **`powerbi-report-cli`** -- routes normal Desktop work through
+  `powerbi-report-author preview` and adds model-aware reload guidance with the
+  required semantic-model processing, DAX verification, and rendered review.
+- **`synapse-migration`** now migrates dedicated SQL pools in Synapse workspaces or standalone deployments to Fabric Lakehouse as schema and code artifacts without source rows, or to Fabric Warehouse with compatibility assessment, security migration, validation, and optional separately approved data movement.
+
+### Fixed
+- **`powerbi-report-cli`** -- fixed broken reference anchors and made the
+  planning contract continuation mandatory before producing an approved report
+  specification; split-guide navigation now names the continuation file instead
+  of linking to headings that are not present in the current document.
+
 ## [0.3.17] - 2026-09-17
 
 ### Added

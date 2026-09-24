@@ -3,10 +3,10 @@
 How to apply color overrides on chart data points, when each pattern is safe,
 and how to keep the same measure the same hue across multiple visuals.
 
-> **Prerequisite reading:** [`formatting.md` § Selectors](formatting.md#selectors-targeting-specific-data)
+> **Prerequisite reading:** `formatting.md` § Selectors (see `formatting.md`, section `selectors-targeting-specific-data`)
 > — the dual-entry pattern, metadata selectors, and selector precedence are
 > assumed throughout. For palette authoring, see
-> [`theming.md` § Data Colors](theming.md#1-data-colors-datacolors).
+> `theming.md` § Data Colors (see `theming.md`, section `1-data-colors-datacolors`).
 
 > Examples use `financials.Revenue` / `financials.Profit` etc. as concrete `queryRef` values — substitute your own `<table>.<measure>` identities.
 
@@ -25,7 +25,7 @@ based on **scope** and **series count**:
 
 | User intent | Approach | Where to edit |
 |-------------|----------|---------------|
-| **Change the color palette across all visuals** | Update the theme's `dataColors` palette | `theme.json` — see [theming.md § Data Colors](theming.md#1-data-colors-datacolors) |
+| **Change the color palette across all visuals** | Update the theme's `dataColors` palette | `theme.json` — see theming.md § Data Colors (see `theming.md`, section `1-data-colors-datacolors`) |
 | **Same measure = same color across all visuals** | Maintain a measure→color mapping; apply explicit `dataPoint.fill`/`defaultColor` per visual | `visual.json → visual.objects.dataPoint` per visual — see [Cross-Visual Measure-Color Consistency](#pattern-cross-visual-measure-color-consistency) below |
 | **Change color for a single-series chart** (one measure, no Series role) | `dataPoint.defaultColor` | `visual.json → visual.objects.dataPoint` |
 | **Override specific series colors** on one visual | `dataPoint.fill` with `metadata` selectors per series | `visual.json → visual.objects.dataPoint` |

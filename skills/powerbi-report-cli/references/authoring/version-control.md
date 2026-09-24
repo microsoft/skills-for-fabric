@@ -1,5 +1,24 @@
 # Version Control for PBIR Editing
 
+## Contents
+
+- [Pre-Flight: Check for Git Repo](#pre-flight-check-for-git-repo)
+  - [Initialize a New Repo (if user approves)](#initialize-a-new-repo-if-user-approves)
+- [Branching Workflow](#branching-workflow)
+  - [1. Create a working branch](#1-create-a-working-branch)
+  - [2. Make changes](#2-make-changes)
+  - [3. Validate & verify](#3-validate--verify)
+  - [4. Ask user before committing](#4-ask-user-before-committing)
+  - [5. Continue or finish](#5-continue-or-finish)
+- [Reverting Changes](#reverting-changes)
+  - [Revert all uncommitted changes](#revert-all-uncommitted-changes)
+  - [Revert the last commit](#revert-the-last-commit)
+  - [Revert to the original state (before any copilot edits)](#revert-to-the-original-state-before-any-copilot-edits)
+  - [Revert a specific file](#revert-a-specific-file)
+- [Decision Tree](#decision-tree)
+- [Important Notes](#important-notes)
+
+
 > Referenced from SKILL.md. Follow this workflow **before** modifying any report files.
 
 ## Pre-Flight: Check for Git Repo
@@ -62,13 +81,13 @@ Run validation after every logical batch of changes:
 powerbi-report-author validate "<path-to-.Report-dir>"
 ```
 
-If the change affects rendered output, follow `references/authoring/powerbi-desktop.md` for Desktop
-reload and screenshot verification. Do not proceed until structural validation
-passes and any required visual verification is complete.
+If the change affects rendered output, follow the host-specific screenshot
+workflow in `references/authoring/preview.md`. Do not proceed until structural validation
+and required visual review are complete.
 
 ### 4. Ask user before committing
 
-**Never auto-commit.** After validation and Desktop verification pass, ask the
+**Never auto-commit.** After validation and preview verification pass, ask the
 user if they want to commit the changes. Show them what was changed and let
 them decide.
 
@@ -97,6 +116,9 @@ Use clear commit messages that describe the user's intent:
 ## Reverting Changes
 
 ### Revert all uncommitted changes
+
+Discard only when the user explicitly requests it. Before running a destructive
+command, identify and preserve unrelated untracked files.
 
 If edits fail validation or user wants to undo current work-in-progress:
 
@@ -193,3 +215,6 @@ Inform user: changes committed on branch, ready to merge or use
   not just the `.Report/` subdirectory.
 - **`localSettings.json`** should be in `.gitignore` — it contains user-local
   state that shouldn't be versioned.
+- Store mandatory validation screenshots outside the PBIP project and every Git
+  worktree. Follow the workflow-owned destination and cleanup lifecycle in
+  preview.md (see `preview.md`); never stage or commit validation screenshots.

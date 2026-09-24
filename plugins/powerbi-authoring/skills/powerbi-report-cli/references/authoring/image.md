@@ -26,6 +26,10 @@ If the user has not specified the source or just asks to add a new image, prompt
 
 Each source has a different structure and different set of properties.
 
+> **Images inside table/matrix cells** (a field of image URLs rendered per row,
+> not a standalone image visual) are a different feature — see
+> conditional-formatting.md § Type 7: Image Field Values (see `conditional-formatting.md`, section `type-7-image-field-values`).
+
 ### 1. Local file path to the image
 
 ```json
@@ -274,7 +278,7 @@ data area of a chart visual (bar, column, line, etc.) that supports a
 > - "background image" in the context of a specific chart visual →
 >   `visual.objects.plotArea.image` (this section)
 > - "page background image" / "canvas background" →
->   [`page-formatting.md` § Background Images](page-formatting.md#background-images)
+>   `page-formatting.md` § Background Images (see `page-formatting.md`, section `background-images`)
 > - User adds an image visual itself → see [Source Types Overview](#source-types-overview) above
 
 Confirm the visual type supports `plotArea` with

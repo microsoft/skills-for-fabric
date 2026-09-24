@@ -8,10 +8,10 @@ with `Applied` / `Available` state selectors.
 > **Scope:** This file covers the **appearance** of the filter pane and its
 > filter cards. For filter **definitions** (which fields are filtered, `Where`
 > conditions, filter scopes at report/page/visual level), see
-> [`filters.md`](filters.md). For slicer visuals (a different mechanism,
-> stored in `visual.json`), see [`slicers.md`](slicers.md).
+> `filters.md` (see `filters.md`). For slicer visuals (a different mechanism,
+> stored in `visual.json`), see `slicers.md` (see `slicers.md`).
 >
-> **Read first:** [`formatting-overview.md`](formatting-overview.md) for the
+> **Read first:** `formatting-overview.md` (see `formatting-overview.md`) for the
 > cascade model and PBIR encoding rules.
 
 ## Contents
@@ -110,6 +110,6 @@ theme's `visualStyles["*"]["*"]`. The filter pane does **NOT** inherit
 from theme structural colors, so theme switches will not update it
 automatically — explicit theme entries are required.
 
-See [`re-theming.md` § Dark Mode Authoring Checklist](re-theming.md#dark-mode-authoring-checklist)
-for the complete dark-mode workflow, and [`re-theming.md` § Step 3: Filter pane + filter cards](re-theming.md#step-3-filter-pane--filter-cards)
+See `re-theming.md` § Dark Mode Authoring Checklist (see `re-theming.md`, section `dark-mode-authoring-checklist`)
+for the complete dark-mode workflow, and `re-theming.md` § Step 3: Filter pane + filter cards (see `re-theming.md`, section `step-3-filter-pane--filter-cards`)
 for the theme-level filter pane recipe.

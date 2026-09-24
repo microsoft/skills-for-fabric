@@ -1,5 +1,20 @@
 # Typography for Data
 
+## Contents
+
+- [Core Principles](#core-principles)
+- [Type Ramp](#type-ramp)
+- [Tone / Signature Overrides](#tone--signature-overrides)
+- [Font Family Guidance](#font-family-guidance)
+  - [Custom font fallback caveat](#custom-font-fallback-caveat)
+- [Tabular Numerals & Number Formatting](#tabular-numerals--number-formatting)
+- [Density & Readability](#density--readability)
+- [Power BI Formatting Keys](#power-bi-formatting-keys)
+- [Archetype Calibration](#archetype-calibration)
+- [Number Format Decision Table](#number-format-decision-table)
+- [Alignment Rules](#alignment-rules)
+
+
 ## Core Principles
 
 1. **Sans-serif for screens** — Segoe UI is the PBI default; it renders cleanly at small sizes.

@@ -1,5 +1,24 @@
 # Layout Composition
 
+## Contents
+
+- [Core Principles](#core-principles)
+- [Reading Patterns](#reading-patterns)
+- [Grid System](#grid-system)
+  - [8-Point Base Grid](#8-point-base-grid)
+  - [12-Column Grid](#12-column-grid)
+  - [Concrete Arithmetic (FHD 1920 x 1080 canvas)](#concrete-arithmetic-fhd-1920-x-1080-canvas)
+- [Slicer Placement Rules](#slicer-placement-rules)
+  - [1–3 slicers — inline with title](#13-slicers--inline-with-title)
+  - [4+ slicers — vertical filter rail](#4-slicers--vertical-filter-rail)
+  - [Bounds and overlap](#bounds-and-overlap)
+- [Visual Hierarchy Levers](#visual-hierarchy-levers)
+- [Whitespace Tiers](#whitespace-tiers)
+- [Space Allocation Rules](#space-allocation-rules)
+  - [Composition Templates](#composition-templates)
+- [Power BI Grounding](#power-bi-grounding)
+
+
 ## Core Principles
 
 1. **Top-left carries the heaviest message** — Readers start there; place the descriptive title, primary KPI callout, or hero chart there.

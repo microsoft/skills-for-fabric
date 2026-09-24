@@ -33,7 +33,7 @@ env:
       {"option":"Databricks migration","slug":"databricks-migration","label":"area:databricks-migration","color":"c5def5","skills":["databricks-migration"]},
       {"option":"Synapse / pipeline migration","slug":"synapse-migration","label":"area:synapse-migration","color":"fef2c0","skills":["pipeline-migration","synapse-migration"]},
       {"option":"HDInsight migration","slug":"hdinsight-migration","label":"area:hdinsight-migration","color":"bfdadc","skills":["hdinsight-migration"]},
-      {"option":"Data engineering (Spark / lakehouse / notebooks)","slug":"data-engineering","label":"area:data-engineering","color":"d0e0e3","skills":["e2e-medallion-architecture","spark-cli"]},
+      {"option":"Data engineering (Spark / lakehouse / notebooks)","slug":"data-engineering","label":"area:data-engineering","color":"d0e0e3","skills":["e2e-medallion-architecture","project-osmos","spark-cli"]},
       {"option":"SQL Data Warehouse","slug":"sqldw","label":"area:sqldw","color":"1d76db","skills":["sqldw-cli"]},
       {"option":"SQL database","slug":"sqldb","label":"area:sqldb","color":"c5def5","skills":["sqldb-cli"]},
       {"option":"Dataflows Gen2","slug":"dataflows","label":"area:dataflows","color":"1d76db","skills":["dataflows-cli"]},

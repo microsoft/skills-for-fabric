@@ -1,5 +1,30 @@
 # Signatures
 
+## Contents
+
+- [Typographic signatures](#typographic-signatures)
+  - [S1. Tabular numerals throughout](#s1-tabular-numerals-throughout)
+  - [S2. Display serif headlines](#s2-display-serif-headlines)
+  - [S3. All-caps tracked headlines](#s3-all-caps-tracked-headlines)
+  - [S4. Caption-style annotations under every visual](#s4-caption-style-annotations-under-every-visual)
+- [Chromatic signatures](#chromatic-signatures)
+  - [S5. Single-accent discipline](#s5-single-accent-discipline)
+  - [S6. Highlight-and-grey](#s6-highlight-and-grey)
+  - [S7. FT pink (or any tinted) surface](#s7-ft-pink-or-any-tinted-surface)
+  - [S8. Status-coded KPI cards](#s8-status-coded-kpi-cards)
+- [Structural signatures](#structural-signatures)
+  - [S9. Composite KPI focus](#s9-composite-kpi-focus)
+  - [S10. Hairline rules instead of borders](#s10-hairline-rules-instead-of-borders)
+  - [S11. Pill-shaped section labels](#s11-pill-shaped-section-labels)
+  - [S12. Modular grid with consistent gutter](#s12-modular-grid-with-consistent-gutter)
+- [Iconographic signatures](#iconographic-signatures)
+  - [S13. Duotone iconography on KPI cards](#s13-duotone-iconography-on-kpi-cards)
+  - [S14. Channel/brand logos in cards](#s14-channelbrand-logos-in-cards)
+  - [S15. Status icons in tables](#s15-status-icons-in-tables)
+- [Composing tone + signature](#composing-tone--signature)
+- [Authoring fresh signatures](#authoring-fresh-signatures)
+
+
 A `signature` is the **one defining visual move** every page of a report
 shares. It's what a user remembers about the report after closing it. Every
 report should commit to exactly one — pick from the gallery below, remix a
