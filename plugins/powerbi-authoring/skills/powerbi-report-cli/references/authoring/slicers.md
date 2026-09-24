@@ -1,5 +1,14 @@
 # Slicer Authoring Guide
 
+## Contents
+
+- [Recommended Defaults](#recommended-defaults)
+  - [Slicer Template](#slicer-template)
+  - [`Values` projection count](#values-projection-count)
+  - [Sizing](#sizing)
+  - [Fill variant](#fill-variant)
+
+
 > **Always read first** when adding/modifying slicers or slicer selections.
 > For expression reference, see **references/authoring/expressions.md**
 
@@ -11,13 +20,14 @@ formatting defaults, and selection configuration for all slicer types.
     - [Slicer Template](#slicer-template)
     - [Sizing](#sizing)
     - [Fill variant](#fill-variant)
-    - [Date Between Slicer Template](#date-between-slicer-template)
-  - [Add/Modify a Slicer](#addmodify-a-slicer)
-    - [Slicer types](#slicer-types)
-    - [Setting slicer selections](#setting-slicer-selections)
-  - [Slicer Sync Groups](#slicer-sync-groups)
-  - [Theme Approach](#theme-approach)
-  - [Discovering Properties](#discovering-properties)
+    - Calendar Date Picker Templates (continued in `slicers-part-02.md`)
+    - Date Between Slicer Template (continued in `slicers-part-02.md`)
+  - Add/Modify a Slicer (continued in `slicers-part-02.md`)
+    - Slicer types (continued in `slicers-part-02.md`)
+    - Setting slicer selections (continued in `slicers-part-02.md`)
+  - Slicer Sync Groups (continued in `slicers-part-02.md`)
+  - Theme Approach (continued in `slicers-part-02.md`)
+  - Discovering Properties (continued in `slicers-part-02.md`)
 
 <a id="per-visual-vco-override-caveat"></a>
 > ⚠️ **Per-visual VCO override caveat**: As soon as a slicer declares **any**
@@ -55,7 +65,7 @@ its reserved band/rail instead.
 ### Slicer Template
 
 All slicer types share this base structure. Adapt `visualType`, query
-roles, and `data.mode` per type (see [Slicer types](#slicer-types) below).
+roles, and `data.mode` per type (see Slicer types (continued in `slicers-part-02.md`) below).
 
 > **`height` value below**: derived from `60 + top_padding + bottom_padding`
 > snapped to 8px (see [Sizing](#sizing)). The `80` shown matches the skill's
@@ -121,6 +131,17 @@ Rules applied to Slicer (classic — default for **all other slicer** requests):
 2. ONLY "Values" allowed under queryState and "Values" only allow Column/Hierarchy Expressions.
 3. "data" under "objects" only available for slicer.
 
+### `Values` projection count
+
+The number of projections allowed in the `Values` role depends on the slicer type:
+
+- **`slicer`, `filterSlicer` and `listSlicer`** may have **more than one** projection in `Values`.
+  Multiple fields make it a **hierarchy slicer**.
+- **All other slicers** (`advancedSlicerVisual`, `textSlicer`,
+  and the single-field `slicer` modes `Single`, `Between`, `Before`, `After`,
+  `Relative`, `RelativeTime`, `RelativeDatePicker`) must have **exactly one**
+  projection in `Values`.
+
 General rules applied to all slicers:
 1. Only slicer with Basic/Dropdown mode and listSlicer can be hierarchy slicers.
 2. The filter property under general in objects describes value selections.
@@ -152,7 +173,7 @@ auto-grow the container and refuses to render partial rows, so the last
 item silently disappears when the math is off.
 
 **Width** (mode-independent): 160px standard, 120px for short labels
-(Year, Stance), 216px for `'Between'` date pickers (side-by-side dates).
+(Year, Stance), 216px for compact `'Between'` date pickers (stacked dates).
 
 > **No height/font shortcuts**: if a slicer collides with the next row or clips
 > on a dark/fill theme, increase the reserved band/rail and recompute `h`.
@@ -164,7 +185,9 @@ item silently disappears when the math is off.
 | Mode / `visualType` | Height | Notes |
 |---|---|---|
 | `slicer` mode `'Dropdown'` | **`h = 60 + top_padding + bottom_padding`**, snap up to the next 8px. Worked values: zero padding → **h=64**; theme default `8/8` → **h=80**; dark-card `10/10` → **h=80**. The 60px chrome = `header (~28px at 10pt Semibold) + dropdown selector field (~32px)`. | Items render in a popup, not inline, so item count doesn't affect height. The padding stays *outside* the visible chrome — every padding pixel must be added to `h`. **Verify the layout below the slicer leaves room for the new height** (e.g. if a fork bumps padding from 8 to 10, recompute and shift the next-row visuals). |
-| `slicer` mode `'Between'` / `'Before'` / `'After'` | **`h = 60 + top + bottom`** side-by-side (same chrome as Dropdown — two date pickers fit on one row). Stacked vertical = **`h = 84 + top + bottom`** (two date pickers on two rows). | See [Date Between Slicer Template](#date-between-slicer-template). |
+| `slicer` mode `'Between'` | At `w=216`, dates stack vertically: **`h = 84 + top + bottom`**, snapped up to the next 8px. With 8/8 padding, use **h=104**. | Desktop validation shows that `w=216, h=80` clips the lower date input. Use a wider container only after screenshot validation confirms both dates render side-by-side. |
+| `slicer` mode `'Before'` / `'After'` | **`h = 60 + top + bottom`**, snapped up to the next 8px. | These modes render one date bound. |
+| `slicer` mode `'RelativeDatePicker'` | **`w >= 280, h >= 240`**, plus any outer layout space required by titles. | Renders the calendar-style Date Picker. Use the same mode for default, fixed-range, and relative preselection. See Calendar Date Picker Templates (continued in `slicers-part-02.md`). |
 | `slicer` mode `'Basic'` / `'Single'` | **Use the formula below** | Items render inline; height must cover header + search box + every visible row. |
 | `listSlicer` | **Use the formula below** | Same inline-list behavior as Basic mode. Scrolls when items exceed available area, but the bottom row still clips if height < `chrome + 1 row`. |
 | `advancedSlicerVisual` | **≥ 56px per tile row** (add padding the same way) | ≤10 tiles; size by number of tile rows × tile height. |
@@ -220,9 +243,14 @@ Defaults you can plug in:
 > row's worth of chrome — every row of data will be clipped. Always
 > recalculate height when changing mode.
 >
-> `powerbi-report-author validate` flags slicers whose
-> `position.height` is below the per-mode floor with
-> `PBIR_SLICER_HEIGHT_BELOW_FLOOR` (warning). To inventory every slicer's mode
+> `powerbi-report-author validate` checks dropdown slicer height in two tiers:
+> it emits `PBIR_SLICER_HEIGHT_BELOW_FLOOR` (**error**) when
+> `position.height` is below the header-hidden floor (`selector 32 + padding`),
+> where the selector itself would be clipped; and
+> `PBIR_SLICER_HEADER_MAY_CLIP` (**warning**) when the height clears the
+> selector floor but is below the full height that also reserves the header row
+> (`header 28 + selector 32 + padding`), meaning Desktop may hide or clip the
+> header. To inventory every slicer's mode
 > and current height before resizing, run
 > `powerbi-report-author preview-visuals <path>` and filter on
 > `visualType` ∈ `slicer` / `listSlicer` / `advancedSlicerVisual` (both
@@ -261,242 +289,3 @@ value. When you use this variant, drop the dropdown template's `h=80` to
 ```
 
 ---
-
-### Date Between Slicer Template
-
-For temporal filtering, use the `slicer` visual in `Between` mode only when
-users need arbitrary date-range exploration and the bound field is a renderable
-Date/DateTime column. For executive dashboards or annual/quarterly grain,
-prefer a compact Year/Period dropdown or tile.
-
-```json
-{
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
-  "name": "<unique-id>",
-  "position": { "x": 1040, "y": 8, "z": 1000, "height": 80, "width": 216, "tabOrder": 1000 },
-  "visual": {
-    "visualType": "slicer",
-    "query": {
-      "queryState": {
-        "Values": {
-          "projections": [{
-            "field": { "Column": { "Expression": { "SourceRef": { "Entity": "<table>" } }, "Property": "<date_column>" } },
-            "queryRef": "<table>.<date_column>",
-            "nativeQueryRef": "<date_column>"
-          }]
-        }
-      }
-    },
-    "objects": {
-      "data": [{ "properties": { "mode": { "expr": { "Literal": { "Value": "'Between'" } } } } }],
-      "header": [{ "properties": {
-        "show": { "expr": { "Literal": { "Value": "true" } } },
-        "text": { "expr": { "Literal": { "Value": "'Date Range'" } } }
-      }}]
-    },
-    "visualContainerObjects": {
-      "padding": [{ "properties": {
-        "top":    { "expr": { "Literal": { "Value": "8D" } } },
-        "bottom": { "expr": { "Literal": { "Value": "8D" } } },
-        "left":   { "expr": { "Literal": { "Value": "8D" } } },
-        "right":  { "expr": { "Literal": { "Value": "8D" } } }
-      }}]
-    }
-  }
-}
-```
-
-**Sizing**:
-- Inline with title: **`w=216, h = 60 + top + bottom`** — dates render
-  side-by-side. With theme default `8/8` padding that's `h=80`; with zero
-  padding `h=64`. This is the minimum width for side-by-side dates.
-- Vertical rail: **`w=200, h = 84 + top + bottom`** — dates stack vertically
-  at narrow widths.
-
-Fill and light variants are the same as the dropdown slicer (see above).
-
----
-
-## Add/Modify a Slicer
-
-### Slicer types
-
-| Type | `visualType` | Query roles | `data.mode` | Notes |
-|------|-------------|-------------|-------------|-------|
-| **Dropdown** | `slicer` | `Values` only (Column/Hierarchy) | `'Dropdown'` | Any cardinality, compact; default for executive Year/Period filters |
-| **Date range** | `slicer` | `Values` only (Date/DateTime column) | `'Between'` | Date picker with range; use only for arbitrary date-range exploration |
-| **Single** | `slicer` | `Values` only (Column) | `'Single'` | Single-select |
-| **Before** | `slicer` | `Values` only (Date/Numeric) | `'Before'` | Upper bound only (≤) |
-| **After** | `slicer` | `Values` only (Date/Numeric) | `'After'` | Lower bound only (≥) |
-| **Relative date** | `slicer` | `Values` only (Date column) | `'Relative'` | "Last N days/months/years" — needs `data.relativeRange`, `relativePeriod`, `relativeDuration` + `dateRange.includeToday` + `general.filter` with DateSpan/DateAdd |
-| **Relative time** | `slicer` | `Values` only (DateTime column) | `'RelativeTime'` | "Last N minutes/hours" — uses `data.relativeTimePeriod` instead of `relativePeriod` |
-| **Scrollable list** | `listSlicer` | `Values` (Column/Hierarchy), `Tooltips` (Measure/Aggregation) | — | Default for list-style slicers. `data.mode` not available. |
-| **Button/tile** | `advancedSlicerVisual` | `Values` (1 Column only), `Label` (1 Measure, optional), `Tooltips` (Aggregations) | — | ≤10 values, tile layout. `data.mode` not available. |
-
-**Temporal decision matrix:**
-
-| Signal | Use |
-|---|---|
-| Executive page, annual grain, ≤10 years | Year dropdown or year tile |
-| Discrete period comparison (e.g., 2020 vs 2023) | Year/month dropdown with multi-select |
-| Month/quarter reporting with 12-36 periods | Period dropdown or relative date |
-| Arbitrary day/month range exploration on Date/DateTime field | Full-date `Between` |
-| Integer/text date key or date picker does not render | Year/Period dropdown |
-
-**Constraints:**
-- `data.mode` is only available on the classic `slicer` visual — not on
-  `listSlicer` or `advancedSlicerVisual`.
-- `advancedSlicerVisual` allows only **one field** in `Values`.
-- Hierarchy slicers: only `slicer` (mode: Basic/Dropdown) and `listSlicer`
-  support hierarchies. Add `expansionStates` for expanded nodes (see
-  expressions.md).
-- A full-date column does not automatically mean `Between`. Choose by grain:
-  Year/Period dropdown or tile for annual/quarterly executive pages; `Between`
-  only when the field renders as Date/DateTime and users need arbitrary ranges.
-
-### Setting slicer selections
-
-The `general.filter` property in `objects` controls which values are
-selected. This is only needed when pre-selecting specific values — omit
-it entirely for the default "All" state.
-
-```json
-"general": [{
-  "properties": {
-    "orientation": { "expr": { "Literal": { "Value": "0D" } } },
-    "filter": {
-      "filter": {
-        "Version": 2,
-        "From": [
-          { "Name": "d", "Entity": "dim_company", "Type": 0 }
-        ],
-        "Where": [{
-          "Condition": { /* filter expression — see expressions.md */ },
-          "Annotations": {
-            "filterExpressionMetadata": {
-              "expressions": [{ /* Column Expression for the filtered field */ }],
-              "decomposedIdentities": {
-                "values": [[
-                  { "0": [{ "Literal": { "Value": "'A. Datum'" } }] },
-                  { "1": [{ "Literal": { "Value": "'N'" } }] },
-                  { "2": [{ "Literal": { "Value": "5L" } }] },
-                  { "3": [{ "Literal": { "Value": "'A. Datum'" } }] }
-                ]],
-                "columns": [{ "value": { /* Column Expression — grouping key */ } }]
-              },
-              "valueMap": [{ "0": "A. Datum", "1": "N", "2": "5", "3": "A. Datum" }]
-            }
-          }
-        }]
-      }
-    }
-  }
-}]
-```
-
-- `decomposedIdentities.values` — the actual selected values as literals
-- `decomposedIdentities.columns` — the grouping key columns
-- `valueMap` — maps indices in `decomposedIdentities` to queryRef values
-- `expansionStates` — only needed for hierarchy slicers when nodes are expanded;
-  `identityKeys` defined on the first level only, `identityValues` inside
-  `root.children[]` only when a specific node has been toggled open
-- **Literal format**: strings use single quotes inside double quotes
-  (`"Value": "'A. Datum'"`); numbers use type suffixes (`"Value": "5L"`).
-
----
-
-## Slicer Sync Groups
-
-Slicers can be synced across pages so that changing a selection on one page
-applies to all other pages with slicers in the same sync group. Add `syncGroup`
-inside the `visual` object (sibling of `visualType`, `query`, `objects`):
-
-```json
-{
-  "visual": {
-    "visualType": "slicer",
-    "syncGroup": {
-      "groupName": "DateSync",
-      "fieldChanges": true,
-      "filterChanges": true
-    },
-    "query": { /* ... */ },
-    "objects": { /* ... */ }
-  }
-}
-```
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `groupName` | string | Unique name for the sync group. Slicers with the same `groupName` across pages are synced. |
-| `fieldChanges` | boolean | When `true`, field/projection changes propagate to all group members. |
-| `filterChanges` | boolean | When `true`, filter/selection changes propagate to all group members. |
-
-**Rules:**
-- All slicers in the same sync group must have the same `visualType` and bound column.
-  Slicers of the same type that produce the same filter expressions can be in the
-  same group — e.g. two `slicer` visuals both bound to `Date.Date` with mode `'Between'`.
-- Set the same `groupName` on each slicer you want synced (e.g. `"DateSync"`; any unique string works).
-- Typically set both `fieldChanges: true` and `filterChanges: true`.
-
-> **Note:** The published PBIR JSON schemas (`visualContainer/2.5.0–2.9.0`) do
-> not list `syncGroup`. However, the internal schema (`visualConfiguration/9999.0.0`)
-> does include it with full type definition. Desktop reads and writes it correctly.
-
----
-
-## Theme Approach
-
-These slicer defaults are applied report-wide via theme `visualStyles`
-(plain JSON, not PBIR `expr` wrappers):
-
-```json
-"slicer": {
-  "*": {
-    "header": [{
-      "fontFamily": "Segoe UI Semibold",
-      "textSize": 10,
-      "fontColor": { "solid": { "color": "#252423" } },
-      "outlineStyle": 0
-    }],
-    "items": [{
-      "fontFamily": "Segoe UI Variable, Segoe UI, sans-serif",
-      "textSize": 9,
-      "fontColor": { "solid": { "color": "#252423" } },
-      "outlineStyle": 0,
-      "padding": 2
-    }]
-  }
-}
-```
-
-The global `*.*` wildcard also provides: border (#E8E8E8, radius=8),
-hidden visual header, and VCO padding (8px). Per the
-[VCO override caveat](#per-visual-vco-override-caveat), this `*.*.padding`
-cascade is **dropped** the moment a slicer sets any per-visual VCO, so every
-slicer template must redeclare `padding` explicitly — `8/8/8/8` to match the
-theme for normal slicers, or `0/0/0/0` for the [fill variant](#fill-variant)
-(so the white fill reaches the container edges).
-
-> `header.text` does **NOT** usefully cascade from theme — it would set
-> the same name on every slicer. Always set per-visual.
-
----
-
-## Discovering Properties
-
-```bash
-# List all formatting objects for a slicer type
-powerbi-report-author formatting list-objects slicer
-powerbi-report-author formatting list-objects advancedSlicerVisual
-powerbi-report-author formatting list-objects listSlicer
-
-# Inspect specific objects
-powerbi-report-author formatting describe-object slicer header
-powerbi-report-author formatting describe-object slicer items
-powerbi-report-author formatting describe-object slicer data
-powerbi-report-author formatting describe-object slicer selection
-
-# Search across all objects
-powerbi-report-author formatting search slicer "font|text|padding"
-```

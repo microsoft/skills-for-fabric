@@ -1,5 +1,16 @@
 # Shape Visual
 
+## Contents
+
+- [Basic Example (Rectangle Divider)](#basic-example-rectangle-divider)
+- [Container Shapes](#container-shapes)
+- [Available Shapes and Formatting](#available-shapes-and-formatting)
+  - [Rotation](#rotation)
+- [Conditional Formatting (Data-Driven Color)](#conditional-formatting-data-driven-color)
+- [Shape Text Caveat](#shape-text-caveat)
+- [Complete Example (Arrow with All Formatting)](#complete-example-arrow-with-all-formatting)
+
+
 <!-- TOC -->
 - [Basic Example (Rectangle Divider)](#basic-example-rectangle-divider)
 - [Container Shapes](#container-shapes)
@@ -113,10 +124,17 @@ powerbi-report-author formatting list-objects shape
 powerbi-report-author formatting describe-object shape <object>
 ```
 
-Shape objects that require `id` selectors need only the **single entry with the
-`id` selector** — the static (no-selector) entry is redundant but harmless.
-The CLI annotates these with `(selector: default)` in
-`powerbi-report-author formatting list-objects` output and `_selectorHint` in
+Shape selector and Show placement is object-specific:
+
+- `fill` and `outline` use a single `{ "id": "default" }` entry, including
+  their `show` property.
+- `text`, `shadow`, and `glow` keep `show` in a selectorless entry and their
+  bound/style properties in a separate `{ "id": "default" }` entry. Desktop
+  ignores `text.show` when it is stored only in the selected entry.
+
+The CLI annotates objects that require an `id` selector with
+`(selector: default)` in `powerbi-report-author formatting list-objects` output
+and `_selectorHint` in
 `powerbi-report-author formatting describe-object` output.
 
 ### Rotation
@@ -141,6 +159,14 @@ require a selector. It supports three independent angles:
 > **⚠️ Textbox minimum height:** Do not use textbox visuals as thin decorative
 > lines. PBI Desktop enforces a minimum rendered height (~24px) regardless of
 > the `height` value in `position`. Use a shape visual instead.
+
+## Conditional Formatting (Data-Driven Color)
+
+Shape color properties and the text label (`text.text`) support data-driven
+formatting. See
+conditional-formatting.md § Buttons and shapes (see `conditional-formatting.md`, section `buttons-and-shapes`)
+for the supported properties, styles (field value / rules / gradient), selector
+requirements, limits, and examples.
 
 ## Shape Text Caveat
 

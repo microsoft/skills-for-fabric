@@ -3,7 +3,16 @@
 #     apm install microsoft/skills-for-fabric --skill synapse-migration
 
 name: synapse-migration
-version: 0.1.0
-description: "Ports Azure Synapse workloads to Microsoft Fabric: Spark pools/notebooks, Lake Databases, Linked Services, and Dedicated SQL Pool schema and stored procedure code to Lakehouse Spark SQL from live or offline..."
+version: 0.1.5
+description: "Converts Azure Synapse workloads to Fabric: Dedicated SQL Pool schemas and procedures to Lakehouse Spark SQL artifacts or Warehouse targets, plus Spark, Lake Database, and Linked Service migration."
 author: Microsoft Fabric
 license: MIT
+
+dependencies:
+  mcp:
+    - name: fabric-sqlendpoint
+      registry: false
+      transport: http
+      url: https://api.fabric.microsoft.com/v1/mcp/dataPlane/sqlEndpoint
+      tools:
+        - "execute_query"

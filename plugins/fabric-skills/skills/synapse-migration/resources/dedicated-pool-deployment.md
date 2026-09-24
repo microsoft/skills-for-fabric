@@ -2,6 +2,8 @@
 
 Convert approved source T-SQL stored-procedure logic into executable Spark SQL `%%sql` notebook cells before publication. Then create or resolve the target Lakehouse through Fabric REST, execute schema-only artifacts through Lakehouse-bound Livy, and publish the generated notebooks to the Fabric workspace without executing them.
 
+Every deployment guidance response must explicitly state that approved source T-SQL is converted to Spark SQL before publication and that deployment approval for the frozen `run-context.json` is required before any mutation, including create, Livy DDL, publish, or update operations. Do not leave either statement implicit in a checklist or heading.
+
 ## ⛔ CRITICAL: What NOT to Do
 
 **These deployment patterns are EXPLICITLY FORBIDDEN and cause correctness/maintenance issues:**
@@ -35,6 +37,8 @@ Create or update each approved target Notebook component. An approved `1:1` comp
 
 ## API Flow
 
+Before the first Fabric mutation, require recorded deployment approval for the frozen `run-context.json`: its artifact hash, exact workspace/Lakehouse target, create-or-reuse decision, and planned schema/view/Notebook creates, updates, and replacements. Read-only workspace and item discovery may precede approval. A changed target, mapping, operation set, or artifact hash invalidates approval; stop and present the revised plan for approval again. Do not create a Lakehouse or Livy session, submit DDL, or create/update a Notebook without a matching approval record.
+
 **Defect #21 fix**: Use `scripts/dedicated_pool_runtime.py` as the maintained implementation for pagination, LRO handling, `kind: sql` Livy statement payloads, atomic manifest checkpoints, immutable run-context verification, schema readiness, orphan Notebook recovery, selectors, and capacity batches. **All helpers must accept caller-provided overrides** via command-line arguments or configuration (timeout values, retry limits, session configuration, headers). Never hardcode defaults that prevent caller customization.
 
 **Defect #22 fix**: `await_lro` declares and enforces `max_poll_duration_seconds` (default 900s, configurable), `max_poll_attempts` (default 180, configurable), and `retry_after_seconds` (from the response header or default 5s). It accepts the legacy `deadline_seconds` and `max_polls` aliases for existing callers. Retryable HTTP failures (429, 500, 502, 503, 504) use bounded exponential backoff. Non-retryable failures (4xx except 429, terminal LRO states) fail immediately. The caller may inject a logger; all retry attempts and final timeout/failure are logged.
@@ -49,9 +53,9 @@ Persist all returned IDs through `record_checkpoint`; never copy them manually b
 1. Acquire a Fabric token for `https://api.fabric.microsoft.com`.
 2. Resolve the workspace by display name.
 3. List Lakehouses and resolve the target by display name.
-4. **Defect #24 fix**: If absent and approved, create it with `POST /v1/workspaces/{workspaceId}/lakehouses`. After creation or resolution, **verify schema-enabled state** by checking lakehouse properties or attempting `CREATE SCHEMA IF NOT EXISTS <test_schema>` via Livy. Lakehouses without SQL Analytics Endpoint or schema support block deployment.
+4. Verify the frozen `run-context.json` and matching deployment approval against the resolved target. **Defect #24 fix**: If absent and the approved plan authorizes creation, create it with `POST /v1/workspaces/{workspaceId}/lakehouses`. After creation or resolution, **verify schema-enabled state** through Lakehouse properties and a read-only Spark catalog query such as `SHOW SCHEMAS`. Lakehouses without SQL Analytics Endpoint or schema support block deployment.
 5. Handle synchronous `200`/`201` responses directly, accepting a documented empty success body without JSON parsing. When a success body is present, require a valid JSON object. For `202`, capture `Location` and `x-ms-operation-id`, honor `Retry-After`, and poll with a declared deadline until `Succeeded`, `Failed`, or `Cancelled`. Timeout, missing `Location`, terminal failure, malformed response, or exhausted bounded retries is a deployment failure and must be persisted; never poll indefinitely.
-6. Verify the frozen `run-context.json`, then create or reuse the recorded Livy session bound to that exact workspace and Lakehouse. A changed target ID or artifact hash blocks mutation.
+6. Create or reuse the recorded Livy session bound to that exact workspace and Lakehouse. A changed target ID or artifact hash blocks mutation and invalidates the deployment approval.
 7. **Defect #23 fix**: Wait for the Livy session to become `idle` within a bounded deadline. **Submit artifacts in strict dependency order**: (a) schemas/tables (DDL), (b) views, (c) procedures-as-notebooks. Within each phase, follow manifest dependency order. Submit each raw schema-only Spark SQL object separately with payload `{"kind":"sql","code":"<statement>"}`; do not include notebook magic such as `%%sql`, and never submit all DDL as one batch. **Never submit procedures before their dependent tables/views are created and validated.** Record the object input hash, session/statement IDs, state, output hash, attempt, and sanitized error transactionally after each statement. A statement succeeds only when its state is `available` and `output.status` is `ok`. Treat `error`, `cancelled`, `dead`, timeout, missing output, or session termination as failure. Do not submit row inserts, CTAS materialization, DataFrame writes, or other data-loading statements.
 8. **Defect #40 fix**: Before any Notebook create or update, verify `deployment-package.json` for every audited procedure:
    - **Required fields**: `projectionPath`, `projectionHash`, `artifacts[]` with `{ path, sha256 }`, `ledgerPath`, `ledgerHash`, verdict `ReadyForPublication`

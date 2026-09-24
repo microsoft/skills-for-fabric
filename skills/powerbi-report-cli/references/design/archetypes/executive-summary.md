@@ -1,5 +1,27 @@
 # Executive Summary Dashboard
 
+## Contents
+
+- [Job To Be Done](#job-to-be-done)
+- [Core Principles](#core-principles)
+- [Layout Variants](#layout-variants)
+  - [Variant A — Hero-Right (default)](#variant-a--hero-right-default)
+  - [Variant B — KPI-Strip](#variant-b--kpi-strip)
+  - [Variant C — Headline-Hero](#variant-c--headline-hero)
+- [Chart Selection](#chart-selection)
+  - [Use](#use)
+  - [Do NOT Use](#do-not-use)
+- [Color & Typography](#color--typography)
+- [Interaction Design](#interaction-design)
+  - [Do NOT Use](#do-not-use)
+- [PBI Formatting Reference](#pbi-formatting-reference)
+  - [Card / CardVisual](#card--cardvisual)
+  - [Sparkline (lineChart)](#sparkline-linechart)
+  - [Variance Bar (barChart)](#variance-bar-barchart)
+  - [Page & Navigation](#page--navigation)
+- [Decision Checklist](#decision-checklist)
+
+
 > **Archetype**: Executive Summary
 > **Theme**: for generated reports, preserve `references/design/assets/base.json` safeguards while adapting `dataColors` to domain; for brownfield, preserve the existing theme unless a theme swap is requested
 > **Canvas**: greenfield default FHD 1920 x 1080; preserve existing size for brownfield unless resize is approved · `pageAlignment: Middle`
@@ -207,6 +229,10 @@ strip.
 | Page tooltip on KPI card | Tooltip page 320 × 240, `tooltipType: ReportPage` | Shows 24 h sparkline + context |
 | Period toggle | Bookmarks: vs-week / vs-plan | ONE toggle, not N slicers |
 | Date filter | Single date picker, top-right | Maximum ONE slicer on page |
+
+**Navigation model**: Executive reports get **minimal** navigation — prefer the auto **Page Navigator**
+(or 1–2 drill-through buttons), never a dense custom button bar. See
+interactivity.md § Navigation Model Decision (see `../interactivity.md`, section `navigation-model-decision`).
 
 ### Do NOT Use
 

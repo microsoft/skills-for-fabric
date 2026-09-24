@@ -1,5 +1,22 @@
 # Anti-Patterns — The Dashboard Slop Catalog
 
+## Contents
+
+- [Why This Catalog Exists](#why-this-catalog-exists)
+- [Cluster 1 — Visual Noise (Chartjunk)](#cluster-1--visual-noise-chartjunk)
+- [Cluster 2 — Misleading Encoding](#cluster-2--misleading-encoding)
+- [Cluster 3 — Cognitive Overload](#cluster-3--cognitive-overload)
+- [Cluster 4 — Color Misuse](#cluster-4--color-misuse)
+- [Cluster 5 — Interactivity Theater](#cluster-5--interactivity-theater)
+- [Cluster 6 — Archetype Mismatch](#cluster-6--archetype-mismatch)
+- [LLM-Specific Failure Modes](#llm-specific-failure-modes)
+- [Detection Heuristics](#detection-heuristics)
+- [Severity Model](#severity-model)
+- [Remediation Quick-Reference](#remediation-quick-reference)
+- [Pre-Publish Review Workflow](#pre-publish-review-workflow)
+- [Cross-Reference to Other Documents](#cross-reference-to-other-documents)
+
+
 ## Why This Catalog Exists
 
 LLMs producing dashboard layouts gravitate toward a set of attractor states —

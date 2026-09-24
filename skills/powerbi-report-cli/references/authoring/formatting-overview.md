@@ -7,43 +7,28 @@
 
 Power BI resolves formatting in a layered cascade (highest priority wins):
 
-| Priority | Layer | File | Encoding |
-|----------|-------|------|----------|
-| 1 (highest) | Conditional formatting | `visual.json` objects (FillRule, rules) | PBIR expressions |
-| 2 | Per-visual objects | `visual.json → visual.objects` | PBIR expressions |
-| 3 | Visual container objects | `visual.json → visual.visualContainerObjects` | PBIR expressions |
-| 4 | Page objects | `page.json → objects` (background, filter pane) | PBIR expressions |
-| 5 | Custom theme (type-specific) | `theme.json → visualStyles[type]["*"][obj]` | Theme encoding |
-| 6 | Custom theme (wildcard) | `theme.json → visualStyles["*"]["*"][obj]` | Theme encoding |
-| 7 | Base theme | `SharedResources/BaseThemes/` | Theme encoding |
-| 8 (lowest) | System defaults | Built into PBI Desktop | — |
+| Priority | Layer | File | Encoding | Instructions |
+|----------|-------|------|----------|--------------|
+| 1 (highest) | Conditional formatting (FillRule, rules) | `visual.json` objects | PBIR expressions | conditional-formatting.md (see `conditional-formatting.md`) |
+| 2 | Per-visual objects (chart colors, labels, axes, data points, row banding) | `visual.json → visual.objects` | PBIR expressions | formatting.md (see `formatting.md`) |
+| 3 | Visual container objects | `visual.json → visual.visualContainerObjects` | PBIR expressions | formatting.md (see `formatting.md`, section `visual-container-objects-vco`) |
+| 4 | Page objects (canvas background, wallpaper, page background images, filter pane (`outspacePane`), filter cards (`filterCard`)) | `page.json → objects` | PBIR expressions | page-formatting.md (see `page-formatting.md`); filter-pane.md (see `filter-pane.md`) |
+| 5 | Custom theme (visualStyles - type-specific; dataColors; textClasses; style presets) | `theme.json → visualStyles[type]["*"][obj]` | Theme encoding | theming.md (see `theming.md`, section `6-visual-styles-visualstyles`) |
+| 6 | Custom theme (visualStyles - wildcard) | `theme.json → visualStyles["*"]["*"][obj]` | Theme encoding | theming.md (see `theming.md`, section `6-visual-styles-visualstyles`) |
+| 7 | Base theme | `SharedResources/BaseThemes/` | Theme encoding | theming.md (see `theming.md`) |
+| 8 (lowest) | System defaults | Built into PBI Desktop | — | No skill-side file; verify rendered defaults in Desktop |
 
 A property set at layer 2 overrides the same property at layers 3–8.
-When a cascade result matters visually, verify in Desktop with the
-`powerbi-desktop` screenshot workflow.
+When a cascade result matters visually, verify it through
+the host-specific workflow in preview.md (see `preview.md`).
 
 > **⚠️ Theme changes require sweeping all cascade layers.** The theme file
 > only controls layers 5–6. Hardcoded colors in `page.json` (layer 4) and
 > `visual.json` (layers 2–3) override the theme and must be updated in the
 > same operation. See
-> [re-theming.md § Re-theming an Existing Report](re-theming.md#re-theming-an-existing-report).
+> re-theming.md § Re-theming an Existing Report (see `re-theming.md`, section `re-theming-an-existing-report`).
 
-### VCO Per-Visual Requirements
-
-These `visualContainerObjects` properties must be set **per-visual** —
-they do not cascade reliably from theme `visualStyles`:
-
-- `border` (including `radius`) — for rounded corners
-- `background` (show, color, transparency)
-- `padding` — must accompany any other VCO override
-- Card-specific: `accentBar`, `outline`, `layout` (require `selector: { id: "default" }`)
-
-**Rule**: when setting any `visualContainerObjects` per-visual, always
-set `background`, `border` (with `radius`), `padding`, and
-`visualHeader` together. Partial VCO overrides cause PBI to reset
-omitted properties to system defaults.
-
-## Value Encoding — Three Formats
+## Static Property Value Encoding — Three Formats
 
 **Critical**: Theme files and PBIR files encode the same properties differently.
 Using the wrong encoding is the #1 formatting error.
@@ -86,12 +71,3 @@ in descending priority:
 Within each priority row, **first match in array order wins**.
 
 See `references/authoring/formatting.md` for full selector patterns and examples.
-
-## Which File to Read Next
-
-| You are editing… | Read this |
-|-----------------|-----------|
-| `visual.json` — chart colors, labels, axes, data points, VCOs, conditional formatting, row banding | **references/authoring/formatting.md** |
-| `page.json` — canvas background, wallpaper, page background images | **references/authoring/page-formatting.md** |
-| `page.json` — filter pane (`outspacePane`), filter cards (`filterCard`) | **references/authoring/filter-pane.md** |
-| `theme.json` — dataColors, textClasses, visualStyles, style presets | **references/authoring/theming.md** |

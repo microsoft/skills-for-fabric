@@ -9,7 +9,7 @@
 # materialises, so a single installed skill keeps every shared reference.
 
 name: skills-for-fabric
-version: 0.3.17
+version: 0.3.18
 description: Microsoft Fabric skills for AI coding agents, with shared reference material.
 author: Microsoft Fabric
 license: MIT

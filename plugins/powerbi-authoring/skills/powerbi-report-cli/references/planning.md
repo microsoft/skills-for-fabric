@@ -1,17 +1,34 @@
+
+## Contents
+
+- [Must/Prefer/Avoid](#mustpreferavoid)
+  - [MUST](#must)
+  - [PREFER](#prefer)
+  - [AVOID](#avoid)
+- [Examples of When to Use](#examples-of-when-to-use)
+- [Required Operating Rules](#required-operating-rules)
+- [Dependency Checklist](#dependency-checklist)
+- [Round Structure](#round-structure)
+  - [Round 0 — Setup and Dependency Check](#round-0--setup-and-dependency-check)
+  - [Round 1 — Audience and Job](#round-1--audience-and-job)
+  - [Round 2 — Model Inventory and Scope](#round-2--model-inventory-and-scope)
+  - [Round 3 — Narrative and Page Plan](#round-3--narrative-and-page-plan)
+  - [Round 4 — Design Identity, Accessibility, and Delivery](#round-4--design-identity-accessibility-and-delivery)
+
 <!-- Mode reference for the `powerbi-report-cli` skill. Loaded on demand from `skills/powerbi-report-cli/SKILL.md` when the request matches the `planning` mode. -->
 
 # powerbi-report-cli planning mode -- Power BI Report Planning
 
+> **Required continuation.** After this file, open
+> `skills/powerbi-report-cli/references/planning-part-02.md` directly from the
+> complete reference index before producing `_brief/report-spec.md`.
+
 This skill orchestrates the full lifecycle for a new Power BI report:
 
-**Define -> Inspect -> Spec -> Approve** | *user replies* | **Build -> Validate -> Publish**
+**Define -> Inspect -> Spec -> Approve -> Build -> Validate -> Publish**
 
-`Approve` is a TURN BOUNDARY, not a step you walk past. Everything to its left
-happens in this turn; everything to its right happens only in a LATER turn, after
-the user has actually answered. This mode does continue into implementation, but
-never in the same turn that asked for approval -- if no reply has arrived, you are
-not approved. Running the arrow end to end as one pipeline is the most common way
-this mode fails.
+It is intentionally broader than a pure requirements-gathering flow: it captures
+the report spec **and** continues into implementation after the user approves.
 
 ## Must/Prefer/Avoid
 
@@ -19,7 +36,7 @@ this mode fails.
 
 - Use this skill for broad report creation workflows that need requirements, dependency checks, approval, and build sequencing.
 - Ask focused clarification questions one at a time and stop after the required decision is clear.
-- Lock `_brief/report-spec.md`, ask for approval, then end the turn. Your own question is not an approval.
+- Lock `_brief/report-spec.md` and get approval before implementation.
 - Route design decisions through the `design` mode and file mechanics through the `authoring` mode.
 
 ### PREFER
@@ -49,11 +66,11 @@ Examples:
 - "Use the report playbook to start a new report."
 - "Create a reusable workflow for new Power BI reports."
 
-Do **not** use this mode for a small edit to an existing report page. For
+Do **not** use this skill for a small edit to an existing report page. For
 direct PBIR authoring tasks, use the `authoring` mode. For visual critique or
 greenfield design guidance **without the full guided workflow** (a one-off
 "redesign this" or "what should this look like?"), use
-the `design` mode directly. This mode *uses* the `design` mode during
+the `design` mode directly. This skill *uses* the design skill during
 Rounds 3–4 — it does not replace it.
 
 ## Required Operating Rules
@@ -67,12 +84,10 @@ Rounds 3–4 — it does not replace it.
 4. **Check dependencies explicitly.** Do not assume Desktop, MCP, authoring, or
    Fabric publishing are available.
 5. **Produce one locked `_brief/report-spec.md` before building.**
-6. **Ask for approval before implementation, then END YOUR TURN.** Do not build
-   until the user has explicitly approved in a reply. Your own question does not
-   count as approval, and neither does the absence of an objection.
-7. **When approved, build end-to-end.** Only once that reply has arrived: model
-   changes, PBIR generation, validation, Desktop preview, screenshot loop, and
-   optional Fabric publish.
+6. **Ask for approval before implementation.** Do not build until the user
+   explicitly approves.
+7. **When approved, build end-to-end.** Model changes, PBIR generation,
+   validation, Desktop preview, screenshot loop, and optional Fabric publish.
 8. **Local edits stay local unless publishing is approved.**
 9. **Do not re-ask known answers.** If the original prompt, inspected files, or
    a prior round already provides audience, page count, delivery target, scope,
@@ -88,9 +103,9 @@ Before implementation, capture this status:
 | Power BI Desktop | Open/reload PBIP and visually validate report | Always for local preview |
 | PBIP/PBIR project | File-based report authoring | Always for generated reports |
 | TMDL semantic model | Model persistence and source control | Required for model edits |
-| `powerbi-modeling-mcp` | Inspect tables, columns, measures; create measures/columns; deploy semantic model | Required for live model authoring |
-| `authoring` mode | Validate PBIR, reload Desktop, screenshot pages | Required for report authoring validation |
-| `management` mode | Create/update/download Fabric reports | Required only for Fabric publishing |
+| powerbi-modeling-mcp | Inspect tables, columns, measures; create measures/columns; deploy semantic model | Required only for the **`Live Connected Model`** entry mode (remote Fabric model) — not needed for **`Local Model`** mode |
+| the `authoring` mode | Validate PBIR, reload Desktop, screenshot pages | Required for report authoring validation |
+| the `management` mode | Create/update/download Fabric reports | Required only for Fabric publishing |
 | Node.js | Generator-based PBIR authoring | Recommended for reproducible reports |
 
 If a dependency is unavailable, continue planning and mark the affected phase as
@@ -102,24 +117,105 @@ blocked/manual. Do not pretend it is available.
 
 Goal: identify the semantic model, report target, and available tooling.
 
-Ask only what cannot be inspected automatically:
+#### Entry modes — how the user is starting
+
+A report always sits on top of a semantic model, so the first job is to locate
+that model. There are multiple entry modes; detect which one the user is starting
+from and follow the matching path. All three converge on the same working-notes
+block below.
+
+| Entry mode | The user is starting from |
+|------------|---------------------------|
+| `Local Model` | Model files already on disk (`.pbip` / `.SemanticModel` / `.Report`) |
+| `Live Connected Model` | A model that lives in a Fabric/Power BI workspace (link, ID, or name) |
+| `No Model` | No model anywhere — only raw data or an idea |
+
+If the prompt doesn't make the starting point obvious, ask one question to decide
+which mode applies — but only when it can't be inferred or inspected:
 
 > What semantic model or dataset should this report use?
 
-Recommended choices should be concrete if candidates are discoverable. Enumerate
-existing Fabric semantic models and local `.SemanticModel` folders in scope,
-then present them as options and mark the best match as recommended. Example:
+A local-folder answer is `Local Model`, a Fabric model/workspace reference is
+`Live Connected Model`, and "no model yet" is `No Model`.
 
-- `<DiscoveredSemanticModelName>` (Recommended)
-- Another existing Fabric semantic model
-- A new local dataset
+**`Local Model`.** The user already has a `.pbip` / `.SemanticModel` /
+`.Report` folder on disk.
 
-Then inspect/check:
+- Enumerate local `.SemanticModel` and `.pbip` folders in scope and confirm
+  which one to use. This is the default path.
+
+**`Live Connected Model`.** The user points at an
+existing semantic model in a Fabric/Power BI workspace by any means. All forms
+funnel into one resolution procedure that ends with the **canonical identifier
+tuple** — `{ workspaceName, workspaceId, modelName, modelId }` — which is what
+both report binding and live model inspection consume.
+
+*Step 1 — Detect the input shape and extract what you can:*
+
+- **Portal URL** (shape varies). Parse GUIDs out of the path: `workspaceId` =
+  the segment after `/groups/`, `modelId` = the segment after `/datasets/` or
+  `/modeling/`. Ignore the tenant subdomain (`app.`, `msit.`, …). `/groups/me`
+  means *My workspace*. Example `modelView` link — both values are **GUIDs**:
+  `https://<tenant>.powerbi.com/groups/<workspace-id>/modeling/<model-id>/modelView?...`.
+- **GUID or name with the kind clear from context** — the user or a URL says it
+  is a *model* vs a *workspace* (e.g. "the *evSales* model in the *Sales*
+  workspace") → assign to `modelId`/`modelName` or `workspaceId`/`workspaceName`
+  accordingly.
+- **Kind unspecified** — a bare GUID or name with no indication whether it refers
+  to a model or a workspace → **ask the user which it is** before resolving; do
+  not assume.
+- **A piece is missing** — once the kind is known, ask the user for anything the
+  resolution still needs (e.g. a model reference with no workspace).
+
+*Step 2 — Resolve to the full tuple.* This skill does **not** own connection
+mechanics — prefer handing the reference to the modeling capability (the Power BI
+modeling MCP `powerbi-modeling-mcp` / `semantic-model-authoring` skill) to
+resolve and connect. Note the live connect needs the workspace and model
+**names**, so if you only have a GUID or URL you must resolve names first. To do
+that, use the read-only Fabric workspace/item lookups in
+`COMMON-CLI.md § Finding Workspaces and Items` (see `../../../common/COMMON-CLI.md`, section `finding-workspaces-and-items-in-fabric`),
+including the **reverse** (ID → name) direction:
+
+- `workspaceId → workspaceName`: get the workspace by ID and read `displayName`.
+- `modelId → modelName` (or `modelName → modelId`): list `SemanticModel` items
+  in the workspace and match on `id`/`displayName`.
+- **Bare `modelId`, no workspace**: the model GUID alone cannot be located
+  without a workspace — search accessible workspaces' semantic models for the
+  id, or ask the user which workspace it lives in.
+
+*Step 3 — Disambiguate lookup results.* After resolving, if a name or GUID
+matches **zero** items (not found or no access) or **more than one** (e.g. a
+common name that recurs across workspaces), **ask the user** to pick the intended
+workspace/model before continuing. Never guess silently.
+
+*Then:*
+
+- If no live model-inspection capability (modeling MCP) is connected, this mode
+  cannot proceed: tell the user the reference requires the modeling MCP and
+  either connect it or fall back to `Local Model` mode with local files.
+- Model inspection happens in Round 2 against the live model — no local TMDL is
+  required.
+- **Persist the binding:** record the resolved tuple (`workspaceName`,
+  `workspaceId`, `modelName`, `modelId`) and the assembled `connectionString` in
+  the brief's **Semantic model binding** section so later steps can reuse it
+  without re-resolving.
+- **Bind the report:** hand the resolved `workspaceName`, `modelName`, and
+  `modelId` to the `authoring` mode, which authors `definition.pbir` using
+  the live `byConnection` form. Do not author the connection string here.
+
+**`No Model`.** The user has only raw data or an idea and no model
+anywhere. This is **out of scope for report planning** — model creation belongs
+to the `semantic-model-authoring` skill and the modeling MCP. Do not attempt to
+build a model here. Recognize the situation, point the user to
+`semantic-model-authoring` to create the model first, and resume report planning
+once a model exists (then re-enter via `Local Model` or `Live Connected Model`).
+
+Once the model is identified, inspect/check the remaining tooling:
 
 - Existing `.pbip`, `.Report`, `.SemanticModel` folders.
 - Whether TMDL files exist.
-- Whether Power BI Desktop automation script exists.
-- Whether MCP connection is available or can be established.
+- Whether Power BI Desktop preview automation via `powerbi-report-author preview --host desktop` is available.
+- Whether the modeling MCP (`powerbi-modeling-mcp`) connection is available or can be established.
 - Whether Fabric publishing is requested.
 
 Output working notes:
@@ -282,7 +378,9 @@ Capture slicers and interactions:
 - Page-specific slicers
 - Search/prefix slicers for high-cardinality dimensions
 - Drillthrough/profile pages
-- Bookmarks/navigation if needed
+- Navigation model: page navigator vs. custom buttons vs. bookmark navigator (pick one primary)
+- Button actions needed: Back, page navigation, bookmark, drillthrough, apply/clear all slicers, Web URL, Q&A
+- Bookmarks: named saved states for narrative steps or view toggles
 
 ### Round 4 — Design Identity, Accessibility, and Delivery
 
@@ -327,251 +425,3 @@ applied automatically unless the user overrides):
 - Use tile/list slicers only for short categorical fields.
 - Place detailed tables near the bottom of the page.
 - Keep report interactions predictable and consistent.
-
-## Design Contract Gate
-
-Before producing `_brief/report-spec.md` for approval, get a canonical
-`Design Brief:` YAML block from the `design` mode. The planner may provide
-requirements, model inventory, page goals, and user constraints to the design
-skill, but the planner must not author a competing detailed design skeleton.
-
-The canonical design block must include:
-
-- `generated_by: powerbi-report-cli`
-- `contract_version`
-- one `pages[]` entry for every page in the page plan
-- `pages[].layout_contract.canvas`
-- `pages[].layout_contract.grid.regions`
-- `pages[].layout_contract.placements`
-- `pages[].layout_contract.space_audit`
-- one `page_title` textbox placement with non-empty title text per page
-- slicer placements in a top-right `filters` region or a justified filter rail
-- no bare single-value `cardVisual` occupying the largest/dominant hero region
-  unless the design marks it as a composite KPI treatment with context and
-  rationale
-- no unresolved placeholders, ellipses, or prose-only wireframes
-
-If the block is missing these items, stop and revise the design contract before
-asking for approval or invoking the `authoring` mode.
-
-## Locked Report Spec Output
-
-After Rounds 0-4, produce one file and save it under `./_brief/` in the
-current working directory:
-
-- `./_brief/report-spec.md` — the single source of truth for approval and
-  implementation handoff.
-
-`report-spec.md` has two layers:
-
-1. **Markdown sections** for user approval and readable context.
-2. A fenced `yaml` block containing the exact `Design Brief:` returned by
-   the `design` mode — the canonical implementation contract that
-   the `authoring` mode consumes.
-
-If Markdown prose and the embedded YAML disagree, fix `report-spec.md` before
-building. Do not ask the authoring agent to choose between conflicting
-instructions.
-
-If the agent runtime exposes a dedicated session/scratch folder (for example a
-`session-state` path injected by the harness), you may also write a copy there
-for user visibility, but the canonical implementation handoff file remains
-`./_brief/report-spec.md` unless every later authoring step carries the alternate
-absolute path explicitly.
-
-### `report-spec.md` template
-
-The user-approval doc and agent handoff contract. The Markdown captures
-sign-off granularity; the embedded YAML captures exact implementation intent.
-
-````markdown
-# Report Spec
-
-## Report identity
-- Report name:
-- Semantic model:
-- Audience:
-- Primary purpose:
-- Delivery target:
-
-## User decisions and constraints
-- Scope:
-- Page count:
-- Interactivity:
-- Design direction:
-- Publishing:
-- Tooling:
-- Model edit permissions:
-- Accessibility:
-- Data caveats:
-
-## Narrative
-- Core story:
-- Audience promise:
-- Key questions answered:
-
-## Design identity (from the `design` mode Step 1)
-- Tone: <named entry from tone-catalog, e.g. "Editorial Newsroom">
-- Signature: <one defining move, e.g. "tabular numerals + display serif headlines">
-- Brownfield delta (if applicable): <current_tone → target_tone>
-
-## Page plan (archetypes from the `design` mode Step 3)
-1. Page name
-   - Archetype:                      <Executive Summary | Analytical Canvas | …>
-   - Layout variant (A/B/C):         <plus one-sentence variant_rationale>
-   - Purpose:
-   - Visuals:
-   - Fields/measures:
-   - Slicers/interactions:
-
-## Design system summary
-- Theme name + base palette (1–2 lines):
-- Color semantics (which measure → which color, 1–2 lines):
-- Typography pairing (display + body):
-- Layout pattern (grid + gutter + density):
-- Accessibility commitments:
-
-## Model requirements
-- Existing measures:
-- New measures:
-- New calculated columns:
-- Relationship/sort requirements:
-
-## Canonical design contract
-
-Paste the exact fenced `yaml` block produced by the `design` mode here.
-Do not rewrite it from planner memory and do not replace its mechanical
-`layout_contract` with a freeform ASCII wireframe.
-
-The YAML block is authoritative for implementation. The `authoring` mode
-must implement this block; surrounding prose is context and conflict detection.
-
-## Implementation notes
-
-- Model changes:
-- PBIR/report authoring:
-- Validation:
-- Desktop screenshot verification:
-- Publishing boundary:
-- Risks:
-````
-
-### Required acceptance checks before approval
-
-Before writing the approval question, verify the spec meets all of the
-following. If any check fails, fix `report-spec.md` and the embedded
-`Design Brief:` block before asking for approval.
-
-- The block begins with `Design Brief:`.
-- It includes `generated_by: powerbi-report-cli` and `contract_version`.
-- Every Markdown page has a matching `pages[]` entry.
-- Every page has `layout_contract.canvas`, `layout_contract.grid.regions`, and
-  `layout_contract.placements`.
-- Every page has `layout_contract.space_audit` with empty `unplaced_regions`
-  and an explicit empty-space/balance rationale.
-- Every page has a `page_title` textbox placement with non-empty title text.
-- Slicers are in a top-right `filters` region or a justified filter rail; no
-  data visual starts under a slicer/header-band region.
-- No bare single-value `cardVisual` is the largest/dominant hero region unless
-  the YAML explicitly describes a composite KPI treatment with context.
-- The approved YAML has no ellipses (`...`), unresolved placeholders, or
-  pages/visuals promised in Markdown but omitted from the YAML.
-
-## Approval Gate
-
-After writing `report-spec.md`, ask exactly one approval question:
-
-> Approve this report spec so I can start building?
-
-Recommended choices:
-
-1. Approve — start building
-2. Revise audience/purpose
-3. Revise scope/page plan
-4. Revise design/delivery
-
-Do not invoke authoring or publishing skills until the user approves.
-
-Then stop and end your turn. A request that said "build it" or "publish it" is what
-brought you here; it is not the approval, because the spec it would approve did not
-exist yet. If no reply has arrived, the correct final state of this turn is the
-written spec plus the question above -- nothing built, nothing published.
-
-## Implementation After Approval
-
-When the user approves, execute this sequence:
-
-1. Re-read the approved canonical report spec (normally `_brief/report-spec.md`,
-   or the explicitly carried alternate absolute path) and extract the embedded
-   `Design Brief:` YAML block. Verify it has `generated_by:
-   powerbi-report-cli`, `contract_version`, one populated `layout_contract`
-   per page, and `space_audit` per page before authoring. For greenfield, verify
-   the canvas is FHD (`1920 x 1080`) unless the user chose another size, and
-   verify the largest/dominant region is not a bare single-value `cardVisual`.
-2. Mark the first implementation todo as in progress.
-3. Connect to the semantic model.
-4. Create/update required measures and calculated columns using whichever
-   model-authoring path is available — a semantic-model authoring skill, a modeling
-   MCP server, or direct TMDL edits — in that order of preference.
-5. Validate each model change with DAX where possible.
-6. After calculated-column or measure changes, trigger the lightweight
-   recalculation supported by the chosen tool (e.g., XMLA refresh with
-   `refreshType=Calculate`) unless a full source refresh is explicitly
-   required and safe.
-7. Export model changes to TMDL.
-8. If the export writes a flat TMDL layout, reorganize into
-   `definition/database.tmdl`, `definition/model.tmdl`,
-   `definition/relationships.tmdl`, and `definition/tables/*.tmdl`.
-9. Scaffold or copy the PBIP/PBIR report structure.
-10. Author PBIR through the `authoring` mode guidance.
-11. Generate report files.
-12. Validate required files and JSON.
-13. Open/reload in Power BI Desktop.
-14. Screenshot pages.
-15. Fix visual, slicer, data-binding, accessibility, and layout issues.
-16. Publish only if the approved delivery target includes publishing.
-
-## Fabric Publish Rules
-
-Publish only when the approved delivery target includes publishing. Hand the
-publish step to the `management` mode; do not author Fabric REST calls
-or `definition.pbir` `byConnection` payloads from this skill. See
-the `management` mode for the authoritative `byConnection` schemas
-(minimal API form and full XMLA form for local Desktop validation), LRO
-polling, and theme upload rules.
-
-Planner-level rules to respect when invoking the `management` mode:
-
-- Resolve workspace, report, and semantic model dynamically; do not hardcode
-  IDs.
-- Include all PBIR definition parts on create/update; never send a partial
-  definition.
-- Match custom theme upload paths exactly to the paths referenced in
-  `report.json`.
-- Use `--verbose` for long-running operations and poll LROs to a terminal
-  state (`Succeeded` / `Failed`).
-- Clean up any temporary publish scripts or payload files after the operation
-  completes.
-
-## Validation Standards
-
-A report is not complete until:
-
-- Required PBIP/PBIR files exist.
-- All JSON parses.
-- `definition.pbir` points to the expected semantic model.
-- Pages and visuals are generated in expected counts.
-- Power BI Desktop opens the `.pbip`.
-- Desktop reload succeeds.
-- Screenshot capture succeeds for at least the cover and any newly authored
-  pages.
-- If published, Fabric LRO returns `Succeeded`.
-
-## Anti-Patterns and Pitfalls
-
-- Generated PBIR is safer than hand-editing individual visual JSON files.
-- Model changes must be persisted before Desktop reload.
-- DAX filter direction can break dimension aggregations from fact-side flags.
-- High-cardinality slicers need search or prefix filtering.
-- Desktop validation catches issues that JSON validation cannot.
-- Fabric publishing is sensitive to `byConnection` schema and theme paths.

@@ -1,5 +1,20 @@
 # Chart Selection Decision Framework
 
+## Contents
+
+- [Core Principle](#core-principle)
+- [Primary Decision Matrix](#primary-decision-matrix)
+- [Secondary Selection Filters](#secondary-selection-filters)
+- [Power BI Visual Type Crosswalk](#power-bi-visual-type-crosswalk)
+- [Archetype Applicability](#archetype-applicability)
+- [Decision Checklist](#decision-checklist)
+- [Quick-Reference: FT Visual Vocabulary Mapping](#quick-reference-ft-visual-vocabulary-mapping)
+- [Cardinality Limits by Visual Type](#cardinality-limits-by-visual-type)
+- [Encoding Accuracy Hierarchy](#encoding-accuracy-hierarchy)
+- [Series Count Decision Tree](#series-count-decision-tree)
+- [Edge Cases & Exceptions](#edge-cases--exceptions)
+
+
 ## Core Principle
 
 Match the chart to the **question**, not the data type.

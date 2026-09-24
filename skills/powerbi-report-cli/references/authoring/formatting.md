@@ -1,9 +1,9 @@
 # Formatting Patterns
 
-> **Read first:** [`formatting-overview.md`](formatting-overview.md) — cascade
-> model and encoding rules. Related: [`authoring-workflows.md`](authoring-workflows.md) for full
-> visual JSON examples, [`theming.md`](theming.md) for theme.json, and
-> [`conditional-formatting.md`](conditional-formatting.md) for data-driven
+> **Read first:** `formatting-overview.md` (see `formatting-overview.md`) — cascade
+> model and encoding rules. Related: `authoring-workflows.md` (see `authoring-workflows.md`) for full
+> visual JSON examples, `theming.md` (see `theming.md`) for theme.json, and
+> `conditional-formatting.md` (see `conditional-formatting.md`) for data-driven
 > formatting.
 
 > **⚠️ The CLI is the source of truth for property names and enum values.**
@@ -27,14 +27,14 @@
 - [Theme Data Color Reference](#theme-data-color-reference)
 - [Selectors](#selectors-targeting-specific-data)
 - [Visual Container Objects (VCO)](#visual-container-objects-vco)
-- [Color Strategy & Patterns](#color-strategy--patterns) → [`color-strategy.md`](color-strategy.md)
-- [Conditional Formatting](#conditional-formatting) → [`conditional-formatting.md`](conditional-formatting.md)
-- [Shape Visual Formatting](#shape-visual-formatting) → [`shape.md`](shape.md)
-- [Line & Marker Formatting](#line--marker-formatting-linestyles--markers) → [`cartesian.md`](cartesian.md)
-- [Row Banding (Table & Matrix)](#row-banding-table--matrix) → [`table.md`](table.md)
-- [Page-Level Formatting](#page-level-formatting-pagejson-objects) → [`page-formatting.md`](page-formatting.md)
-- [Background Images — Routing](#background-images--routing) → [`image.md`](image.md), [`page-formatting.md`](page-formatting.md)
-- [References](#references)
+- [Color Strategy & Patterns](#color-strategy--patterns) → `color-strategy.md` (see `color-strategy.md`)
+- [Conditional Formatting](#conditional-formatting) → `conditional-formatting.md` (see `conditional-formatting.md`)
+- Shape Visual Formatting (continued in `formatting-part-02.md`) → `shape.md` (see `shape.md`)
+- Line & Marker Formatting (continued in `formatting-part-02.md`) → `cartesian.md` (see `cartesian.md`)
+- Row Banding (Table & Matrix) (continued in `formatting-part-02.md`) → `table.md` (see `table.md`)
+- Page-Level Formatting (continued in `formatting-part-02.md`) → `page-formatting.md` (see `page-formatting.md`)
+- Background Images — Routing (continued in `formatting-part-02.md`) → `image.md` (see `image.md`), `page-formatting.md` (see `page-formatting.md`)
+- References (continued in `formatting-part-02.md`)
 
 ## Formatting JSON Structure
 
@@ -273,14 +273,11 @@ sufficient (the static entry is redundant but harmless).
 "fill": [
   {
     "properties": {
-      "show": { "expr": { "Literal": { "Value": "true" } } },
-      "fillColor": { "solid": { "color": { "expr": { "Literal": { "Value": "'#00FF00'" } } } } },
-      "transparency": { "expr": { "Literal": { "Value": "0D" } } }
+      "show": { "expr": { "Literal": { "Value": "true" } } }
     }
   },
   {
     "properties": {
-      "show": { "expr": { "Literal": { "Value": "true" } } },
       "fillColor": { "solid": { "color": { "expr": { "Literal": { "Value": "'#00FF00'" } } } } },
       "transparency": { "expr": { "Literal": { "Value": "0D" } } }
     },
@@ -288,6 +285,10 @@ sufficient (the static entry is redundant but harmless).
   }
 ]
 ```
+
+> **Entry 1 (no selector):** Toggle properties (`show`) — applies to ALL states.
+> **Entry 2 (with state selector):** Styling properties — applies to that state.
+> Do NOT combine `show` with styling in one entry — formatting silently fails.
 
 **Example: cardVisual accentBar (single entry sufficient)**
 
@@ -345,6 +346,21 @@ visual.json root
     ├── objects              ← chart-specific formatting
     └── visualContainerObjects  ← container formatting (title, background, etc.)
 ```
+
+### Per-Visual Requirements
+
+These `visualContainerObjects` properties must be set **per-visual** —
+they do not cascade reliably from theme `visualStyles`:
+
+- `border` (including `radius`) — for rounded corners
+- `background` (show, color, transparency)
+- `padding` — must accompany any other VCO override
+- Card-specific: `accentBar`, `outline`, `layout` (require
+  `selector: { id: "default" }`)
+
+**Rule**: when setting any `visualContainerObjects` per-visual, always set
+`background`, `border` (with `radius`), `padding`, and `visualHeader` together.
+Partial VCO overrides cause PBI to reset omitted properties to system defaults.
 
 ### Auto-Generated Subtitles
 
@@ -405,7 +421,7 @@ details, see the CLI table in the preamble.
 For color overrides on chart data points — when to use theme `dataColors`,
 `dataPoint.defaultColor`, and per-series `dataPoint.fill` with `metadata`
 selectors, plus the cross-visual measure-color consistency pattern — see
-[`color-strategy.md`](color-strategy.md).
+`color-strategy.md` (see `color-strategy.md`).
 
 ## Conditional Formatting
 
@@ -413,57 +429,4 @@ For data-driven formatting (FillRule color gradients, rules-based formatting,
 icon sets, data bars, web URLs, field values) — including the `expr` wrapper
 rule inside FillRule color stops and the `dataViewWildcard` selector pattern
 for table/matrix conditional formatting — see
-[`conditional-formatting.md`](conditional-formatting.md).
-
-## Shape Visual Formatting
-
-For shape-object discovery, available shapes, and formatting, see
-[`shape.md` § Available Shapes and Formatting](shape.md#available-shapes-and-formatting).
-
-## Line & Marker Formatting (lineStyles / markers)
-
-For line stroke properties (width, style, dash cap, line join, interpolation),
-marker properties (shape, size, border, rotation), and the per-series metadata
-selector pattern for line/area/scatter charts, see
-[`cartesian.md` § lineStyles](cartesian.md#linestyles--line-specific) and
-[`cartesian.md` § markers](cartesian.md#markers--marker-styling).
-
-## Row Banding (Table & Matrix)
-
-For row banding (`backColorPrimary` / `backColorSecondary`), the full
-table/matrix region map (`values`, `columnHeaders`, `rowHeaders`, `total`,
-`subTotals`), the **critical style preset rule** (`stylePreset` must be set to
-`'None'` for custom row colors to render), and the `backColor` vs
-`backColorPrimary` distinction, see
-[`table.md` § Row Banding](table.md#row-banding-table--matrix).
-
-## Page-Level Formatting (`page.json` objects)
-
-For canvas background, wallpaper (`outspace`), and page-level background
-images, see [`page-formatting.md`](page-formatting.md). For filter pane
-(`outspacePane`) and filter card states (Applied / Available), see
-[`filter-pane.md`](filter-pane.md).
-
-## Background Images — Routing
-
-When the user requests a "background image," route based on the target:
-
-| User says | Target | Reference |
-|-----------|--------|-----------|
-| "background image" while creating/modifying a chart visual | `visual.objects.plotArea.image` | [`image.md` § Plot Area Background Image](image.md#plot-area-background-image-plotareaimage) |
-| "page background image" / "canvas background" | `page.json → objects.background.image` | [`page-formatting.md` § Background Images](page-formatting.md#background-images) |
-| "background image" with no visual context | Ask the user to clarify — page canvas or visual plot area | — |
-
-**⚠️ Both visual plot areas and page backgrounds use the nested `image.image` structure** (`image.image.name`, `image.image.url`, `image.image.scaling`). A flat `image.name/url/scaling` will silently fail to render.
-
-For the `image` object on image visuals themselves (border, background,
-corner-radius routing between `objects.image` and VCOs), see
-[`image.md` § Image Formatting](image.md#image-formatting-objectsimage).
-
-## References
-
-- [`formatting-overview.md`](formatting-overview.md) — cascade resolution order (visual → VCO → page → custom theme → base theme → defaults), encoding rules, and the Theme JSON vs PBIR encoding comparison table.
-- [`theming.md`](theming.md) — `theme.json` authoring: dataColors, textClasses, visualStyles, dark-mode checklist.
-- [`conditional-formatting.md`](conditional-formatting.md) — gradients, rules, field values, and the six conditional formatting types.
-- [`table.md`](table.md), [`shape.md`](shape.md), [`cartesian.md`](cartesian.md), [`image.md`](image.md), [`card.md`](card.md) — visual-type-specific formatting details.
-
+`conditional-formatting.md` (see `conditional-formatting.md`).

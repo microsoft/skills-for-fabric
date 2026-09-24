@@ -1,5 +1,23 @@
 # Tone Catalog
 
+## Contents
+
+- [1. Editorial Newsroom](#1-editorial-newsroom)
+- [2. Industrial Cockpit](#2-industrial-cockpit)
+- [3. Clinical Calm](#3-clinical-calm)
+- [4. FT Pink Financial](#4-ft-pink-financial)
+- [5. Bauhaus Catalog](#5-bauhaus-catalog)
+- [6. Monospace Terminal](#6-monospace-terminal)
+- [7. Industrial Dense (Analyst Workbench)](#7-industrial-dense-analyst-workbench)
+- [8. Playful Energetic](#8-playful-energetic)
+- [9. Minimal Restrained](#9-minimal-restrained)
+- [10. Corporate Cool](#10-corporate-cool)
+- [11. Scholarly Calm](#11-scholarly-calm)
+- [12. Brand-Forward (template)](#12-brand-forward-template)
+- [Remixing tones](#remixing-tones)
+- [Default tone by domain (when user is silent)](#default-tone-by-domain-when-user-is-silent)
+
+
 The Step 1 `tone` field is **open vocabulary** — a free-text adjective +
 short elaboration. But agents (and humans) struggle to pick a tone from
 nothing. This catalog is a calibration set, not a closed style menu. Prefer

@@ -3,16 +3,17 @@
 Page formatting controls the page canvas, wallpaper, and page-level background
 images. All stored in `page.json → objects` using PBIR expression encoding.
 
-> **Read first:** [`formatting-overview.md`](formatting-overview.md) for the
+> **Read first:** `formatting-overview.md` (see `formatting-overview.md`) for the
 > cascade model and encoding rules. For visual-level formatting (inside
-> `visual.json`), see [`formatting.md`](formatting.md). For filter pane and
+> `visual.json`), see `formatting.md` (see `formatting.md`). For filter pane and
 > filter card chrome (also in `page.json` but a separate concern), see
-> [`filter-pane.md`](filter-pane.md).
+> `filter-pane.md` (see `filter-pane.md`).
 
 ## Contents
 
 - [Canvas Background (`background`)](#canvas-background-background)
 - [Wallpaper (`outspace`)](#wallpaper-outspace)
+- [Dynamic Color Limitation](#dynamic-color-limitation)
 - [Background Images](#background-images)
 
 ## Canvas Background (`background`)
@@ -54,13 +55,28 @@ Same properties as `background`: `color`, `image`, `transparency`.
 creates a translucent overlay — the wallpaper bleeds through creating unexpected
 composite colors. For dark themes, set both layers to opaque dark colors.
 
+## Dynamic Color Limitation
+
+Canvas background and wallpaper colors do **not** support field-value
+conditional formatting. Power BI Desktop does not evaluate `Measure`, `Column`,
+`FillRule`, or `Conditional` expressions at either of these paths:
+
+- `page.json → objects.background[].properties.color`
+- `page.json → objects.outspace[].properties.color`
+
+The page schema leaves these properties structurally open, so a data-bound
+expression can pass schema validation but silently render the default color.
+Use a static color expression such as `Literal` instead. If a user asks for a
+measure-driven page color, explain that the page-level target is unsupported;
+do not write a data-bound expression that appears valid but does not render.
+
 ## Background Images
 
-Both `background` and `outspace` support images. The `image` property uses a **nested `image` sub-object** — the same structure as visual plot area background images (see [`image.md` § Plot Area Background Image](image.md#plot-area-background-image-plotareaimage)).
+Both `background` and `outspace` support images. The `image` property uses a **nested `image` sub-object** — the same structure as visual plot area background images (see `image.md` § Plot Area Background Image (see `image.md`, section `plot-area-background-image-plotareaimage`)).
 
 **⚠️ Both page backgrounds and visual plot areas use the nested `image.image` structure** (`image.image.name`, `image.image.url`, `image.image.scaling`). A flat `image.name/url/scaling` will silently fail to render.
 
-**⚠️ The image must be copied to `StaticResources/RegisteredResources/` and registered in `report.json` — see [`image.md`](image.md) for the registration workflow.**
+**⚠️ The image must be copied to `StaticResources/RegisteredResources/` and registered in `report.json` — see `image.md` (see `image.md`) for the registration workflow.**
 
 ```json
 "background": [{
@@ -96,5 +112,5 @@ Both `background` and `outspace` support images. The `image` property uses a **n
 
 ## See Also
 
-- [`filter-pane.md`](filter-pane.md) — filter pane (`outspacePane`) and
+- `filter-pane.md` (see `filter-pane.md`) — filter pane (`outspacePane`) and
   filter card (`filterCard`) appearance, also stored in `page.json → objects`.

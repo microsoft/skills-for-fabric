@@ -3,8 +3,8 @@
 #     apm install microsoft/skills-for-fabric --skill sqldw-cli
 
 name: sqldw-cli
-version: 0.1.1
-description: "Manage Fabric Warehouse, Lakehouse SQL analytics endpoints, and Mirrored Databases: DDL/DML, COPY INTO, read-only T-SQL, Query Insights diagnostics, Capacity Metrics CU-spike correlation, custom SQL pool guidance, and..."
+version: 0.1.3
+description: "Manage Fabric Warehouse, Lakehouse SQL endpoints, and Mirrored Databases: DDL/DML, COPY INTO, read-only T-SQL, Query Insights diagnostics, and Capacity Metrics CU-spike correlation."
 author: Microsoft Fabric
 license: MIT
 

@@ -1,5 +1,30 @@
 # Operational Monitor Dashboard
 
+## Contents
+
+- [Job To Be Done](#job-to-be-done)
+- [Core Principles](#core-principles)
+- [Layout Variants](#layout-variants)
+  - [Variant A — 4-Up Status (default, balanced surveillance + triage)](#variant-a--4-up-status-default-balanced-surveillance--triage)
+  - [Variant B — Wallboard (TV-wall surveillance)](#variant-b--wallboard-tv-wall-surveillance)
+  - [Variant C — Incident-First (queue dominant for active responders)](#variant-c--incident-first-queue-dominant-for-active-responders)
+- [Chart Selection](#chart-selection)
+  - [Use](#use)
+  - [Do NOT Use](#do-not-use)
+- [Color & Typography](#color--typography)
+  - [Semaphore Palette](#semaphore-palette)
+  - [Typography by Viewing Distance](#typography-by-viewing-distance)
+- [Freshness & Refresh](#freshness--refresh)
+  - [Staleness Decision Table](#staleness-decision-table)
+- [Interaction Design](#interaction-design)
+- [PBI Formatting Reference](#pbi-formatting-reference)
+  - [Status Tiles](#status-tiles)
+  - [Time Series](#time-series)
+  - [Exception Table](#exception-table)
+  - [Refresh & Page](#refresh--page)
+- [Decision Checklist](#decision-checklist)
+
+
 > **Archetype**: Operational Monitor
 > **Theme**: for generated reports, preserve `references/design/assets/base.json` safeguards while adapting `dataColors` to domain; for brownfield, preserve the existing theme unless a theme swap is requested
 > **Canvas**: greenfield default FHD 1920 x 1080; preserve existing size for brownfield unless resize is approved · F-pattern

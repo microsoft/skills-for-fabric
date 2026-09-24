@@ -1,5 +1,26 @@
 # Expressions — Semantic Query Trees
 
+## Contents
+
+- [Expression Tree Templates](#expression-tree-templates)
+  - [Entity Source Expression](#entity-source-expression)
+  - [Column Expression](#column-expression)
+  - [Measure Expression](#measure-expression)
+  - [NativeVisualCalculation Expression](#nativevisualcalculation-expression)
+  - [NativeMeasure Expression](#nativemeasure-expression)
+  - [Hierarchy Level Expression](#hierarchy-level-expression)
+  - [Aggregation Expression](#aggregation-expression)
+  - [ScopedEval Expression](#scopedeval-expression)
+  - [Comparison Expression](#comparison-expression)
+  - [Not Expression](#not-expression)
+  - [Contains/StartsWith Expression](#containsstartswith-expression)
+  - [In Expression](#in-expression)
+  - [Visual Query Projection](#visual-query-projection)
+  - [Sort Definition](#sort-definition)
+  - [Expansion state](#expansion-state)
+- [Filters](#filters)
+
+
 > Referenced from SKILL.md. Read this for expression tree templates used in
 > visual queries (`queryState`) and sort definitions. For **filter** templates
 > (Categorical, Range, etc.), see **references/authoring/filters.md § Add a Filter**.
@@ -45,6 +66,96 @@ Expression references a measure defined in the semantic model:
 }
 ```
 
+### NativeVisualCalculation Expression
+
+A visual calculation is DAX embedded directly in one visual's query. It exists
+only on that visual and can be customized without creating a semantic-model
+measure.
+
+Add the calculation as another projection in the same query role as its input:
+
+```json
+"Y": {
+  "projections": [
+    {
+      "field": {
+        "Measure": {
+          "Expression": {
+            "SourceRef": {
+              "Entity": "Expenditure Statistics"
+            }
+          },
+          "Property": "Arrivals per month"
+        }
+      },
+      "queryRef": "Expenditure Statistics.Arrivals per month",
+      "nativeQueryRef": "Arrivals per month"
+    },
+    {
+      "field": {
+        "NativeVisualCalculation": {
+          "Language": "dax",
+          "Expression": "MOVINGAVERAGE([Arrivals per month], 3)",
+          "Name": "Moving average"
+        }
+      },
+      "queryRef": "select",
+      "nativeQueryRef": "Moving average"
+    }
+  ]
+}
+```
+
+Power BI Desktop visual-calculation functions include:
+
+- `RUNNINGSUM()`
+- `MOVINGAVERAGE()`
+- `PREVIOUS()`
+- `NEXT()`
+- `FIRST()`
+- `LAST()`
+- `RANGE()`
+- `EXPAND()`
+- `COLLAPSE()`
+
+Rules:
+
+- `Language` must be `"dax"`.
+- `Expression` contains the visual-calculation DAX.
+- `Name` is the calculation's display name and should match
+  `nativeQueryRef`.
+- The calculation can reference only columns, measures, or calculations already
+  projected on the same visual.
+- It cannot be reused by another visual or referenced by semantic-model
+  measures.
+- Relationship-dependent functions such as `RELATED`, `RELATEDTABLE`, and
+  `USERELATIONSHIP` are not supported.
+
+### NativeMeasure Expression
+
+An inline DAX expression embedded directly in the report query. Unlike
+`Measure`, it does not reference an existing semantic-model measure.
+
+```json
+{
+  "NativeMeasure": {
+    "Language": "dax",
+    "Expression": "\"Sales for \" & SELECTEDVALUE('Date'[Year])",
+    "DataType": 1,
+    "ProposedName": "Dynamic Title"
+  }
+}
+```
+
+Rules:
+
+- `Language` must be `"dax"`.
+- `Expression` contains the DAX expression.
+- `DataType` declares the expected result type.
+- Use a text-returning expression for `title.text`.
+- Support depends on the host/query pipeline; referencing a model `Measure` is
+  generally safer.
+
 ### Hierarchy Level Expression
 ```json
 {
@@ -81,6 +192,49 @@ Wraps a column with an aggregation function:
 ```
 Aggregation Function values: `0`=Sum, `1`=Avg, `2`=Count, `3`=Min, `4`=Max,
 `5`=CountNonNull, `6`=Median, `7`=StdDev, `8`=Var
+
+### ScopedEval Expression
+
+Evaluates an expression at a specific grouping scope rather than the visual's
+default scope.
+
+```json
+{
+  "ScopedEval": {
+    "Expression": {
+      "Measure": {
+        "Expression": {
+          "SourceRef": {
+            "Entity": "Sales"
+          }
+        },
+        "Property": "Dynamic Title"
+      }
+    },
+    "Scope": [
+      {
+        "Column": {
+          "Expression": {
+            "SourceRef": {
+              "Entity": "Geography"
+            }
+          },
+          "Property": "Region"
+        }
+      }
+    ]
+  }
+}
+```
+
+Rules:
+
+- `Expression` is the value being evaluated.
+- `Scope` is a non-empty array of column expressions only.
+- The scope columns must be available to the visual query.
+- It is mainly useful for matrix/grouped data and conditional formatting.
+- For an ordinary dynamic visual title, use a model `Measure`; use `ScopedEval`
+  only when evaluation at a particular grouping level is required.
 
 ### Comparison Expression
 Expression compares between two values

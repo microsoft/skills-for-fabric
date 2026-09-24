@@ -53,6 +53,7 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 ### Data Engineering
 - **Lakehouse**: Delta tables, Spark, file management
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview
+  - Project Osmos skill: `skills/project-osmos/SKILL.md` — local-agent orchestration for complex long-running Lakehouse, OneLake, notebook, and Spark outcomes; Fabric portal Copilot receives availability and GitHub Copilot CLI marketplace guidance.
   - Spark skill: `skills/spark-cli/SKILL.md` — notebook authoring and runs, Livy analysis, Spark diagnostics, and the full Materialized Lake View lifecycle.
 - **Notebooks**: PySpark notebooks with mssparkutils
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/how-to-use-notebook
@@ -65,6 +66,7 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
   - Docs: https://learn.microsoft.com/en-us/fabric/data-warehouse/data-warehousing
   - Note: Limited T-SQL surface area - check supported features
   - Skill: `skills/sqldw-cli/SKILL.md` — one skill, three modes: authoring (DDL, DML, ingestion, schema changes), consumption (read-only T-SQL queries), operations (performance diagnostics, slow queries, query insights)
+  - Synapse Dedicated SQL Pool-to-Warehouse migration: use `skills/synapse-migration/SKILL.md`; run source Dedicated Pool SQL with `sqlcmd` and target Fabric Warehouse SQL with the Fabric SQL Endpoint MCP `execute_query` tool. Use `sqldw-cli` for standalone Warehouse work outside that migration.
 
 ### Application Lifecycle Management (ALM)
 - **Deployment Pipelines**: Promote Fabric content across dev/test/prod stages

@@ -5,8 +5,21 @@ templates, themes, drillthrough, interactions, and visual-type routing.
 
 Related references:
 
-- [formatting.md](formatting.md) — value encoding, colors, selectors, VCOs, and formatting properties.
-- [expressions.md](expressions.md) — field expressions, filters, and sort definitions.
+- formatting.md (see `formatting.md`) — value encoding, colors, selectors, VCOs, and formatting properties.
+- expressions.md (see `expressions.md`) — field expressions, filters, and sort definitions.
+
+> **Mandatory completion gate:** Every workflow in this file that creates or
+> changes rendered report content must end with validation, loading the latest
+> PBIR into a preview host, screenshot capture of every affected page, and
+> review using screenshot-review.md (see `screenshot-review.md`). Use `--all-pages`
+> for report-wide changes such as themes or global formatting. Load/reload and
+> screenshot are separate commands; never combine `--reload` and `--screenshot`.
+> A successful `powerbi-report-author validate` result must be followed by
+> loading the validated PBIR, capturing screenshots of every affected page, and
+> reviewing those screenshots; schema validation alone never completes a
+> workflow. If any of those steps cannot be completed using the latest PBIR,
+> report screenshot validation as blocked and do not claim the authoring task is
+> complete.
 
 > **Before editing existing reports:** inventory the report with
 > `powerbi-report-author preview-pages <path-to-.Report-dir>` and
@@ -27,6 +40,7 @@ Related references:
 - [Change Theme](#change-theme)
 - [Visual Type References](#visual-type-references)
 - [Drillthrough Page](#drillthrough-page)
+- [Same-Report Drillthrough Workflow](#same-report-drillthrough-workflow)
 - [Visual Interactions](#visual-interactions)
 
 ## Names & Format Versions
@@ -56,7 +70,7 @@ current PBIR format:
 - `definition.pbir` → `"version": "4.0"`
 
 For `$schema` URL versioning rules and the file layout, see
-[authoring.md § PBIR File Layout](../authoring.md#pbir-file-layout). When creating a
+SKILL.md § PBIR File Layout (see `../authoring.md`, section `pbir-file-layout`). When creating a
 new file of any type, copy the `$schema` URL from an existing file of the same
 type in the same report.
 
@@ -122,14 +136,17 @@ type in the same report.
 
 ## Common Layout Templates
 
-**Full-width KPI row + detail chart:**
+**Full-width KPI row + detail chart** (720px canvas example):
 ```text
-KPI Card 1:  x=20,  y=20,  w=290, h=120
-KPI Card 2:  x=330, y=20,  w=290, h=120
-KPI Card 3:  x=640, y=20,  w=290, h=120
-KPI Card 4:  x=950, y=20,  w=290, h=120
-Main Chart:  x=20,  y=160, w=1240, h=540
+KPI Card 1:  x=20,  y=20,  w=290, h=82
+KPI Card 2:  x=330, y=20,  w=290, h=82
+KPI Card 3:  x=640, y=20,  w=290, h=82
+KPI Card 4:  x=950, y=20,  w=290, h=82
+Main Chart:  x=20,  y=118, w=1240, h=582
 ```
+> Card heights follow the card sizing formula (see `card.md`, section `card-sizing-required`) —
+> derive per canvas, don't hardcode.
+
 **2×2 Grid:**
 ```text
 Top-Left:     x=20,  y=20,  w=610, h=340
@@ -164,9 +181,10 @@ In `report.json`, update the `themeCollection.customTheme`:
 Also ensure the theme file exists in `StaticResources/RegisteredResources/`
 and is listed in the `resourcePackages` array with matching `name` and `path`.
 
-On every theme edit, follow the [GUID cache-busting procedure in theming.md](theming.md#theme-name-guid-convention-cache-busting)
+On every theme edit, follow the GUID cache-busting procedure in theming.md (see `theming.md`, section `theme-name-guid-convention-cache-busting`)
 — rotate the GUID suffix (keep `<CustomThemeName>` stable), update all
-`report.json` references, and reload Desktop. Only change `<CustomThemeName>`
+`report.json` references, and rerun the host-specific workflow in
+preview.md (see `preview.md`). Only change `<CustomThemeName>`
 if the user explicitly requests a rename.
 
 > ⚠️ **`type` must be `"RegisteredResources"`** — not `"SharedResources"`.
@@ -187,14 +205,15 @@ and known rendering pitfalls.
 
 | Intent | Read |
 |---|---|
-| Bar, column, and line charts | [cartesian.md](cartesian.md) |
-| Cards and KPI callouts | [card.md](card.md) |
-| Tables and matrices | [table.md](table.md) |
-| Slicers and slicer selections | [slicers.md](slicers.md) |
-| Image visuals | [image.md](image.md) |
-| Shapes, dividers, and containers | [shape.md](shape.md) |
-| Maps | [map.md](map.md) |
-| Static or dynamic textboxes | [textbox.md](textbox.md) |
+| Bar, column, and line charts | cartesian.md (see `cartesian.md`) |
+| Cards (`cardVisual`) | card.md (see `card.md`) |
+| KPI visual (`kpi`) | kpi.md (see `kpi.md`) |
+| Tables and matrices | table.md (see `table.md`) |
+| Slicers and slicer selections | slicers.md (see `slicers.md`) |
+| Image visuals | image.md (see `image.md`) |
+| Shapes, dividers, and containers | shape.md (see `shape.md`) |
+| Maps | map.md (see `map.md`) |
+| Static or dynamic textboxes | textbox.md (see `textbox.md`) |
 
 ## Drillthrough Page
 A drillthrough page adds `pageBinding` and drillthrough filters to `page.json`:
@@ -244,6 +263,30 @@ A drillthrough page adds `pageBinding` and drillthrough filters to `page.json`:
   and a matching `pageBinding.parameters` entry with `boundFilter` referencing the filter name.
 - The `pageBinding.name` is typically `"Pod"`.
 - `pageBinding.type` is `"Drillthrough"` (or `"Tooltip"` for tooltip pages).
+- To trigger a drillthrough (or any page navigation, bookmark, or slicer action) from a button,
+  see the Drillthrough button pattern (see `button.md`, section `drillthrough-button`). The button
+  enables only when a selected data point carries the drillthrough field; a
+  slicer selection alone does not enable it.
+- For bookmark files, saved page/visual/filter state, groups, show/hide
+  patterns, and bookmark verification, see bookmark.md (see `bookmark.md`).
+
+### Same-Report Drillthrough Workflow
+
+A same-report drillthrough opens the target page with filter context from a
+selected data point in a source visual:
+
+1. Choose the drillthrough field and ensure the source visual projects it.
+2. Create the target page and add a page filter marked
+   `"howCreated": "Drillthrough"`.
+3. Add `pageBinding.type: "Drillthrough"` with a parameter whose `boundFilter`
+   references that filter and whose `fieldExpr` matches it.
+4. Add the target visuals and the required
+   Back button (see `button.md`, section `back-button`).
+5. Use the source visual's drillthrough menu, or add a
+   Drillthrough button (see `button.md`, section `drillthrough-button`) when the report needs an
+   explicit action.
+6. Validate and reload the report, select a source data point carrying the
+   field, navigate to the target, and confirm the filter context and Back action.
 
 ## Visual Interactions
 Control how visuals cross-filter/highlight each other on a page.

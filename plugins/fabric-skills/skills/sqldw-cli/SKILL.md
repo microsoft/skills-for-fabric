@@ -1,6 +1,6 @@
 ---
 name: sqldw-cli
-description: "Manage Fabric Warehouse, Lakehouse SQL analytics endpoints, and Mirrored Databases: DDL/DML, COPY INTO, read-only T-SQL, Query Insights diagnostics, Capacity Metrics CU-spike correlation, custom SQL pool guidance, and Lakehouse health. Fabric SQL database (OLTP) belongs to sqldb-cli. Triggers: query warehouse, create warehouse table, failed or canceled query, CU spike, Capacity Metrics app, custom SQL pool, Lakehouse table health."
+description: "Manage Fabric Warehouse, Lakehouse SQL endpoints, and Mirrored Databases: DDL/DML, COPY INTO, read-only T-SQL, Query Insights diagnostics, and Capacity Metrics CU-spike correlation. Synapse migration target SQL belongs to synapse-migration; Fabric SQL database belongs to sqldb-cli. Triggers: query warehouse, create warehouse table, failed or canceled query, CU spike, Capacity Metrics app, custom SQL pool, Lakehouse table health."
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -11,7 +11,7 @@ description: "Manage Fabric Warehouse, Lakehouse SQL analytics endpoints, and Mi
 > **CRITICAL NOTES**
 > 1. To find the workspace details (including its ID) from workspace name: list all workspaces and, then, use JMESPath filtering
 > 2. To find the item details (including its ID) from workspace ID, item type, and item name: list all items of that type in that workspace and, then, use JMESPath filtering
-> 3. **Skill disambiguation**: use `sqldw-cli` for any T-SQL sent to a Warehouse, a Lakehouse SQL analytics endpoint or a Mirrored Database — including plain Lakehouse table SELECT, row-count, filtering and aggregation requests. Any notebook-cell or PySpark DataFrame work is `spark-cli`; a Fabric SQL database (OLTP) is `sqldb-cli`.
+> 3. **Skill disambiguation**: use `sqldw-cli` for T-SQL sent to a Warehouse, a Lakehouse SQL analytics endpoint, or a Mirrored Database, including plain Lakehouse table SELECT, row-count, filtering, and aggregation requests. Target Warehouse SQL executed within an end-to-end Azure Synapse or Dedicated SQL Pool migration belongs to `synapse-migration`; standalone Warehouse work before or after migration returns to `sqldw-cli`. Any notebook-cell or PySpark DataFrame work is `spark-cli`; a Fabric SQL database (OLTP) is `sqldb-cli`.
 
 # Fabric Warehouse and SQL Endpoints — CLI Skill
 

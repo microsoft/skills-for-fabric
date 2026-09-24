@@ -1,5 +1,19 @@
 # Interactivity & Storytelling
 
+## Contents
+
+- [Core Principles](#core-principles)
+- [Interaction Taxonomy](#interaction-taxonomy)
+  - [5 Clusters](#5-clusters)
+- [Descriptive Titles & Information Scent](#descriptive-titles--information-scent)
+- [Cross-Filter Etiquette](#cross-filter-etiquette)
+- [Power BI Feature Grounding](#power-bi-feature-grounding)
+- [Navigation Model Decision](#navigation-model-decision)
+- [Slicer Placement Decision Table](#slicer-placement-decision-table)
+- [Interaction Complexity Budget](#interaction-complexity-budget)
+- [Bookmark Design Rules](#bookmark-design-rules)
+
+
 ## Core Principles
 
 1. **Shneiderman's mantra**: Overview first → zoom and filter → details on demand.
@@ -67,6 +81,34 @@
 | **Bookmark Navigator** | Visual bookmark selector | Good for slideshow pattern; label each bookmark clearly |
 | **Filters Pane** | Persistent filter panel | Hide for executive; show for analytical; pre-set defaults |
 | **Personalize Visuals** | End-user can change measure/axis | Enable for analytical archetype only; confusing for casual users |
+
+---
+
+## Navigation Model Decision
+
+Every multi-page report needs a deliberate navigation model. Pick one **primary** model per report
+and use the others only as secondary accents. Decide this at design time and record it in the brief.
+
+| Model | Best for | Strengths | Avoid when | Interaction budget |
+|---|---|---|---|---|
+| **Page Navigator** (auto tabs) | Standard multi-page reports; peer pages | Zero maintenance; always in sync with pages; clear "where am I" | >7 pages (tabs overflow); when pages aren't peers | Minimal–Moderate |
+| **Custom buttons** (per-action) | Guided flows; branded/hub-and-spoke nav; a single deliberate action (Back, drill-through, apply/clear slicers, open URL, Q&A) | Full control of layout, label, icon, and action; supports non-navigation actions | You just need plain page switching (use Page Navigator instead) | Guided–Rich |
+| **Bookmark Navigator** (auto tiles) | Slideshow/story steps; toggling states on one page (view A vs view B) | Auto-generates one tile per bookmark; good for narrative stepping | Navigating between *pages* (that's Page Navigator's job); >8 bookmarks | Guided |
+
+**Rules**
+- **One primary model.** Don't mix Page Navigator *and* a full custom button bar for the same
+  purpose — pick one and keep it consistent across pages.
+- **Drill-through always needs a Back button** on the destination page (see the Drill-through row above).
+- **Buttons cover actions navigators can't**: Back, drill-through, apply/clear all slicers, Web URL,
+  and Q&A. Reach for a button when the action isn't plain page switching.
+- **Label for destination** — button and tab labels must preview the content ("Regional Breakdown",
+  not "Page 2"). See *Descriptive Titles & Information Scent* above.
+- **Match the archetype budget** — Executive: 1–2 nav elements, prefer Page Navigator; Narrative:
+  Bookmark Navigator for steps; Analytical/Operational: buttons for drill-through and slicer actions.
+
+> Implementation: this skill only *chooses* the navigation model. For the concrete `actionButton`,
+> `pageNavigator`, and `bookmarkNavigator` visuals and their `visualLink` action encodings, hand off
+> to the `authoring` mode's button authoring guide.
 
 ---
 

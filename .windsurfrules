@@ -16,23 +16,23 @@ rules:
   - name: delta_lake_format
     description: Always use Delta Lake format for Lakehouse tables
     pattern: "spark.write.format(\"delta\")"
-    
+
   - name: mssparkutils_usage
     description: Use mssparkutils for Fabric-specific operations
     applies_to: ["*.py", "*.ipynb"]
-    
+
   - name: spark_optimization
     description: Run OPTIMIZE and VACUUM for Delta table maintenance
-    
+
   # Warehouse
   - name: tsql_surface_area
     description: Check T-SQL surface area - not all SQL Server features supported
     reference: https://learn.microsoft.com/en-us/fabric/data-warehouse/tsql-surface-area
-    
+
   - name: limit_queries
     description: Always use TOP/LIMIT when exploring data
     pattern: "SELECT TOP"
-    
+
   # KQL (Real-Time Intelligence)
   - name: kql_time_filter
     description: Always include time filters in KQL queries
@@ -53,6 +53,10 @@ rules:
   - name: spark
     description: Use spark-cli for notebook authoring and runs, Livy analysis, Spark diagnostics, and the full Materialized Lake View lifecycle
     reference: skills/spark-cli/SKILL.md
+
+  - name: project_osmos
+    description: Use project-osmos for complex long-running Lakehouse, OneLake, notebook, or Spark outcomes from local agents; in Fabric portal Copilot return availability guidance without API calls
+    reference: skills/project-osmos/SKILL.md
 
   - name: azmon_operations
     description: Use azmon-mirroredcatalogs-operations-cli to onboard Azure Monitor / App Insights / Log Analytics observability data into Fabric and correlate telemetry with business data for business-impact insights, an optional Real-Time (KQL) dashboard, and opt-in Operations Agent instructions
@@ -119,6 +123,10 @@ rules:
     description: One skill, sqldw-cli, with authoring, consumption and operations modes
     reference: skills/sqldw-cli/SKILL.md
 
+  - name: synapse_dedicated_pool_to_warehouse
+    description: Use synapse-migration for Synapse Dedicated SQL Pool-to-Warehouse migrations; run source Dedicated Pool SQL with sqlcmd and target Fabric Warehouse SQL with the Fabric SQL Endpoint MCP execute_query tool. Use sqldw-cli for standalone Warehouse work outside that migration.
+    reference: skills/synapse-migration/SKILL.md
+
   # SQL Database (in Fabric) Operations
   - name: sqldb_skills
     description: sqldb-cli is one skill with three modes - authoring, consumption and operations
@@ -136,7 +144,7 @@ rules:
       - "password="
       - "secret="
       - "connectionstring="
-      
+
   # Architecture
   - name: medallion_architecture
     description: Prefer Bronze/Silver/Gold data organization

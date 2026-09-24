@@ -1,640 +1,242 @@
 # Conditional Formatting Patterns
 
+## Contents
+
+- [Field-Value Result Contracts and Support Guardrails](#field-value-result-contracts-and-support-guardrails)
+  - [Result contracts](#result-contracts)
+  - [Shared authoring checks](#shared-authoring-checks)
+  - [Support decision and fallbacks](#support-decision-and-fallbacks)
+  - [Validation and diagnostics](#validation-and-diagnostics)
+- [VCO Conditional Formatting](#vco-conditional-formatting)
+  - [Data-Bound Expression Rules](#data-bound-expression-rules)
+- [Authoring Workflow](#authoring-workflow)
+- [Formatting Options by Visual Type](#formatting-options-by-visual-type)
+  - [Tables/matrices](#tablesmatrices)
+  - [Charts](#charts)
+
+
 Read this when applying data-driven visual formatting in PBIR. Conditional
-formatting is supported on chart `dataPoint` properties (charts) and on table /
-matrix `values` cells, but **not** on container objects like axes, legends, or
-visual containers.
+formatting is supported on chart `dataPoint` properties, line and marker colors, selected data-label colors,table / matrix `values` cells, and selected card/KPI font-color properties. Support is
+property-specific; do not assume that every color property accepts a rule.
+The supported visual-container properties are listed under
+[VCO Conditional Formatting](#vco-conditional-formatting). Other container
+objects such as axes and legends are not covered by these patterns.
+
+Page canvas and wallpaper colors are also not conditional-formatting targets.
+Use static colors only; see
+`page-formatting.md` § Dynamic Color Limitation (see `page-formatting.md`, section `dynamic-color-limitation`).
 
 Related references:
-- [`formatting.md`](formatting.md) — value encoding, selectors, VCOs.
-- [`formatting-overview.md`](formatting-overview.md) — cascade and encoding.
-- [`table.md`](table.md) — table/matrix authoring and style presets.
+- `formatting.md` (see `formatting.md`) — value encoding, selectors, VCOs.
+- `formatting-overview.md` (see `formatting-overview.md`) — cascade and encoding.
+- `expressions.md` (see `expressions.md`) — `Measure`, `Column`, `Aggregation`,
+  `NativeMeasure`, and `ScopedEval` expression trees.
+- `table.md` (see `table.md`) — table/matrix authoring and style presets.
 
 > Examples use illustrative `<table>.<measure>` identifiers — substitute your own.
 
-## Contents
-
-- [Selector summary by visual type](#selector-summary-by-visual-type)
-- [Type 1: Color Gradient (FillRule)](#type-1-color-gradient-fillrule)
-- [Type 2: Rules-Based Formatting](#type-2-rules-based-formatting)
-- [Type 3: Icon Sets](#type-3-icon-sets)
-- [Type 4: Data Bars](#type-4-data-bars)
-- [Type 5: Web URL](#type-5-web-url)
-- [Type 6: Field-Driven Color](#type-6-field-driven-color)
-
-## Selector summary by visual type
-
-| Visual type | CF type | Object/property | Selector |
-|-------------|---------|-----------------|----------|
-| Tables/matrices | Data bars | `columnFormatting.dataBars` | `metadata` only |
-| Tables/matrices | Background / font color | `values.backColor` / `values.fontColor` | `dataViewWildcard + metadata` |
-| Tables/matrices | Icons | `values.icon` | `dataViewWildcard + metadata` |
-| Charts | Gradient / rules / field color | `dataPoint.fill` | No selector, or `dataViewWildcard` only (do NOT include `metadata`) |
-
-> This table covers **value-driven conditional formatting**. **Static** per-series
-> color (coloring a specific series a fixed hue) uses a `metadata` selector
-> instead — see [color-strategy.md § Per-Series Colors](color-strategy.md#pattern-per-series-colors).
-
-## Type 1: Color Gradient (FillRule)
-
-Applies data-driven color gradients. Uses `linearGradient2` (2-stop) or `linearGradient3` (3-stop).
-
-> ⚠️ **Do not omit `mid` from `linearGradient3`.** A `linearGradient3` rule must
-> include all three stops: `min`, `mid`, and `max`. If you only need two stops,
-> use `linearGradient2`; deleting `mid` from `linearGradient3` can cause Desktop
-> render errors or a blank table/matrix body.
-
-### Choose gradient colors by measure meaning
-
-Do **not** default to red/white/green for every numeric measure. Pick the color
-scale based on what the measure means:
-
-| Measure meaning | Use | Example measures | Color pattern |
-|-----------------|-----|------------------|---------------|
-| **Magnitude**: "how much?", "more vs less" | Single-hue `linearGradient2` | Sales, Revenue, Units, Gross Margin %, Count, COGS | Light tint of one theme `dataColors[N]` → base/saturated theme color |
-| **Sentiment / variance**: "good vs bad?", negative vs positive, performance vs target | Divergent `linearGradient3` | Profit variance, MoM %, YoY %, vs target, budget variance | Bad color → neutral midpoint → good color |
-
-**Rule of thumb:** if the measure can be read as "low to high", use a
-light-to-dark gradient of one color. If the measure can be read as "bad to good"
-with a meaningful neutral point (usually zero or target), use a divergent
-red/neutral/green gradient.
-
-Examples:
-- `Sales`, `Units`, `Gross Margin %` as absolute magnitude: use
-  `#DEEFFF` → `#118DFF` (or another light-to-dark pair derived from one theme
-  `dataColors` entry).
-- `Units MoM %`, `Profit variance`, `Actual vs Target %`: use divergent colors
-  only when negative values are bad and positive values are good.
-
-> ⚠️ **Do not use sentiment colors for pure magnitude.** Red/green implies
-> judgment. A low Sales value is not automatically "bad" unless the user asked
-> for performance/target/variance semantics.
-
-**Supported on** `dataPoint.fill` (or `dataPoint.fillRule`) for: barChart,
-clusteredBarChart, clusteredColumnChart, columnChart, funnel,
-hundredPercentStackedBarChart, hundredPercentStackedColumnChart, ribbonChart,
-lineStackedColumnComboChart, lineClusteredColumnComboChart, map, filledMap,
-shapeMap, treemap, scatterChart, heatMap.
-
-**For tables/matrices**: add an entry to the `values` object array (NOT `columnFormatting`).
-The entry must use:
-- A `selector` with `data: [{ dataViewWildcard: { matchingOption: 1 } }]` and
-  `metadata` pointing to the measure's queryRef.
-- A `FillRule` with `Input` using `SelectRef` / `ExpressionName` (referencing
-  the measure's queryRef) instead of a direct `Measure` / `SourceRef`.
-
-> ⚠️ **Do NOT use `columnFormatting`** for conditional formatting on tables/matrices,
-> except data bars (Type 4). `columnFormatting` is for static styling (alignment,
-> display units, etc.). PBI Desktop writes other conditional formatting via "cell
-> elements" to the `values` array, not `columnFormatting`.
-
-**Pivot table / matrix magnitude gradient example** (placed as entry in `values` array inside `objects`):
-
-```json
-{
-  "properties": {
-    "backColor": {
-      "solid": {
-        "color": {
-          "expr": {
-            "FillRule": {
-              "Input": {
-                "SelectRef": { "ExpressionName": "metrics.NetIncome" }
-              },
-              "FillRule": {
-                "linearGradient2": {
-                  "min": {
-                    "color": { "Literal": { "Value": "'#DEEFFF'" } }
-                  },
-                  "max": {
-                    "color": { "Literal": { "Value": "'#118DFF'" } }
-                  },
-                  "nullColoringStrategy": {
-                    "strategy": { "Literal": { "Value": "'noColor'" } }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "selector": {
-    "data": [{ "dataViewWildcard": { "matchingOption": 1 } }],
-    "metadata": "metrics.NetIncome"
-  }
-}
-```
-
-The `metadata` and `ExpressionName` values must match the measure's `queryRef`
-from the visual's `queryState`.
-
-**Pivot table / matrix sentiment or variance gradient example** (placed as entry in `values` array inside `objects`):
-
-```json
-{
-  "properties": {
-    "backColor": {
-      "solid": {
-        "color": {
-          "expr": {
-            "FillRule": {
-              "Input": {
-                "SelectRef": { "ExpressionName": "metrics.NetIncome" }
-              },
-              "FillRule": {
-                "linearGradient3": {
-                  "min": {
-                    "color": { "Literal": { "Value": "'#FF0000'" } },
-                    "value": { "Literal": { "Value": "-5000000D" } }
-                  },
-                  "mid": {
-                    "color": { "Literal": { "Value": "'#FFFFFF'" } },
-                    "value": { "Literal": { "Value": "0D" } }
-                  },
-                  "max": {
-                    "color": { "Literal": { "Value": "'#00FF00'" } },
-                    "value": { "Literal": { "Value": "5000000D" } }
-                  },
-                  "nullColoringStrategy": {
-                    "strategy": { "Literal": { "Value": "'asZero'" } }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "selector": {
-    "data": [{ "dataViewWildcard": { "matchingOption": 1 } }],
-    "metadata": "metrics.NetIncome"
-  }
-}
-```
-
-**Key differences between chart and table/matrix conditional formatting:**
-| Aspect | Charts (`dataPoint`) | Pivot Tables (`values`) |
-|--------|---------------------|------------------------|
-| Object | `dataPoint` | `values` |
-| Property | `fill` | `backColor` or `fontColor` |
-| Input ref | `Measure` + `SourceRef` (DAX measures) or `Aggregation` (columns) | `SelectRef` + `ExpressionName` |
-| Selector | `dataViewWildcard` only (do NOT include `metadata`) | `data: [{ dataViewWildcard }]` + `metadata` |
-| `matchingOption` | `0` | `1` |
-
-**3-color sentiment / variance gradient** (linearGradient3) — use only when
-negative/positive values have bad/good meaning:
-
-```json
-{
-  "solid": {
-    "color": {
-      "expr": {
-        "FillRule": {
-          "Input": {
-            "Measure": {
-              "Expression": { "SourceRef": { "Entity": "metrics" } },
-              "Property": "GrossMargin"
-            }
-          },
-          "FillRule": {
-            "linearGradient3": {
-              "min": {
-                "color": { "Literal": { "Value": "'#FF0000'" } },
-                "value": { "Literal": { "Value": "-0.01D" } }
-              },
-              "mid": {
-                "color": { "Literal": { "Value": "'#FFFF00'" } },
-                "value": { "Literal": { "Value": "0D" } }
-              },
-              "max": {
-                "color": { "Literal": { "Value": "'#00FF00'" } },
-                "value": { "Literal": { "Value": "0.01D" } }
-              },
-              "nullColoringStrategy": {
-                "strategy": { "Literal": { "Value": "'asZero'" } }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-**2-color gradient** (linearGradient2) — omit `mid`:
-
-```json
-{
-  "fillRule": {
-    "linearGradient2": {
-      "min": { "color": { "Literal": { "Value": "'#DEEFFF'" } } },
-      "max": { "color": { "Literal": { "Value": "'#118DFF'" } } },
-      "nullColoringStrategy": {
-        "strategy": { "Literal": { "Value": "'noColor'" } }
-      }
-    }
-  }
-}
-```
-
-When `value` is omitted from color stops, PBI auto-calculates from data range.
-
-> ⚠️ **FillRule color stops must use `Literal` hex values** — `ThemeDataColor`
-> silently renders black inside `linearGradient2` / `linearGradient3` color stops.
-> To use theme-aware colors, read `dataColors[N]` from the theme file and compute
-> a lighter tint (blend 40-60% toward `#FFFFFF`) for the min stop.
-
-**For single-series bar/column charts** — the most common use case. Apply a
-value-gradient so the highest bar is darkest and lowest is lightest:
-
-```json
-"dataPoint": [{
-  "properties": {
-    "fill": {
-      "solid": {
-        "color": {
-          "expr": {
-            "FillRule": {
-              "Input": {
-                "Measure": {
-                  "Expression": { "SourceRef": { "Entity": "<table>" } },
-                  "Property": "<measure>"
-                }
-              },
-              "FillRule": {
-                "linearGradient2": {
-                  "min": { "color": { "Literal": { "Value": "'#D0E8F5'" } } },
-                  "max": { "color": { "Literal": { "Value": "'#56B4E9'" } } },
-                  "nullColoringStrategy": {
-                    "strategy": { "Literal": { "Value": "'noColor'" } }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "selector": {
-    "data": [{ "dataViewWildcard": { "matchingOption": 0 } }]
-  }
-}]
-```
-
-Key requirements:
-- **`Input`** must reference the Y-axis measure (Measure or Aggregation field)
-- **`selector`** must be `data: [{ dataViewWildcard: { matchingOption: 0 } }]` —
-  without this selector, the gradient does not render
-- **Min color**: light tint of the base color (blend ~50% toward white)
-- **Max color**: the base color at full saturation (never darker — avoid black)
-- ⚠️ **Gradient color stops use `Literal` directly** — do NOT add an `expr`
-  wrapper inside the gradient `min.color` / `max.color`. Write
-  `{ "Literal": { "Value": "'#hex'" } }` not
-  `{ "expr": { "Literal": { "Value": "'#hex'" } } }`.
-  The `expr` wrapper exists on the outer `fill.solid.color.expr.FillRule` but
-  NOT inside the gradient stops. Adding `expr` inside stops causes a
-  Desktop crash (`Cannot read properties of undefined (reading 'accept')`
-  in `visitFillRuleStop`).
-
-**Null coloring strategies:**
-
-| Strategy | Behavior |
-|----------|----------|
-| `"asZero"` | Treat nulls as zero — apply corresponding gradient color |
-| `"noColor"` | No color (transparent/default) |
-| `"specificColor"` | Use the `color` property from the strategy object |
-
-## Type 2: Rules-Based Formatting
-
-Applies colors based on value conditions using `Conditional.Cases[]` inside a
-color property. The structure is the same for charts (`dataPoint.fill`) and
-tables/matrices (`values.backColor` or `values.fontColor`).
-
-> ⚠️ There is no `backColorRule` or `fontColorRule` property — these do not
-> exist. Rules are expressed as `Conditional.Cases[]` inside the standard color
-> property path (`backColor.solid.color.expr.Conditional`).
-
-**Table/matrix example** (entry in `values` array):
-
-```json
-{
-  "properties": {
-    "backColor": {
-      "solid": {
-        "color": {
-          "expr": {
-            "Conditional": {
-              "Cases": [
-                {
-                  "Condition": {
-                    "Comparison": {
-                      "ComparisonKind": 2,
-                      "Left": { "Measure": { "Expression": { "SourceRef": { "Entity": "Sales" } }, "Property": "TotalProfit" } },
-                      "Right": { "Literal": { "Value": "500D" } }
-                    }
-                  },
-                  "Value": { "Literal": { "Value": "'#1AAB40'" } }
-                },
-                {
-                  "Condition": {
-                    "Comparison": {
-                      "ComparisonKind": 3,
-                      "Left": { "Measure": { "Expression": { "SourceRef": { "Entity": "Sales" } }, "Property": "TotalProfit" } },
-                      "Right": { "Literal": { "Value": "0D" } }
-                    }
-                  },
-                  "Value": { "Literal": { "Value": "'#D64554'" } }
-                }
-              ],
-              "DefaultValue": { "Literal": { "Value": "'#FFFFFF'" } }
-            }
-          }
-        }
-      }
-    }
-  },
-  "selector": {
-    "data": [{ "dataViewWildcard": { "matchingOption": 1 } }],
-    "metadata": "Sum(Sales.TotalProfit)"
-  }
-}
-```
-
-**Chart example** (entry in `dataPoint` array — no selector needed):
-
-```json
-{
-  "properties": {
-    "fill": {
-      "solid": {
-        "color": {
-          "expr": {
-            "Conditional": {
-              "Cases": [
-                {
-                  "Condition": {
-                    "Comparison": {
-                      "ComparisonKind": 2,
-                      "Left": { "Measure": { "Expression": { "SourceRef": { "Entity": "Sales" } }, "Property": "TotalProfit" } },
-                      "Right": { "Literal": { "Value": "500D" } }
-                    }
-                  },
-                  "Value": { "Literal": { "Value": "'#1AAB40'" } }
-                }
-              ],
-              "DefaultValue": { "Literal": { "Value": "'#118DFF'" } }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-**Key rules:**
-
-- All keys are **PascalCase**: `Conditional`, `Cases`, `Condition`, `Comparison`,
-  `ComparisonKind`, `Value`, `DefaultValue`.
-- The operator is **`Comparison`** (not `Compare`).
-- `Left` must be a self-aggregating expression: use `Measure` (already aggregated)
-  or wrap a `Column` in `Aggregation { Expression: Column, Function: N }`.
-  A raw `Column` in `Left` breaks the visual.
-- `DefaultValue` provides the fallback color when no case matches.
-- For "is not equal" conditions, use `Not { Expression: { Comparison: { ComparisonKind: 0, ... } } }`
-  — there is no NotEqual ComparisonKind.
-
-**Selector requirements (critical — wrong selector silently drops all formatting):**
-
-| Visual type | Required selector | Notes |
-|-------------|-------------------|-------|
-| Tables/matrices | `{ "data": [{ "dataViewWildcard": { "matchingOption": 1 } }], "metadata": "<queryRef>" }` | Both `data` AND `metadata` required — either alone fails |
-| Charts | No selector, or `{ "data": [{ "dataViewWildcard": { "matchingOption": 1 } }] }` | Do NOT include `metadata` — it causes silent failure |
-
-**ComparisonKind values:**
-
-| Value | Operator | Meaning |
-|-------|----------|---------|
-| 0 | `==` | Equal |
-| 1 | `>` | Greater Than |
-| 2 | `>=` | Greater Than or Equal |
-| 3 | `<` | Less Than |
-| 4 | `<=` | Less Than or Equal |
-
-## Type 3: Icon Sets
-
-Adds icons alongside values in tables/matrices based on thresholds. Uses the
-`icon` property in a `values` array entry with `Conditional.Cases[]`.
-
-> ⚠️ There is no `iconRule` or `iconDefinition` property — these do not exist
-> and are silently discarded. Icons use the same `Conditional.Cases[]` pattern
-> as rules-based formatting, with icon name literals as `Value`.
-
-**Table/matrix example** (entry in `values` array):
-
-```json
-{
-  "properties": {
-    "icon": {
-      "kind": "Icon",
-      "layout": {
-        "expr": { "Literal": { "Value": "'Before'" } }
-      },
-      "verticalAlignment": {
-        "expr": { "Literal": { "Value": "'Middle'" } }
-      },
-      "value": {
-        "expr": {
-          "Conditional": {
-            "Cases": [
-              {
-                "Condition": {
-                  "Comparison": {
-                    "ComparisonKind": 2,
-                    "Left": { "Measure": { "Expression": { "SourceRef": { "Entity": "Sales" } }, "Property": "TotalProfit" } },
-                    "Right": { "Literal": { "Value": "1000D" } }
-                  }
-                },
-                "Value": { "Literal": { "Value": "'CircleHigh'" } }
-              },
-              {
-                "Condition": {
-                  "Comparison": {
-                    "ComparisonKind": 3,
-                    "Left": { "Measure": { "Expression": { "SourceRef": { "Entity": "Sales" } }, "Property": "TotalProfit" } },
-                    "Right": { "Literal": { "Value": "500D" } }
-                  }
-                },
-                "Value": { "Literal": { "Value": "'CircleLow'" } }
-              }
-            ],
-            "DefaultValue": { "Literal": { "Value": "'CircleMedium'" } }
-          }
-        }
-      }
-    }
-  },
-  "selector": {
-    "data": [{ "dataViewWildcard": { "matchingOption": 1 } }],
-    "metadata": "Sum(Sales.TotalProfit)"
-  }
-}
-```
-
-**Icon property structure:**
-
-| Property | Required | Type | Values |
-|----------|----------|------|--------|
-| `kind` | ✅ | string | `"Icon"` (always) |
-| `value` | ✅ | expr Conditional | `Conditional.Cases[]` with icon name literals |
-| `layout` | optional | expr literal | `"Before"` (default), `"After"`, `"IconOnly"` (hide value) |
-| `verticalAlignment` | optional | expr literal | `"Top"`, `"Middle"` (default), `"Bottom"` |
-
-**Icon name catalog** (use as `Value: { Literal: { Value: "'<name>'" } }`):
-
-| Family | Icons (high → low / full → empty) |
-|--------|-----------------------------------|
-| Circles (3-state) | `CircleHigh` · `CircleMedium` · `CircleLow` |
-| Circles (4-state) | `CircleHigh` · `CircleMedium` · `4CircleMedium2` · `4CircleLow` |
-| Circle fill | `CircleFilled` · `Circle75` · `CircleHalf` · `Circle25` · `CircleEmpty` |
-| Circle pattern | `CircleGreenPatternFill` · `CircleYellowPatternFill` · `CircleRedPatternFill` · `CircleBlackFill` · `CircleGrayPatternFill` · `CirclePurplePatternFill` |
-| Circle pattern (black bg) | `CircleGreenBlackBackgroundPatternFill` · `CircleYellowBlackBackgroundPatternFill` · `CircleRedBlackBackgroundPatternFill` |
-| Circle pattern (outline) | `CircleGreenBlackOutlinePatternFill` · `CircleYellowBlackOutlinePatternFill` · `CircleRedBlackOutlinePatternFill` |
-| Signs | `SignMedium` · `SignLow` |
-| Symbols (✓/!/✗) | `SymbolHigh` · `SymbolMedium` · `SymbolLow` |
-| Circled symbols | `CircleSymbolHigh` · `CircleSymbolMedium` · `CircleSymbolLow` |
-| Triangles | `TriangleHigh` · `TriangleMedium` · `TriangleLow` |
-| Colored arrows | `ColoredArrowUp` · `ColoredArrowUpRight` · `ColoredArrowRight` · `ColoredArrowDownRight` · `ColoredArrowDown` |
-| Colored arrows (alt) | `ColoredArrowUpRed` · `ColoredArrowDownGreen` |
-| Grey arrows | `GreyArrowUp` · `GreyArrowUpRight` · `GreyArrowRight` · `GreyArrowDownRight` · `GreyArrowDown` |
-| Traffic lights | `TrafficHigh` · `TrafficMedium` · `TrafficLow` · `TrafficBlackRimmed` |
-| Traffic lights (light) | `TrafficHighLight` · `TrafficMediumLight` · `TrafficLowLight` · `TrafficBlackRimmedLight` |
-| Flags | `FlagHigh` · `FlagMedium` · `FlagLow` · `FlagBlack` |
-| Flag pattern | `FlagGreenPatternFill` · `FlagYellowPatternFill` · `FlagRedPatternFill` |
-| Stars | `StarHigh` · `StarMedium` · `StarLow` |
-| Stars (light) | `StarHighLight` · `StarMediumLight` |
-| Signal bars | `SignalBarFull` · `SignalBarMedium2` · `SignalBarMedium` · `SignalBarLow` · `SignalBarEmpty` |
-| Signal bars (colored) | `SignalBarFullColored` · `SignalBarMedium2Colored` · `SignalBarMediumColored` · `SignalBarLowColored` |
-| Quadrants | `QuadrantFull` · `Quadrant75` · `Quadrant50` · `Quadrant25` · `QuadrantEmpty` |
-| Quadrants (colored) | `QuadrantFullColored` · `Quadrant75Colored` · `Quadrant50Colored` · `Quadrant25Colored` |
-
-> ⚠️ Invalid icon names cause a Desktop crash ("Unable to find resource").
-> Only use names from the catalog above.
-
-**Selector:** Same as rules-based — tables/matrices require both `data` and
-`metadata`; the `metadata` must reference the measure's queryRef.
-
-## Type 4: Data Bars
-
-In-cell bar visualization for tables/matrices. Applied per-column via metadata selector.
-
-**Placed as an entry in the `columnFormatting` array (NOT `values`), with a
-metadata-only selector:**
-
-> ⚠️ **Do not use `dataViewWildcard` for data bars.** Unlike `values.backColor`,
-> `values.fontColor`, and `values.icon`, data bars are column-level formatting.
-> They render with `{ "selector": { "metadata": "<queryRef>" } }`; adding
-> `data: [{ "dataViewWildcard": ... }]` causes the bars to disappear.
-
-```json
-{
-  "properties": {
-    "dataBars": {
-      "positiveColor": { "solid": { "color": { "expr": { "Literal": { "Value": "'#118DFF'" } } } } },
-      "negativeColor": { "solid": { "color": { "expr": { "Literal": { "Value": "'#D64554'" } } } } },
-      "axisColor": { "solid": { "color": { "expr": { "Literal": { "Value": "'#999999'" } } } } },
-      "reverseDirection": { "expr": { "Literal": { "Value": "false" } } },
-      "hideText": { "expr": { "Literal": { "Value": "false" } } }
-    }
-  },
-  "selector": { "metadata": "Sales.Revenue" }
-}
-```
-
-Properties: `positiveColor`, `negativeColor`, `axisColor` (fills), `reverseDirection` (bool),
-`hideText` (bool), `minValue`/`maxValue` (optional numeric scale bounds).
-
-## Type 5: Web URL
-
-Turns text into clickable hyperlinks using a URL field:
-
-```json
-{
-  "properties": {
-    "webUrl": {
-      "expr": {
-        "Column": {
-          "Expression": { "SourceRef": { "Entity": "Companies" } },
-          "Property": "WebsiteUrl"
-        }
-      }
-    }
-  }
-}
-```
-
-Supported in tables and matrices.
-
-## Type 6: Field-Driven Color
-
-Colors a property using hex values stored in a data column. There is no special
-`fieldValue` property — this is a pattern of placing an `Aggregation` expression
-(referencing a color column) inside any standard color property slot
-(`backColor`, `fontColor`, `foreColor`, etc.).
-
-### Contract
-
-```json
-{
-  "properties": {
-    "backColor": {
-      "solid": {
-        "color": {
-          "expr": {
-            "Aggregation": {
-              "Expression": {
-                "Column": {
-                  "Expression": { "SourceRef": { "Entity": "Colors" } },
-                  "Property": "Color"
-                }
-              },
-              "Function": 3
-            }
-          }
-        }
-      }
-    }
-  },
-  "selector": {
-    "data": [{ "dataViewWildcard": { "matchingOption": 1 } }],
-    "metadata": "Sum(OrderBreakdown.Sales)"
-  }
-}
-```
-
-### Aggregation Function values
-
-| Function | Meaning |
-|----------|---------|
-| 3 | Min |
-| 4 | Max |
-
-### Selector
-
-The `metadata` queryRef targets the **column being colored** (the measure or
-column whose cells receive the color), not the color source column.
-
-| `matchingOption` | Meaning |
-|------------------|---------|
-| 0 | All data points including totals |
-| 1 | Values only (excludes totals) |
-
-### Applies to
-
-Works with `backColor` and `fontColor`. The color source column must contain
-valid hex strings (e.g., `#FF6B35`).
+## Field-Value Result Contracts and Support Guardrails
+
+A field-value binding is valid only when its driver resolves to one scalar value
+that the target property accepts. A valid PBIR expression shape does not prove
+that the runtime value is valid or that the target supports field-value
+formatting.
+
+Use this section as a contract and routing index. Keep detailed PBIR mechanics
+in the linked result-type and visual-specific sections below.
+
+### Result contracts
+
+| Result | Required runtime value | Supported built-in routes | Invalid or unsupported behavior |
+|--------|------------------------|---------------------------|---------------------------------|
+| **Color (continued in `conditional-formatting-part-07.md`)** | Nonblank text containing `#RGB`, `#RRGGBB`, a standard CSS color name, `rgb()` / `rgba()`, `hsl()` / `hsla()`, or a verified report-theme color name. Solid field-value colors may also use `#RRGGBBAA`; see the hex-form restrictions (continued in `conditional-formatting-part-03.md`). Prefer a text-typed measure with one color format. | [Table/matrix cells](#tablesmatrices); supported chart targets (continued in `conditional-formatting-part-02.md`); [VCO colors](#vco-conditional-formatting); button/shape colors (continued in `conditional-formatting-part-03.md`); supported Azure Maps layer colors (continued in `conditional-formatting-part-02.md`). | A missing or non-color field can error the visual or fall back to default formatting. Page canvas/wallpaper, combo line/marker CF, scatter category-label CF, and other targets marked unsupported below must remain static. |
+| **Web URL (continued in `conditional-formatting-part-06.md`)** | Nonblank text containing an absolute `http://` or `https://` URL. Use `dataCategory: WebUrl` when the field itself is displayed as a link; also prefer it for URL-driving fields and measures. | Table/matrix Web URL data category (continued in `conditional-formatting-part-06.md`); matrix `values.webURL`; button/shape `visualLink.webUrl` (continued in `conditional-formatting-part-03.md`). | Malformed or relative values do not become links. `tableEx` does not expose `values.webURL`; chart data points do not gain actions from a URL-valued field. |
+| **Image (continued in `conditional-formatting-part-07.md`)** | Nonblank text containing an absolute, directly reachable image URL; HTTPS is preferred. The model field must have `dataCategory: ImageUrl`. | Table/matrix image cells (continued in `conditional-formatting-part-07.md`) and a data-bound standalone image visual (see `image.md`, section `3-select-from-data`). | A missing data category shows URL text or a blank visual; unreachable, non-image, authentication-gated, or CORS-blocked resources render blank/broken. |
+| **Icon (continued in `conditional-formatting-part-06.md`)** | One exact icon name from the icon catalog (continued in `conditional-formatting-part-06.md`), stored as a string `Literal` in a `Conditional.Cases[]` result. | Table/matrix `values.icon` rules. | Icon names are not free-form field-value outputs. Invalid names can crash Desktop; button glyph names and Azure Maps marker shapes are separate static enums. |
+| **Text** | One scalar text value. Prefer a text measure; a column must resolve to one value in context or be wrapped in an appropriate aggregation. | [VCO title/alt text](#vco-conditional-formatting), button/shape labels (continued in `conditional-formatting-part-03.md`), and dynamic textboxes (see `textbox.md`, section `dynamic-textbox-value`). | A missing field errors the visual; a multi-valued raw column can return blank or an ambiguous result. Do not assume arbitrary axis, legend, or label text properties accept data-bound expressions. |
+
+### Shared authoring checks
+
+- **Refuse incompatible or unknown result types before writing PBIR.** A color
+  field-value driver must be verified as text-typed and return valid color
+  strings; a Web URL driver must be text-typed and return absolute HTTP(S)
+  URLs; an image driver must additionally have `dataCategory: ImageUrl`. Do not
+  author a deliberately invalid binding to discover Desktop's fallback. If the
+  driver's type, data category, or representative values cannot be verified,
+  stop and request a valid field or the required semantic-model correction.
+- Keep the displayed/formatting **target** separate from the **driver** that
+  supplies the result. Follow Driving field vs. target
+  field (continued in `conditional-formatting-part-03.md`).
+- Ensure the driver resolves to one scalar value. Reference measures directly;
+  aggregate raw columns as documented in Aggregation: columns vs.
+  measures (continued in `conditional-formatting-part-03.md`).
+- Treat `Min`/`Max` only as scalarization. Use it when all contributing rows
+  should return the same result or lexical minimum/maximum is intentional;
+  otherwise use a measure that defines the business rule.
+- Use the target visual's documented expression and selector route; see the
+  selector summary (continued in `conditional-formatting-part-03.md`). Do not infer one
+  visual's route from another.
+
+### Support decision and fallbacks
+
+1. Confirm the visual type, object, property, and accepted expression type with
+   `powerbi-report-author catalog describe` and
+   `powerbi-report-author formatting describe-object`.
+2. Check the target-specific matrices in this file. A property typed as `fill`
+   proves its value shape, not that the target property supports field-value,
+   Rules, or Gradient formatting.
+3. Verify the model field/measure exists, has the required data type and data
+   category, and returns values matching the table above. This is a hard
+   pre-authoring gate: reject numeric/boolean color outputs, non-URL action
+   values, and image fields without `ImageUrl` metadata rather than persisting
+   them for Desktop to diagnose. Delegate model changes or data inspection to
+   the semantic-model authoring capability.
+4. If the target is supported, author the documented selector and expression.
+   If unsupported, do not move the expression to a similarly named property or
+   rely on schema permissiveness. Explain the limitation and offer a static
+   value or a supported built-in visual/target.
+5. Run PBIR validation, load the latest report, and review a screenshot with
+   representative nonblank, blank, and invalid values where those cases can
+   occur.
+
+Known cross-cutting unsupported cases include:
+
+- Page canvas and wallpaper field-value colors; use static colors and see
+  `page-formatting.md` (see `page-formatting.md`, section `dynamic-color-limitation`).
+- Table/matrix column width is static and not conditionally formattable; see
+  Column width (continued in `conditional-formatting-part-07.md`).
+- Button icon glyph/size/placement, shape geometry, and shadow/glow numeric
+  parameters; only their documented color or text properties are data-driven.
+- Chart Web URL actions and field-driven icon names.
+- Any visual/property combination marked `No*` or unsupported in a capability
+  matrix in this file.
+
+Marketplace, organizational, and private custom visuals define their own
+capabilities. The built-in catalog and matrices in this guide cannot guarantee
+their field-value support. Inspect the visual package's
+`capabilities.dataRoles` and formatting capabilities or authoritative vendor
+documentation, then verify in Desktop. Successful registration and recognition
+do not prove that a custom visual supports conditional formatting. See
+`custom-visuals.md` (see `custom-visuals.md`).
+
+### Validation and diagnostics
+
+Offline validation cannot evaluate the values returned by model measures or
+columns, so runtime rendering remains required.
+
+| Symptom or diagnostic | Meaning | Action |
+|-----------------------|---------|--------|
+| Grey **See details** overlay or field warning | Driver is missing, errors, or returns the wrong result type | Repair or replace the model field through the semantic-model capability; do not silently substitute an unrelated field |
+| Validates but keeps default/static formatting | Unsupported target, wrong selector, or driver does not resolve at that scope | Recheck the target matrix, selector, and driver context; use a documented fallback if unsupported |
+| `PBIR_PAGE_COLOR_DATA_BOUND_UNSUPPORTED` | Page canvas/wallpaper cannot evaluate a data-bound color | Replace it with a static `Literal` |
+| URL remains plain text or image is blank/broken | Value/data category is invalid, or the resource is unreachable | Validate representative values and the required `WebUrl` / `ImageUrl` model metadata |
+| Desktop fails while loading an icon rule | Icon result is not in the documented catalog | Replace it with an exact catalog name before reloading |
+
+## VCO Conditional Formatting
+
+Visual-container conditional formatting is stored in
+`visual.json → visual.visualContainerObjects`. VCOs are visual-wide settings
+and do not use selectors.
+
+| Property | Valid expressions |
+|----------|-------------------|
+| Title text (`title.text`); alt text (`general.altText`) | `Literal`; `Conditional` (Type 2 (continued in `conditional-formatting-part-05.md`)); `Measure`; `Column`; `NativeMeasure`; `Aggregation`; `ScopedEval`; `SelectRef` (continued in `conditional-formatting-part-04.md`) |
+| Title font color (`title.fontColor`); title background (`title.background`); visual background color (`background.color`); border color (`border.color`) | `Literal`; `ThemeDataColor`; `FillRule` (Type 1 (continued in `conditional-formatting-part-04.md`)); `Conditional` (Type 2 (continued in `conditional-formatting-part-05.md`)); color-valued `Measure`; `Column`; `NativeMeasure`; `Aggregation`; `ScopedEval`; `SelectRef` (continued in `conditional-formatting-part-04.md`) |
+
+> `general.altText` describes the visual and its meaningful insights for
+> accessibility.
+
+### Data-Bound Expression Rules
+
+| Property | Data-bound expression | Rules |
+|----------|-----------------------|-------|
+| `title.text`; `general.altText` | `Measure` | Preferred option. Must reference the exact owning table and measure and return scalar text. |
+| `title.text`; `general.altText` | `Column` | Must resolve to one value in the current filter context. Prefer a measure using `SELECTEDVALUE`. |
+| `title.text`; `general.altText` | `Aggregation` | Must aggregate the referenced column into one scalar text-compatible value. |
+| `title.text`; `general.altText` | `NativeMeasure` | Must be available in the visual query and return text. |
+| `title.text`; `general.altText` | `ScopedEval` | Referenced roles and fields must exist in the visual query; the result must be text. |
+| `title.text`; `general.altText` | `SelectRef` | Referenced query selection must exist and return text. |
+| `title.text`; `general.altText` | `Conditional` | Every case value and default must return text. |
+| `title.fontColor` | `Measure`, `Column`, `Aggregation`, `NativeMeasure`, `ScopedEval`, `SelectRef` | Must resolve to one valid CSS color or theme token. Null is not allowed. |
+| `title.fontColor` | `Conditional` | Every case value and default must return a valid color. |
+| `title.fontColor` | `FillRule` | Input must be an available numeric field or measure; gradient stops must provide valid colors. |
+| `title.background` | `Measure`, `Column`, `Aggregation`, `NativeMeasure`, `ScopedEval`, `SelectRef` | Must resolve to a valid color. Null is allowed. |
+| `title.background` | `Conditional` | Every result must be a valid color or null. |
+| `title.background` | `FillRule` | Input must be numeric; gradient stops must provide valid colors. |
+| `background.color` | `Measure`, `Column`, `Aggregation`, `NativeMeasure`, `ScopedEval`, `SelectRef` | Must resolve to a valid color. Null is not allowed. |
+| `background.color` | `Conditional` | Every result must be a valid color. |
+| `background.color` | `FillRule` | Input must be numeric; gradient stops must provide valid colors. |
+| `border.color` | `Measure`, `Column`, `Aggregation`, `NativeMeasure`, `ScopedEval`, `SelectRef` | Must resolve to a valid color. Null is not allowed. |
+| `border.color` | `Conditional` | Every result must be a valid color. |
+| `border.color` | `FillRule` | Input must be numeric; gradient stops must provide valid colors. |
+
+`Literal` and `ThemeDataColor` are constant/static expressions rather than
+conditional-formatting types. `FillRule` corresponds to Type 1, and
+`Conditional.Cases[]` corresponds to Type 2.
+
+## Authoring Workflow
+
+1. **Identify the visual type.** Start with the relevant section under
+   [Formatting Options by Visual Type](#formatting-options-by-visual-type).
+2. **Validate the result and target.** Apply the
+   [field-value result contracts and support guardrails](#field-value-result-contracts-and-support-guardrails),
+   then follow the linked type for the desired result, such as a gradient,
+   rules, icons, data bars, links, or field-driven color.
+3. **Build the formatting expression.** Reference the field or measure that
+   drives the formatting and follow the
+   driver-expression decision path (continued in `conditional-formatting-part-03.md`):
+   an existing visual query selection uses `SelectRef`; otherwise a DAX measure
+   uses `Measure`, and a raw column uses `Aggregation(Column, Function)`. Keep
+   the driving field distinct from the target field (continued in `conditional-formatting-part-03.md`)
+   and use only valid hex color results (continued in `conditional-formatting-part-03.md`).
+4. **Apply the correct object and selector.** Use the
+   selector summary (continued in `conditional-formatting-part-03.md`); requirements differ
+   across tables, matrices, charts, cards, and KPIs.
+5. **Validate and render.** Run `powerbi-report-author validate <path>`, reload
+   the report in Desktop, and confirm that the formatting appears.
+
+## Formatting Options by Visual Type
+
+### Tables/matrices
+
+- Cell gradients: Type 1: Color Gradient (continued in `conditional-formatting-part-04.md`)
+- Rule-based cell colors: Type 2: Rules-Based Formatting (continued in `conditional-formatting-part-05.md`)
+- Cell icons: Type 3: Icon Sets (continued in `conditional-formatting-part-06.md`)
+- In-cell bars: Type 4: Data Bars (continued in `conditional-formatting-part-06.md`)
+- Clickable links: Type 5: Web URL (continued in `conditional-formatting-part-06.md`)
+- Colors supplied by a field: Type 6: Field-Driven Color (continued in `conditional-formatting-part-07.md`)
+- Images in cells: Type 7: Image Field Values (continued in `conditional-formatting-part-07.md`)
+- Totals/subtotals targeting: Totals, subtotals, and the matrix `total` slot (continued in `conditional-formatting-part-07.md`)
+- Column width (not conditionally formattable; static width lives in
+  table.md § Column width (static) (see `table.md`, section `column-width-static`)):
+  Column width — not conditionally formattable (continued in `conditional-formatting-part-07.md`)
+
+> **`tableEx` (table) and `pivotTable` (matrix) share the same CF syntax for
+> Types 1–6.** Those types use the same objects and selectors on both visuals;
+> the examples below use a table for brevity and apply to a matrix unchanged. On
+> a matrix the `metadata` queryRef still targets the **Values** measure whose
+> cells you format (Types 1/2/3/5/6 use `dataViewWildcard` + `metadata`; Type 4
+> data bars are `metadata`-only). **Type 7 (image field values) differs** between
+> the two — a table binds an ImageUrl **column** directly, while a matrix needs a
+> **measure** or an `Aggregation`-wrapped column; see
+> Type 7 (continued in `conditional-formatting-part-07.md`) for the placement rules.
+>
+> **Cell CF targets Values-role fields.** Both visuals bind the formatted field
+> through the **Values** role. In a `pivotTable`, cell CF (Background color, Font
+> color, Data bars, Icons, Web URL) is available **only for Values-role fields** —
+> fields in the **Rows** or **Columns** role cannot be conditionally formatted this
+> way, so the `metadata` selector must reference a **Values-role** field's queryRef,
+> never a Rows/Columns field. A `tableEx` has a single **Values** role that holds
+> every displayed column, so any column can be formatted. (Row/column *header*
+> styling is a separate format-pane setting, not cell CF.)
+
+### Charts
+
+- Data-point, line, marker, and label gradients:
+  Type 1: Color Gradient (continued in `conditional-formatting-part-04.md`)
+- Rule-based chart colors:
+  Type 2: Rules-Based Formatting (continued in `conditional-formatting-part-05.md`)
+- Colors supplied by a field:
+  Type 6: Field-Driven Color (continued in `conditional-formatting-part-07.md`)
+- Legend and series-label color consistency:
+  Chart color inheritance (continued in `conditional-formatting-part-07.md`)

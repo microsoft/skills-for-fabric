@@ -1,5 +1,12 @@
 # Textbox Visual Authoring Guide
 
+## Contents
+
+- [Static textbox title](#static-textbox-title)
+- [Dynamic textbox value](#dynamic-textbox-value)
+- [Rules](#rules)
+
+
 Use `textbox` for visible static page titles, headers, annotations, and dynamic
 text values. Textboxes require a **native `paragraphs` array** directly under
 `objects.general[].properties.paragraphs`; do not wrap it as
