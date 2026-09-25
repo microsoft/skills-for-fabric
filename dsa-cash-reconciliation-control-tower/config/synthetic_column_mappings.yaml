@@ -1,0 +1,61 @@
+# Synthetic fixture headers used only by the included demo generator and tests.
+sources:
+  SnapPay:
+    worksheets: ["Transactions"]
+    required: [transaction_id, account_type, batch_number, amount, transaction_date]
+    columns:
+      transaction_id: ["transaction_ref"]
+      account_type: ["payment_type"]
+      batch_number: ["batch_ref"]
+      amount: ["net_amount"]
+      transaction_date: ["transaction_dt"]
+      settlement_date: ["settlement_dt"]
+      status: ["transaction_status"]
+      backend_id: ["backend_ref"]
+      customer_reference: ["customer_ref"]
+  BluePay:
+    worksheets: ["Transactions"]
+    required: [transaction_id, backend_id, amount, transaction_date]
+    columns:
+      transaction_id: ["transaction_ref"]
+      backend_id: ["backend_ref"]
+      amount: ["net_amount"]
+      transaction_date: ["transaction_dt"]
+      settlement_date: ["settlement_dt"]
+      status: ["transaction_status"]
+      batch_number: ["batch_ref"]
+      customer_reference: ["customer_ref"]
+  BMO:
+    worksheets: ["Transactions"]
+    required: [amount, transaction_date]
+    required_any: [backend_id, customer_reference]
+    columns:
+      transaction_id: ["bank_txn_ref"]
+      customer_reference: ["customer_ref"]
+      backend_id: ["backend_ref"]
+      amount: ["net_amount"]
+      transaction_date: ["posting_dt"]
+      settlement_date: ["settlement_dt"]
+      status: ["transaction_status"]
+      batch_number: ["batch_ref"]
+  JDE:
+    worksheets: ["Transactions"]
+    required: [batch_number, amount, transaction_date]
+    columns:
+      batch_number: ["batch_ref"]
+      amount: ["net_amount"]
+      transaction_date: ["posting_dt"]
+      status: ["transaction_status"]
+      transaction_id: ["transaction_ref"]
+      account_type: ["payment_type"]
+      backend_id: ["backend_ref"]
+      customer_reference: ["customer_ref"]
+matching:
+  amount_tolerance: 0.01
+  settlement_window_days: 3
+sharepoint:
+  source_folders:
+    SnapPay: SnapPay
+    BluePay: BluePay
+    BMO: BMO
+    JDE: JDE
