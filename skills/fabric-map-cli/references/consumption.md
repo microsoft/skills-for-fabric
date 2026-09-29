@@ -11,8 +11,9 @@
 General questions about supported sources or connections need no workspace,
 Map lookup, or authentication. Read the relevant source adapter's capability
 summary: [Lakehouse](authoring/lakehouse.md),
-[Eventhouse](authoring/eventhouse.md), or
-[connections](authoring/connections.md). These documentation reads remain in
+[Eventhouse](authoring/eventhouse.md),
+[connections](authoring/connections.md), [Ontology](authoring/ontology.md), or
+[variable references](authoring/variables.md). These documentation reads remain in
 consumption mode; do not run the adapters' authoring or source-validation steps.
 Distinguish documented Map adapters from the broader Fabric connector catalog.
 
@@ -110,6 +111,15 @@ Present the Map in this order:
    labels, and tooltips.
 6. Definition integrity findings.
 
+For Ontology layers, include the referenced entity and spatial properties,
+and the source generation when verified. Use the adapter's format checks and
+distinguish unsupported formats from invalid definitions.
+For variable-backed sources, retain the expression and distinguish the declared
+reference from its resolved target. Inspect the library's active value set and
+definition only when needed to answer the request; do not change either or
+execute source queries. If resolution is unavailable, report it as unverified,
+not as a missing source or permission to replace the expression with an ID.
+
 Redact credentials and sensitive connection details. IDs may be shown when
 useful for administration, but do not mistake an ID for a display name.
 
@@ -118,6 +128,11 @@ useful for administration, but do not mistake an ID for a display name.
 - `map.json` exists, decodes as UTF-8 JSON, and references a known schema.
 - Each UUID-formatted field is valid.
 - Every `layerSettings[].sourceId` resolves to exactly one layer source.
+- When present, each layer source's `datasourceId` resolves to exactly one
+  `dataSources` entry. Validate identifier formats against the Map's declared
+  schema; do not impose UUID requirements on fields it defines as strings.
+- Variable expressions are checked against the declared schema and expected
+  reference type; JSON Schema alone does not prove variable resolution.
 - Adapter-owned parts and spatial mappings agree with their source types.
 - Distinguish definition references from independently verified source access;
   inspect source metadata only when needed, not credentials or underlying data.

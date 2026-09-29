@@ -6,17 +6,47 @@ data validation, and any additional definition parts.
 
 ## Requirements
 
-Identify the operation and ask for missing values using the host's question
-tool: workspace and new Map display name for creation; workspace and existing
-Map identity for edits/deletion; the new value for an unspecified change.
-Ask only for inputs needed by that operation. Do not require data for an empty
-Map, or a source adapter for metadata or basemap edits.
-If a required value is absent from the request and prior user context, ask and
-wait; do not search unrelated local files for an implicit target.
+Creation requires a workspace and new Map display name; edits/deletion require
+a workspace and existing Map identity. Clarify an unspecified change's intended
+value. Reuse the request, prior user context, and verified existing configuration
+before asking for missing values using the host's question tool.
+Ask only for inputs needed by that operation. Do not require data when the
+request explicitly asks for a blank/empty Map or generic item creation with
+no data-backed goal. Do not require a source adapter for metadata or basemap
+edits. If a data-backed goal is stated but its source is not identified in the
+request or prior user context, ask which source to use and wait before
+creation; do not default to an empty Map.
 
 For source/layer changes, read the relevant adapter and validate only the
 affected sources before assembling the complete definition. Do not provision
 prerequisite data or connections as a hidden side effect.
+
+For Ontology entities, read [Ontology](authoring/ontology.md). For variable-backed
+sources, read [variable references](authoring/variables.md) and the underlying
+source adapter. Apply their compatibility checks to the operation's selected
+schema; do not migrate an existing Map just to enable a new source.
+
+### Focused clarification
+
+Source adapters describe what the agent must verify, not a questionnaire for
+the user. Resolve details from supplied context, the existing Map definition
+on edits, and documented read-only metadata within the identified source scope.
+Do not search unrelated workspaces or local files for an implicit target.
+
+- Ask only for a required value that remains unknown or a choice that metadata
+  cannot resolve. Present verified names as choices when several candidates fit;
+  do not choose the first result or require the user to supply internal IDs.
+- Keep questions focused on the next blocking decision. Combine closely related
+  missing values, but do not ask for the entire adapter checklist up front or
+  request confirmation of every unambiguous resolved value.
+- Do not make optional styling or refresh preferences prerequisites. On creation,
+  omit optional settings when permitted and use documented, geometry-compatible
+  defaults where a rendering choice is required. If a required choice has no
+  verified default and remains unspecified, ask rather than guess. On edits,
+  preserve existing settings unless the request requires a change.
+- Discovery does not replace validation. Report access failures, incompatible
+  sources, and missing bindings as blockers; user answers cannot substitute for
+  required compatibility or permission checks.
 
 ## Resolve workspace and Map
 
@@ -49,71 +79,120 @@ az rest --method get --resource "https://api.fabric.microsoft.com" `
   --headers "x-ms-fabric-skill=fabric-map-cli"
 ```
 
-## Default schema and blank definitions
+## Schema resolution and blank definitions
 
-Use **2.0.0** for new Maps unless the user explicitly requests a different
-version. Fetch that schema directly and validate locally, including formats
-and documented bounds not enforced by the schema:
+For each new-Map workflow, resolve the latest published schema at runtime from
+the authoritative
+[Map schema directory on main](https://github.com/microsoft/json-schemas/tree/main/fabric/item/map/definition).
+Read any applicable repository/directory instructions and the selected schema;
+do not copy a version from this skill, an older example, or a remembered URL.
 
-`https://developer.microsoft.com/json-schemas/fabric/item/map/definition/2.0.0/schema.json`
+1. List the version directories at that link. For programmatic discovery, use
+   `GET https://api.github.com/repos/microsoft/json-schemas/contents/fabric/item/map/definition?ref=main`.
+   Consider stable numeric `major.minor.patch` directories, comparing the
+   numeric components rather than sorting their names lexicographically.
+   Ignore non-version entries and preview versions unless explicitly requested.
+2. Select the highest stable version and inspect its `schema.json`. If the user
+   explicitly requests a version, verify that directory and use it instead;
+   never invent a version or probe incremented version URLs.
+3. Resolve the published URL from the selected directory:
+   `https://developer.microsoft.com/json-schemas/fabric/item/map/definition/<discovered-version>/schema.json`.
+   Fetch that exact schema and store its URL as `$resolvedSchemaUrl`. A GitHub
+   `main` entry can precede live publication; confirm that the published URL
+   returns the expected JSON Schema, not an error or HTML page. Do not use the
+   GitHub page/raw URL as the Map's `$schema`.
+4. Read the downloaded schema's required fields, definitions, and referenced
+   schemas before assembling the Map. Use its declared JSON Schema dialect,
+   enable format checking, and validate the complete definition locally,
+   including documented bounds not enforced by the schema.
 
-Use the JSON Schema dialect declared by the downloaded schema's own `$schema`,
-not the Map definition version, to select the validator. The Map 2.0.0 schema
-declares Draft 7. With Python `jsonschema`, explicitly use `Draft7Validator`
-with a `FormatChecker`; automatic selection may not recognize the schema's
-HTTPS Draft 7 dialect URI and may fall back to another draft. For other
-schemas, select their declared dialect instead of forcing Draft 7. Stop and
-report an unsupported dialect rather than silently falling back. Do not
-rewrite either `$schema` URL to resolve a local validator compatibility issue.
-Dialect selection does not replace the format and documented-bounds checks.
+If discovery, publication checks, schema retrieval, or validation fails, stop
+before mutation and report the failure. Do not silently use a cached default,
+fall back to an older version, or retry a rejected write with another schema.
+Resolve once for the workflow and use the same schema for assembly, validation,
+submission, and readback.
 
-Normal authoring does not discover the highest published version, probe newer
-versions, or retry with another schema. Version changes are separate, explicit
-requests. On edits, preserve the existing Map's `$schema`; the default is not
-permission to upgrade or downgrade an existing definition.
+For each version-dependent object, inspect the selected schema's alternatives
+and choose the compatible branch with no deprecation notice. For a new Map,
+prefer the current `datasourceId` plus item/connection-reference model when the
+selected schema defines it; use a legacy `itemType`/`workspaceId`/`itemId` or
+`connectionId` branch only when that schema does not provide the newer model.
+Build layer and icon source links from the same selected branch. Do not infer a
+new field name by analogy or copy a fragment whose branch was not verified.
+Do not combine fields from incompatible reference branches.
+On edits, preserve the existing representation unless the requested change
+requires another compatible branch or the user explicitly requests migration.
 
-A request without sources creates an empty Map, not a source-selection
-workflow. Use the default schema URL and empty arrays:
+Select the validator from the downloaded schema's own `$schema`, not the Map
+definition version. Verify that it implements the declared dialect and enables
+format checking; an automatic fallback to another dialect is not sufficient.
+Report an unsupported dialect rather than changing either `$schema` URL or
+silently validating against another contract.
 
-```json
-{
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/map/definition/2.0.0/schema.json",
-  "basemap": {},
-  "dataSources": [],
-  "iconSources": [],
-  "layerSources": [],
-  "layerSettings": []
+On definition edits, fetch and validate against the existing Map's declared
+`$schema`; do not apply the latest-schema selection to unrelated changes.
+A schema migration requires an explicit request, review of the target schema,
+and validation of the complete migrated definition while preserving unrelated
+content. Metadata-only updates, deletion, and listing need no schema discovery.
+
+Use the empty-Map workflow only for explicit blank/empty creation (including
+an explicit request to add data later) or generic Map-item creation with no
+data-backed goal. For example, "create a Map" needs no source selection, but
+"create a Map showing our latest vehicle locations" requires clarification
+when its source is not yet identified. Missing source details are not evidence
+of blank-Map intent.
+
+For the empty-Map workflow, after resolving `$resolvedSchemaUrl` above,
+assemble the blank definition from the fetched contract. This starting shape
+must still be checked against that schema, including any newly required
+properties:
+
+```powershell
+$map = [ordered]@{
+    '$schema' = $resolvedSchemaUrl
+    basemap = @{}
+    dataSources = @()
+    iconSources = @()
+    layerSources = @()
+    layerSettings = @()
 }
+$mapJson = $map | ConvertTo-Json -Depth 100
 ```
 
 Here "empty" means no data or layers; it does not require the `blank` basemap
 style. `dataSources` identifies inputs, `iconSources` defines reusable symbols,
 `layerSources` describes data retrieval, and `layerSettings` describes rendering.
 Each layer's `sourceId` must resolve to a unique layer source. Preserve IDs on
-updates; generate UUIDs only for genuinely new UUID-formatted entries.
+updates and generate identifiers only for new entries. Validate IDs and links
+against the selected schema; require UUIDs only for UUID-formatted fields.
 
 ### Required blank-Map completion response
 
 After successful creation and readback, read the capability summaries in
-[Lakehouse](authoring/lakehouse.md), [Eventhouse](authoring/eventhouse.md), and
-[connections](authoring/connections.md). Do not run their source-discovery or
+[Lakehouse](authoring/lakehouse.md), [Eventhouse](authoring/eventhouse.md),
+[connections](authoring/connections.md), [Ontology](authoring/ontology.md), and
+[variable references](authoring/variables.md). Do not run their source-discovery or
 setup procedures. Even when the request only says "create a Map", the final
 response must include all three parts below:
 
 1. **Created:** actual workspace, Map name/ID, persisted schema, and confirmation
    that no data sources or layers exist. Qualify visual rendering separately.
 2. **Add later:** say data and layers can be added later, then give a compact
-   three-row source table using the coverage below and the adapters' limits.
-3. **Needed for a follow-up:** source workspace/item or existing connection;
-   file path/format, KQL entity/query, or published imagery layer/collection;
-   spatial fields/geometry for vectors; desired rendering and refresh/styling
-   preferences. State these as future inputs, not questions or prerequisites.
+   source table using the coverage below and the adapters' limits.
+3. **Needed for a follow-up:** identify the source and what to show, such as a
+   file, KQL entity/query, imagery layer, or Ontology entity in the user's terms.
+   For variables, a reference or library plus variable name identifies the
+   source. Explain that metadata will be discovered and only unresolved choices
+   will need clarification; styling and refresh preferences are optional.
+   State this as future guidance, not a questionnaire or creation prerequisite.
 
 | Source row | Required coverage |
 |---|---|
 | Lakehouse | GeoJSON, vector/raster PMTiles, and COG; compatible points, lines, polygons, heatmaps, and extrusions versus raster imagery; key file/format limits |
 | Eventhouse / KQL Database | Coordinates or GeoJSON geometry, compatible vector renderings, and result/function limits; distinguish direct table preview limits from general query results |
 | External connections | Name Geospatial Web Services for WMS/WMTS and Microsoft Planetary Computer for MPC Pro; imagery-only rendering and projection/image-format limits, not arbitrary Fabric connectors |
+| Ontology (preview) | Entity-backed spatial layers; numeric coordinates or geometry properties; up to 100,000 returned features |
+| Variable references | Parameterize supported item/connection sources, not geometry; selected-schema and variable-type compatibility, active value set, and underlying source permissions still apply |
 
 Do not stop after metadata or replace the source table and follow-up inputs
 with "data can be added later", documentation links, or an offer to explain.
@@ -148,9 +227,10 @@ Do not send raw JSON as a part payload. Retain untouched part payloads exactly.
 
 ## Common styling
 
-Get and decode the existing definition first. Patch only requested properties;
-create missing containers without replacing existing siblings. Do not migrate
-`$schema`, reset arrays, or apply new defaults during an unrelated edit.
+For edits, get and decode the existing definition first. Patch only requested
+properties; create missing containers without replacing existing siblings.
+Do not migrate `$schema`, reset arrays, or apply new defaults during an unrelated
+edit.
 
 | Request | JSON location | Values / constraints |
 |---|---|---|
@@ -255,8 +335,10 @@ and `/result` endpoints; do not send credentials to an unvalidated host.
 
 Retain authentication and telemetry on every poll, result, retry, and page.
 Only forward credentials to the trusted Fabric API host. Honor `Retry-After`
-on `429`. Do not blindly retry a timed-out create: resolve whether it already
-created the Map before attempting another mutation.
+on `429`. Retain the submitted definition and returned item/operation IDs,
+without credentials, so interrupted operations can be reconciled. Before
+retrying an uncertain write, inspect its operation status and persisted state;
+a client-side failure does not establish that the service rejected the write.
 
 ## Readback and completion
 
@@ -270,7 +352,10 @@ Complete each write's readback before the next mutation:
 | Delete | Verify ID absent from all active list pages and/or GET returns documented not-found/deleted state |
 
 A `401`, `403`, network error, or incomplete list is not proof of deletion.
-Report server normalization explicitly instead of hiding an unexpected diff.
+Compare changed JSON parts as parsed content, not by whitespace or property
+order. Preserve untouched part paths and payloads exactly. Report server
+normalization and accept it only when verified against the applicable contract;
+retain returned fields and treat unexplained semantic differences as failures.
 REST persistence does not prove visual rendering. Report API error code,
 message, request ID, and related resource when available. Stop on failed LROs,
 validation errors, or readback mismatches; never discard unknown fields to
@@ -280,7 +365,7 @@ force a write. Clean up temporary request files, not users' source assets.
 
 - [Map REST operations](https://learn.microsoft.com/en-us/rest/api/fabric/map/items)
 - [Definition contract](https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/map-definition)
-- [Default schema](https://developer.microsoft.com/json-schemas/fabric/item/map/definition/2.0.0/schema.json)
+- [Map schema versions and instructions](https://github.com/microsoft/json-schemas/tree/main/fabric/item/map/definition)
 - [Customize a Map](https://learn.microsoft.com/en-us/fabric/real-time-intelligence/map/customize-map)
 - [Style IDs](https://learn.microsoft.com/en-us/azure/azure-maps/supported-map-styles)
 - [Languages and geopolitical views](https://learn.microsoft.com/en-us/azure/azure-maps/supported-languages)

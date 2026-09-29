@@ -18,9 +18,11 @@ parameters. Direct **Show Table** previews display only the last 100 ingested
 rows; this is not a universal 100-row limit on KQL results. Use functions or
 materialized views for aggregated or filtered layers.
 
-To add a layer, obtain the workspace, KQL Database identity, source entity or
-query, spatial fields, desired rendering, and refresh interval. Latest-location
-queries also need an entity key, timestamp, and time window.
+Identify the KQL Database from the request, existing Map, or resolved variable
+target; resolve the intended entity/query separately. Inspect its schema before
+asking for unresolved entity or spatial-field choices. Latest-location queries
+also need a verified entity key, timestamp, and time window; clarify only what
+the request and source cannot establish.
 
 ## Scope
 
@@ -57,36 +59,44 @@ the Map.
 
 ## Definition parts
 
-Data source:
+Derive the reference branch from the operation's selected schema using the
+shared schema-selection rules. For a new Map whose schema supports the
+nondeprecated item-reference model, use a stable `datasourceId`:
 
 ```json
 {
-  "itemType": "KqlDatabase",
-  "workspaceId": "<workspace-guid>",
-  "itemId": "<kql-database-guid>"
+  "datasourceId": "kql-source",
+  "item": {
+    "workspaceId": "<workspace-guid>",
+    "itemId": "<kql-database-guid>"
+  }
 }
 ```
 
-Kusto layer source:
+Link the Kusto layer source through that same data source:
 
 ```json
 {
-  "id": "<stable-layer-source-guid>",
+  "id": "<stable-layer-source-id>",
   "name": "<source name>",
   "type": "kusto",
-  "itemId": "<kql-database-guid>",
-  "refreshIntervalMs": 5000
+  "datasourceId": "kql-source"
 }
 ```
+
+If the selected schema lacks that branch, use only the legacy workspace-item
+and layer-link fields that its applicable alternatives require. Do not combine
+the two representations. Preserve an existing Map's representation unless a
+schema migration is explicitly requested.
 
 The associated query is a separate UTF-8 definition part:
 
 ```text
-queries/layerSource-<stable-layer-source-guid>.kql
+queries/layerSource-<stable-layer-source-id>.kql
 ```
 
-Its UUID must exactly match `layerSources[].id`. Base64-encode the KQL file like
-every other definition part.
+The identifier in the filename must exactly match `layerSources[].id`.
+Base64-encode the KQL file like every other definition part.
 
 ## Query rules
 
@@ -100,8 +110,9 @@ every other definition part.
   when deterministic selection is required; `arg_max` alone does not do this.
 - Remove rows with null or invalid coordinates.
 - Use the exact validated column names in layer spatial mappings.
-- Choose a refresh interval appropriate to source cadence and capacity; do not
-  assume zero means continuous streaming.
+- Set `refreshIntervalMs` only when requested, using an interval appropriate to
+  source cadence and capacity. Otherwise omit it on creation or preserve it on
+  edits. Do not assume zero means continuous streaming.
 
 Query creation belongs in the local definition assembly. Changing Eventhouse
 schema or data is a separate mutation and must not be hidden inside Map
@@ -112,7 +123,8 @@ authoring.
 After the shared terminal write:
 
 - decode `map.json` and the matching `.kql` part;
-- verify source item ID, layer source ID, query filename, and refresh interval;
+- verify source item ID, selected data-source branch and link, layer source ID,
+  query filename, and any configured refresh interval;
 - compare the persisted query text semantically with the intended query;
 - optionally run the read-only query again through `eventhouse-cli` consumption
   mode when the user asks for data validation.

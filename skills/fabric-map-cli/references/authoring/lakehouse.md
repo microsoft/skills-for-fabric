@@ -25,8 +25,11 @@ tileset. Raster PMTiles and COG provide imagery, not interactive vector features
 heatmaps, or extrusions. Arbitrary TIFF files are not a substitute for COG.
 This adapter does not query Lakehouse SQL/Delta tables directly.
 
-To add a layer, obtain the source workspace, Lakehouse identity, file path and
-format, geometry/properties, desired rendering, and optional refresh/styling.
+Identify the Lakehouse from the request, existing Map, or resolved variable
+target. A variable identifies the item, not its file. Resolve the intended file
+from the request, existing layer, or scoped file discovery; clarify unresolved
+file or tileset-layer choices. Verify format and geometry/properties through
+the validation below rather than requesting them as setup inputs.
 
 Do not create, transform, upload, or delete Lakehouse files unless the user
 separately requests that data-plane work and the owning Lakehouse/Spark skill is
@@ -36,7 +39,9 @@ loaded.
 
 1. Resolve the source workspace by exact name.
 2. Resolve the Lakehouse by exact display name and type `Lakehouse`.
-3. Verify the requested `Files/...` path exists in OneLake.
+3. Verify the requested `Files/...` path through a documented OneLake metadata
+   or listing operation. Distinguish a confirmed missing path from an
+   unsupported operation, incomplete listing, or access failure.
 4. Confirm file type, the GeoJSON feature limit, PMTiles tile kind
    (vector/raster), and applicable geometry/projection/band requirements.
 5. Reuse the resolved workspace and item IDs in `map.json`; never derive IDs
@@ -44,34 +49,42 @@ loaded.
 
 ## Definition fragments
 
-Data source:
+Derive the reference branch from the operation's selected schema using the
+shared schema-selection rules. For a new Map whose schema supports the
+nondeprecated item-reference model, use a stable `datasourceId`:
 
 ```json
 {
-  "itemType": "Lakehouse",
-  "workspaceId": "<workspace-guid>",
-  "itemId": "<lakehouse-guid>"
+  "datasourceId": "lakehouse-source",
+  "item": {
+    "workspaceId": "<workspace-guid>",
+    "itemId": "<lakehouse-guid>"
+  }
 }
 ```
 
-GeoJSON layer source:
+Link the layer source through that same data source:
 
 ```json
 {
-  "id": "<stable-layer-source-guid>",
+  "id": "<stable-layer-source-id>",
   "name": "<source name>",
   "type": "geojson",
-  "itemId": "<lakehouse-guid>",
-  "relativePath": "Files/path/data.geojson",
-  "refreshIntervalMs": 0
+  "datasourceId": "lakehouse-source",
+  "relativePath": "Files/path/data.geojson"
 }
 ```
+
+If the selected schema lacks that branch, use only the legacy workspace-item
+and layer-link fields that its applicable alternatives require. Do not combine
+the two representations. Preserve an existing Map's representation unless a
+schema migration is explicitly requested.
 
 PMTiles uses `type: "pmtiles"` and a `.pmtiles` relative path. COG uses the
 currently documented raster source type and must be validated against the live
 schema/documentation before authoring because raster support can evolve.
 
-Layer settings must reference the layer source UUID. For PMTiles, choose
+Layer settings must reference the exact layer source ID. For PMTiles, choose
 `options.type: "vector"` or `"raster"` to match the archive's tile kind. Vector
 PMTiles can require a `sourceLayerId`/`options.sourceLayer` present in the
 tileset; do not add vector-only source-layer mappings to raster imagery.
@@ -81,6 +94,7 @@ tileset; do not add vector-only source-layer mappings to raster imagery.
 After the shared terminal write, verify:
 
 - the Lakehouse data source has the expected workspace and item IDs;
+- the selected data-source branch and its layer link were preserved;
 - the layer source has the exact relative path and type;
 - the layer setting resolves to that source;
 - the source file still exists.

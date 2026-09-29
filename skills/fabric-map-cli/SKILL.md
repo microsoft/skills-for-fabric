@@ -64,7 +64,7 @@ Blank creation, metadata, basemap edits, and deletion require no source setup.
 Capability summaries are documentation reads, not permission to discover or
 configure a source.
 
-For blank creation, all three capability summaries below are required reading
+For blank creation, all capability summaries below are required reading
 before the final response. Follow the authoring reference's **Required blank-Map
 completion response**; metadata and "data can be added later" alone are
 incomplete.
@@ -74,13 +74,26 @@ incomplete.
 | Lakehouse / OneLake | [references/authoring/lakehouse.md](references/authoring/lakehouse.md) |
 | Eventhouse / KQL Database | [references/authoring/eventhouse.md](references/authoring/eventhouse.md) |
 | External Fabric Connections | [references/authoring/connections.md](references/authoring/connections.md) |
+| Ontology (preview) | [references/authoring/ontology.md](references/authoring/ontology.md) |
+| Variable-backed item/connection references | [references/authoring/variables.md](references/authoring/variables.md) |
+
+Variable references parameterize a supported source; they are not a separate
+geometry provider. For variable-backed layers, read the variable reference
+guide and the adapter for the resolved item or connection.
 
 ## Shared rules
 
 - Ask for missing workspace, Map identity/name, or requested values; never
   fabricate them. Resolve names with paginated exact-match lookups; verify IDs.
-- Use public type-specific Map REST endpoints. Default new definitions to
-  schema `2.0.0`; preserve the schema and unrelated content on edits.
+- Treat adapter validation requirements as agent checks, not an intake form.
+  Discover metadata within the identified source scope; ask only for unresolved
+  required choices, not discoverable values or optional preferences.
+- Use public type-specific Map REST endpoints. For new definitions, discover
+  the latest published schema from the
+  [Map schema directory](https://github.com/microsoft/json-schemas/tree/main/fabric/item/map/definition)
+  using the authoring reference's schema-resolution procedure; never pin a
+  default version in this skill. Preserve the declared schema and unrelated
+  content on inspection and edits unless a schema migration is requested.
 - Keep source-data and connection administration separate from Map mutations.
 - A local definition is not deployment. Complete the terminal write and its
   readback before claiming persistence; report rendering as unverified unless

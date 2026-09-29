@@ -22,10 +22,11 @@ combined with vector layers. These imagery integrations are documented preview
 features; the presence of another provider in Fabric's general connector
 catalog does not establish Map support.
 
-To add imagery, obtain the existing connection identity, WMS/WMTS endpoint and
-published layer/resource ID. For MPC Pro, also identify the GeoCatalog,
-collection, and configured WMTS resource. Do not invent a resource ID from
-the connection display name.
+Identify the existing connection from the request, existing Map, or resolved
+variable target. Inspect read-only metadata for its endpoint and published
+resources, including the GeoCatalog, collection, and configured WMTS resource
+for MPC Pro. Ask only for an unresolved imagery resource selection; do not
+request discoverable endpoint details or invent IDs from display names.
 
 ## Scope and ownership
 
@@ -54,32 +55,40 @@ that the API does not expose.
 
 ## Definition fragments
 
-Data source:
+Derive the reference branch from the operation's selected schema using the
+shared schema-selection rules. For a new Map whose schema supports the
+nondeprecated connection-reference model, use a stable `datasourceId`:
 
 ```json
 {
-  "itemType": "Connection",
-  "connectionId": "<connection-guid>"
+  "datasourceId": "imagery-source",
+  "connection": {
+    "connectionId": "<connection-guid>"
+  }
 }
 ```
 
-Connection layer source:
+Link the connection layer source through that same data source:
 
 ```json
 {
-  "id": "<stable-layer-source-guid>",
+  "id": "<stable-layer-source-id>",
   "name": "<source name>",
   "type": "connection",
-  "connectionId": "<connection-guid>",
-  "connectionResourceId": "<provider resource identifier>",
-  "refreshIntervalMs": 0
+  "datasourceId": "imagery-source",
+  "connectionResourceId": "<provider resource identifier>"
 }
 ```
+
+If the selected schema lacks that branch, use only the legacy connection and
+layer-link fields that its applicable alternatives require. Do not combine the
+two representations. Preserve an existing Map's representation unless a schema
+migration is explicitly requested.
 
 Use the exact source type and resource identifier supported by the selected
 connection/provider and current schema. Do not infer them from a display name.
 Render these sources with `layerSettings[].options.type: "raster"` and the
-matching layer-source UUID; do not add vector-only `options.sourceLayer`.
+matching layer-source ID; do not add vector-only `options.sourceLayer`.
 
 Anonymous, Basic, and API-key authentication are documented for Geospatial
 Web Services; MPC Pro requires Entra OAuth 2.0. Authentication stays in the
@@ -97,8 +106,9 @@ Fabric Connection, never in a Map definition.
 ## Readback
 
 After the shared terminal write, verify that the persisted data source and layer
-source contain the intended connection ID and resource ID. Report connection
-access or provider-resource failures separately from Map definition persistence.
+source contain the intended connection ID, selected reference branch and link,
+and resource ID. Report connection access or provider-resource failures
+separately from Map definition persistence.
 
 ## References
 
