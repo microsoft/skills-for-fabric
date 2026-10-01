@@ -62,7 +62,7 @@ powerbi-report-author theme shade-color "#118DFF" -0.4  # → #0A5599 (darker)
 | Backgrounds from palette | `ThemeDataColor(N, 0.4)` | Consistent, theme-adaptive |
 | Brand colors that must NOT change | Literal `"'#FF6B35'"` | Theme-independent |
 | Semantic colors (red=bad) | Literal hex | Meaning is absolute |
-| Explicit per-measure `dataPoint.fill` with a `metadata` selector | Literal hex | `ThemeDataColor` in this position silently resolves to white or black — see SKILL.md Anti-Patterns (see `../authoring.md`, section `anti-patterns-and-pitfalls`) |
+| Explicit per-measure `dataPoint.fill` with a `metadata` selector | Literal hex | `ThemeDataColor` in this position silently resolves to white or black — see SKILL.md Anti-Patterns (see `../authoring-part-04.md`, section `anti-patterns-and-pitfalls`) |
 
 ## 9. Theme Defaults for Page Objects
 
@@ -154,6 +154,6 @@ authoring patterns.
 | Assuming dataColors merge with base theme | Custom `dataColors` fully replaces the base array |
 | Forgetting `reportVersionAtImport` | Preserve as-is — PBI Desktop manages this field |
 | Putting conditional formatting rules in theme JSON | Apply conditional formatting separately on individual visuals |
-| Dark theme but table/matrix rows still white | See § Style Presets and re-theming.md § Dark Mode Checklist (see `re-theming.md`, section `dark-mode-authoring-checklist`) |
+| Dark theme but table/matrix rows still white | See § Style Presets and re-theming.md § Dark Mode Checklist (see `re-theming-part-03.md`, section `dark-mode-authoring-checklist`) |
 | Setting `visualStyles["slicer"]` for dark slicer text | Modern slicers use `filterSlicer` / `advancedSlicerVisual` — the legacy `"slicer"` key has no effect. Add type-specific entries for both modern types |
 | Shape text invisible after dark theme switch | Shapes relying on inherited foreground have no explicit `fontColor` — the bulk hex sweep can't add a property that didn't exist. Add explicit `text.fontColor` to every shape with `text.show: true` |

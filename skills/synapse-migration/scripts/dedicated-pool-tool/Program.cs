@@ -30,17 +30,47 @@ Directory.CreateDirectory(temporaryRoot);
 try
 {
     var dacpacPath = ResolveDacpac(inputPath, temporaryRoot, allowTrustedProjectBuild);
-    var loadOptions = new ModelLoadOptions
+    var warnings = new BoundedBlindSpotCollection();
+    (TSqlModel Model, string SelectedMode, string[] Attempts) modelLoad;
+    try
     {
-        LoadAsScriptBackedModel = true
-    };
-
-    using var model = TSqlModel.LoadFromDacpac(dacpacPath, loadOptions);
+        modelLoad = LoadModelWithFallback(dacpacPath, warnings);
+    }
+    catch (ModelLoadFailureException exception)
+    {
+        var failureInventory = new
+        {
+            schemaVersion = 1,
+            input = new
+            {
+                path = Path.GetFileName(inputPath),
+                kind = Path.GetExtension(inputPath).Equals(".dacpac", StringComparison.OrdinalIgnoreCase)
+                    ? "Dacpac"
+                    : "ZippedSqlProject",
+                resolvedDacpac = Path.GetFileName(dacpacPath)
+            },
+            modelLoadOptions = new
+            {
+                loadAsScriptBackedModel = true,
+                preferredMode = "ScriptBacked",
+                selectedMode = (string?)null,
+                attempts = exception.Attempts,
+                queryScope = "UserDefined"
+            },
+            status = "Blocked",
+            blindSpots = warnings.ToArray()
+        };
+        File.WriteAllText(
+            Path.Combine(outputPath, "schema-inventory.json"),
+            JsonSerializer.Serialize(failureInventory, new JsonSerializerOptions { WriteIndented = true }));
+        throw;
+    }
+    using var model = modelLoad.Model;
+    var identifierComparer = model.CollationComparer;
     var modelMetadata = ExtractModelMetadata(dacpacPath);
     var conversionObjects = new List<object>();
     var evidenceObjects = new List<object>();
     var supportingObjects = new List<object>();
-    var warnings = new List<object>();
     Directory.CreateDirectory(Path.Combine(outputPath, "source"));
 
     foreach (var sourceObject in model.GetObjects(DacQueryScopes.UserDefined))
@@ -51,7 +81,7 @@ try
 
         if (category == ObjectCategory.Supporting)
         {
-            supportingObjects.Add(CreateRecord(sourceObject, stableId, objectType, null, null, warnings));
+            supportingObjects.Add(CreateRecord(sourceObject, stableId, objectType, null, null, warnings, identifierComparer));
             continue;
         }
 
@@ -63,13 +93,24 @@ try
         }
         catch (Exception exception) when (exception is DacModelException or InvalidOperationException or NotSupportedException)
         {
-            scriptError = exception.Message;
+            scriptError = SanitizeMessage(exception.Message);
             warnings.Add(new
             {
                 code = "NonScriptableObject",
                 sourceStableId = stableId,
                 objectType,
-                message = exception.Message
+                message = SanitizeMessage(exception.Message)
+            });
+        }
+        if (scriptError is null && string.IsNullOrWhiteSpace(sourceText))
+        {
+            scriptError = "DacFx returned an empty object script.";
+            warnings.Add(new
+            {
+                code = "NonScriptableObject",
+                sourceStableId = stableId,
+                objectType,
+                message = scriptError
             });
         }
 
@@ -80,9 +121,13 @@ try
             File.WriteAllText(Path.Combine(outputPath, sourcePath), sourceText);
         }
 
-        var record = CreateRecord(sourceObject, stableId, objectType, sourcePath, scriptError, warnings);
+        var record = CreateRecord(sourceObject, stableId, objectType, sourcePath, scriptError, warnings, identifierComparer);
         if (category == ObjectCategory.Conversion)
         {
+            record["conversionStatus"] = (bool)record["scriptable"]!
+                ? "Eligible"
+                : "ManualReviewRequired";
+            record["sourceContractBlockers"] = Array.Empty<object>();
             conversionObjects.Add(record);
         }
         else
@@ -91,7 +136,8 @@ try
         }
     }
 
-    var sourceContracts = ExtractSourceContracts(model, warnings);
+    var sourceContracts = ExtractSourceContracts(model, warnings, identifierComparer);
+    ApplySourceContractBlockers(conversionObjects, sourceContracts, identifierComparer);
     var inventory = new
     {
         schemaVersion = 1,
@@ -105,7 +151,13 @@ try
         },
         modelLoadOptions = new
         {
-            loadAsScriptBackedModel = true,
+            loadAsScriptBackedModel = string.Equals(
+                modelLoad.SelectedMode,
+                "ScriptBacked",
+                StringComparison.Ordinal),
+            preferredMode = "ScriptBacked",
+            selectedMode = modelLoad.SelectedMode,
+            attempts = modelLoad.Attempts,
             queryScope = "UserDefined"
         },
         modelMetadata,
@@ -113,7 +165,7 @@ try
         evidenceObjects,
         supportingObjects,
         sourceContracts,
-        blindSpots = warnings
+        blindSpots = warnings.ToArray()
     };
 
     var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
@@ -133,13 +185,61 @@ finally
 }
 catch (Exception exception)
 {
-    var message = exception.Message.ReplaceLineEndings(" ").Trim();
-    if (message.Length > 500)
-    {
-        message = $"{message[..497]}...";
-    }
-    Console.Error.WriteLine($"Dedicated Pool discovery failed: {message}");
+    Console.Error.WriteLine($"Dedicated Pool discovery failed: {SanitizeMessage(exception.Message)}");
     return 1;
+}
+
+static (TSqlModel Model, string SelectedMode, string[] Attempts) LoadModelWithFallback(
+    string dacpacPath,
+    BoundedBlindSpotCollection blindSpots)
+{
+    var attempts = new List<string> { "ScriptBacked" };
+    try
+    {
+        return (
+            TSqlModel.LoadFromDacpac(
+                dacpacPath,
+                new ModelLoadOptions { LoadAsScriptBackedModel = true }),
+            "ScriptBacked",
+            attempts.ToArray());
+    }
+    catch (Exception exception) when (
+        exception is DacModelException or InvalidOperationException or NotSupportedException)
+    {
+        blindSpots.Add(new
+        {
+            code = "ScriptBackedModelLoadFailed",
+            message = SanitizeMessage(exception.Message),
+            fallbackMode = "ModelOnly",
+            impact = "Object scripts can be unavailable in fallback mode; every missing script is recorded as NonScriptableObject."
+        });
+    }
+
+    attempts.Add("ModelOnly");
+    try
+    {
+        return (
+            TSqlModel.LoadFromDacpac(
+                dacpacPath,
+                new ModelLoadOptions { LoadAsScriptBackedModel = false }),
+            "ModelOnly",
+            attempts.ToArray());
+    }
+    catch (Exception exception)
+    {
+        blindSpots.Add(new
+        {
+            code = "ModelOnlyModelLoadFailed",
+            message = SanitizeMessage(exception.Message),
+            impact = "Discovery could not load the DACPAC in either supported mode."
+        });
+        throw new ModelLoadFailureException(attempts.ToArray(), exception);
+    }
+}
+
+static string SanitizeMessage(string message)
+{
+    return DedicatedPoolMessageSanitizer.Sanitize(message);
 }
 
 static void TryDeleteDirectory(string path)
@@ -150,7 +250,7 @@ static void TryDeleteDirectory(string path)
     }
     catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
     {
-        Console.Error.WriteLine($"Warning: temporary directory cleanup failed: {exception.Message}");
+        Console.Error.WriteLine($"Warning: temporary directory cleanup failed: {SanitizeMessage(exception.Message)}");
     }
 }
 
@@ -323,53 +423,100 @@ static void ExtractZipSafely(string inputPath, string extractRoot)
     }
 }
 
-static object CreateRecord(
+static Dictionary<string, object?> CreateRecord(
     TSqlObject sourceObject,
     string stableId,
     string objectType,
     string? sourcePath,
     string? scriptError,
-    List<object> blindSpots)
+    BoundedBlindSpotCollection blindSpots,
+    ModelCollationComparer identifierComparer)
 {
     var recordWarnings = scriptError is null
         ? new List<string>()
         : new List<string> { "NonScriptableObject" };
     var dependencies = Array.Empty<string>();
+    var dependencyExtractionComplete = true;
     try
     {
         dependencies = sourceObject.GetReferenced()
             .Select(GetStableId)
-            .Where(dependency => !dependency.Equals(stableId, StringComparison.OrdinalIgnoreCase))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(dependency => dependency, StringComparer.OrdinalIgnoreCase)
+            .Where(dependency => !identifierComparer.Equals(dependency, stableId))
+            .Distinct(identifierComparer)
+            .OrderBy(dependency => dependency, identifierComparer)
             .ToArray();
     }
     catch (Exception exception)
     {
+        dependencyExtractionComplete = false;
         recordWarnings.Add("DependencyExtractionFailed");
         blindSpots.Add(new
         {
             code = "DependencyExtractionFailed",
             sourceStableId = stableId,
             objectType,
-            message = exception.Message
+            message = SanitizeMessage(exception.Message)
         });
     }
 
-    return new
+    return new Dictionary<string, object?>
     {
-        sourceStableId = stableId,
-        objectType,
-        sourcePath,
-        scriptable = scriptError is null && sourcePath is not null,
-        scriptError,
-        dependencies,
-        warnings = recordWarnings.ToArray(),
-        dacFxName = sourceObject.Name?.ToString()
+        ["sourceStableId"] = stableId,
+        ["objectType"] = objectType,
+        ["sourcePath"] = sourcePath,
+        ["scriptable"] = scriptError is null && sourcePath is not null && dependencyExtractionComplete,
+        ["scriptError"] = scriptError,
+        ["dependencies"] = dependencies,
+        ["dependencyExtractionComplete"] = dependencyExtractionComplete,
+        ["warnings"] = recordWarnings.ToArray(),
+        ["dacFxName"] = sourceObject.Name?.ToString()
     };
 }
 
-static object[] ExtractSourceContracts(TSqlModel model, List<object> blindSpots)
+static void ApplySourceContractBlockers(
+    List<object> conversionObjects,
+    object[] sourceContracts,
+    ModelCollationComparer identifierComparer)
+{
+    var blockersByProcedure = sourceContracts
+        .Where(contract => !string.Equals(
+            GetObjectProperty(contract, "status") as string,
+            "Resolved",
+            StringComparison.Ordinal))
+        .GroupBy(
+            contract => GetObjectProperty(contract, "referencingObject") as string ?? string.Empty,
+            identifierComparer)
+        .ToDictionary(group => group.Key, group => group.ToArray(), identifierComparer);
+
+    foreach (var record in conversionObjects.OfType<Dictionary<string, object?>>())
+    {
+        var stableId = record["sourceStableId"] as string;
+        if (string.IsNullOrWhiteSpace(stableId) ||
+            !blockersByProcedure.TryGetValue(stableId, out var blockers))
+        {
+            continue;
+        }
+
+        record["scriptable"] = false;
+        record["conversionStatus"] = "ManualReviewRequired";
+        record["sourceContractBlockers"] = blockers.Select(contract => new
+        {
+            status = GetObjectProperty(contract, "status"),
+            blocker = GetObjectProperty(contract, "blocker"),
+            referencedObject = GetObjectProperty(contract, "referencedObject"),
+            referencedName = GetObjectProperty(contract, "referencedName"),
+            missingColumns = GetObjectProperty(contract, "missingColumns")
+        }).ToArray();
+    }
+}
+
+static object? GetObjectProperty(object value, string propertyName) =>
+    value.GetType().GetProperty(propertyName)?.GetValue(value);
+
+static object[] ExtractSourceContracts(
+    TSqlModel model,
+    BoundedBlindSpotCollection blindSpots,
+    ModelCollationComparer identifierComparer)
 {
     var contracts = new List<object>();
     foreach (var procedure in model.GetObjects(DacQueryScopes.UserDefined).Where(item => IsProcedure(item.ObjectType.Name)))
@@ -377,13 +524,25 @@ static object[] ExtractSourceContracts(TSqlModel model, List<object> blindSpots)
         var procedureId = GetStableId(procedure);
         try
         {
-            var dependencies = new Dictionary<string, SourceContractAccumulator>(StringComparer.OrdinalIgnoreCase);
+            var dependencies = new Dictionary<string, SourceContractAccumulator>(identifierComparer);
             foreach (var relationship in procedure.GetReferencedRelationshipInstances()
                          .Where(item => item.Relationship.Name.Equals("BodyDependencies", StringComparison.OrdinalIgnoreCase)))
             {
                 var referenced = relationship.Object;
                 if (referenced is null)
                 {
+                    contracts.Add(new
+                    {
+                        referencingObject = procedureId,
+                        referencedObject = (string?)null,
+                        referencedObjectType = "Unknown",
+                        referencedName = relationship.ObjectName?.ToString(),
+                        referencedColumns = Array.Empty<string>(),
+                        discoveredProjection = Array.Empty<string>(),
+                        missingColumns = Array.Empty<string>(),
+                        status = "UnknownProjection",
+                        blocker = "UnresolvedSourceContractReference"
+                    });
                     blindSpots.Add(new
                     {
                         code = "UnresolvedSourceContractReference",
@@ -402,6 +561,18 @@ static object[] ExtractSourceContracts(TSqlModel model, List<object> blindSpots)
                     referenced = referenced.GetParent(DacQueryScopes.UserDefined);
                     if (referenced is null)
                     {
+                        contracts.Add(new
+                        {
+                            referencingObject = procedureId,
+                            referencedObject = (string?)null,
+                            referencedObjectType = "Unknown",
+                            referencedName = relationship.ObjectName?.ToString(),
+                            referencedColumns = new[] { referencedColumn },
+                            discoveredProjection = Array.Empty<string>(),
+                            missingColumns = new[] { referencedColumn },
+                            status = "UnknownProjection",
+                            blocker = "UnresolvedSourceContractParent"
+                        });
                         blindSpots.Add(new
                         {
                             code = "UnresolvedSourceContractParent",
@@ -417,6 +588,22 @@ static object[] ExtractSourceContracts(TSqlModel model, List<object> blindSpots)
                 }
                 if (referenced is null || !IsTableOrView(referencedType))
                 {
+                    contracts.Add(new
+                    {
+                        referencingObject = procedureId,
+                        referencedObject = referenced is null ? null : (string?)GetStableId(referenced),
+                        referencedObjectType = referencedType,
+                        referencedName = relationship.ObjectName?.ToString(),
+                        referencedColumns = string.IsNullOrWhiteSpace(referencedColumn)
+                            ? Array.Empty<string>()
+                            : new[] { referencedColumn },
+                        discoveredProjection = Array.Empty<string>(),
+                        missingColumns = string.IsNullOrWhiteSpace(referencedColumn)
+                            ? Array.Empty<string>()
+                            : new[] { referencedColumn },
+                        status = "UnknownProjection",
+                        blocker = "UnsupportedSourceContractReference"
+                    });
                     continue;
                 }
 
@@ -432,15 +619,15 @@ static object[] ExtractSourceContracts(TSqlModel model, List<object> blindSpots)
                 }
             }
 
-            foreach (var (referencedId, dependency) in dependencies.OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase))
+            foreach (var (referencedId, dependency) in dependencies.OrderBy(item => item.Key, identifierComparer))
             {
                 var projection = GetOrderedProjection(dependency.ReferencedObject, dependency.ReferencedObjectType);
                 var referencedColumns = dependency.ReferencedColumns
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(column => column, StringComparer.OrdinalIgnoreCase)
+                    .Distinct(identifierComparer)
+                    .OrderBy(column => column, identifierComparer)
                     .ToArray();
                 var missingColumns = referencedColumns
-                    .Where(column => !projection.Contains(column, StringComparer.OrdinalIgnoreCase))
+                    .Where(column => !projection.Contains(column, identifierComparer))
                     .ToArray();
                 contracts.Add(new
                 {
@@ -458,12 +645,23 @@ static object[] ExtractSourceContracts(TSqlModel model, List<object> blindSpots)
         }
         catch (Exception exception)
         {
+            contracts.Add(new
+            {
+                referencingObject = procedureId,
+                referencedObject = (string?)null,
+                referencedObjectType = "Unknown",
+                referencedColumns = Array.Empty<string>(),
+                discoveredProjection = Array.Empty<string>(),
+                missingColumns = Array.Empty<string>(),
+                status = "UnknownProjection",
+                blocker = "SourceContractExtractionFailed"
+            });
             blindSpots.Add(new
             {
                 code = "SourceContractExtractionFailed",
                 sourceStableId = procedureId,
                 objectType = procedure.ObjectType.Name,
-                message = exception.Message
+                message = SanitizeMessage(exception.Message)
             });
         }
     }
@@ -472,9 +670,12 @@ static object[] ExtractSourceContracts(TSqlModel model, List<object> blindSpots)
 
 static string[] GetOrderedProjection(TSqlObject referencedObject, string referencedObjectType)
 {
-    var columns = referencedObjectType == "Table"
-        ? referencedObject.GetReferenced(Table.Columns, DacQueryScopes.UserDefined)
-        : referencedObject.GetReferenced(View.Columns, DacQueryScopes.UserDefined);
+    var sourceObjectType = referencedObject.ObjectType.Name;
+    var columns = string.Equals(sourceObjectType, "ExternalTable", StringComparison.OrdinalIgnoreCase)
+        ? referencedObject.GetReferenced(ExternalTable.Columns, DacQueryScopes.UserDefined)
+        : referencedObjectType == "Table"
+            ? referencedObject.GetReferenced(Table.Columns, DacQueryScopes.UserDefined)
+            : referencedObject.GetReferenced(View.Columns, DacQueryScopes.UserDefined);
     return columns.Select(GetObjectLeafName).ToArray();
 }
 
@@ -485,11 +686,18 @@ static bool IsColumn(string? objectType) =>
     objectType is not null && objectType.Contains("Column", StringComparison.OrdinalIgnoreCase);
 
 static bool IsTableOrView(string? objectType) =>
-    objectType is not null && (objectType.Contains("Table", StringComparison.OrdinalIgnoreCase) ||
-                               objectType.Contains("View", StringComparison.OrdinalIgnoreCase));
+    objectType is not null &&
+    (objectType.Equals("Table", StringComparison.OrdinalIgnoreCase) ||
+     objectType.Equals("SqlTable", StringComparison.OrdinalIgnoreCase) ||
+     objectType.Equals("ExternalTable", StringComparison.OrdinalIgnoreCase) ||
+     objectType.Equals("View", StringComparison.OrdinalIgnoreCase) ||
+     objectType.Equals("SqlView", StringComparison.OrdinalIgnoreCase));
 
 static string NormalizeReferencedType(string objectType) =>
-    objectType.Contains("View", StringComparison.OrdinalIgnoreCase) ? "View" : "Table";
+    objectType.Equals("View", StringComparison.OrdinalIgnoreCase) ||
+    objectType.Equals("SqlView", StringComparison.OrdinalIgnoreCase)
+        ? "View"
+        : "Table";
 
 static string GetObjectLeafName(TSqlObject sourceObject) =>
     sourceObject.Name?.Parts.LastOrDefault() ?? GetStableId(sourceObject);
@@ -543,4 +751,79 @@ sealed class SourceContractAccumulator(TSqlObject referencedObject, string refer
     public TSqlObject ReferencedObject { get; } = referencedObject;
     public string ReferencedObjectType { get; } = referencedObjectType;
     public List<string> ReferencedColumns { get; } = new();
+}
+
+sealed class ModelLoadFailureException(string[] attempts, Exception innerException)
+    : Exception("DacFx could not load the DACPAC in either supported mode.", innerException)
+{
+    public string[] Attempts { get; } = attempts;
+}
+
+sealed class BoundedBlindSpotCollection
+{
+    private const int MaximumRetainedItems = 999;
+    private const int MaximumSerializedBytes = 512 * 1024;
+    private readonly List<object> retained = new();
+    private int retainedSerializedBytes;
+    private int totalObservedCount;
+
+    public void Add(object value)
+    {
+        totalObservedCount++;
+        var serializedBytes = JsonSerializer.SerializeToUtf8Bytes(value).Length;
+        if (retained.Count >= MaximumRetainedItems
+            || retainedSerializedBytes + serializedBytes > MaximumSerializedBytes)
+        {
+            return;
+        }
+
+        retained.Add(value);
+        retainedSerializedBytes += serializedBytes;
+    }
+
+    public object[] ToArray()
+    {
+        var droppedCount = totalObservedCount - retained.Count;
+        if (droppedCount == 0)
+        {
+            var completeEvidence = retained.ToArray();
+            if (GetPersistedSize(completeEvidence) <= MaximumSerializedBytes)
+            {
+                return completeEvidence;
+            }
+
+            var lastIndex = retained.Count - 1;
+            retainedSerializedBytes -= JsonSerializer.SerializeToUtf8Bytes(retained[lastIndex]).Length;
+            retained.RemoveAt(lastIndex);
+            droppedCount++;
+        }
+
+        while (true)
+        {
+            var truncationEvidence = new
+            {
+                code = "BlindSpotEvidenceTruncated",
+                totalObservedCount,
+                retainedCount = retained.Count,
+                droppedCount,
+                maximumRetainedItems = MaximumRetainedItems,
+                maximumSerializedBytes = MaximumSerializedBytes
+            };
+            var candidate = retained.Append(truncationEvidence).ToArray();
+            if (GetPersistedSize(candidate) <= MaximumSerializedBytes)
+            {
+                return candidate;
+            }
+
+            var lastIndex = retained.Count - 1;
+            retainedSerializedBytes -= JsonSerializer.SerializeToUtf8Bytes(retained[lastIndex]).Length;
+            retained.RemoveAt(lastIndex);
+            droppedCount++;
+        }
+    }
+
+    private static int GetPersistedSize(object[] evidence) =>
+        JsonSerializer.SerializeToUtf8Bytes(
+            evidence,
+            new JsonSerializerOptions { WriteIndented = true }).Length;
 }

@@ -101,6 +101,7 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 
 ### Cost Estimation & Migration Planning
 - E2E skill: `skills/e2e-fabric-cost-estimation/SKILL.md` — Fabric capacity cost estimation, SKU sizing, billing strategy
+- Synapse migration skill: `skills/synapse-migration/SKILL.md` — migrate Synapse Spark, Lake Database/HMS, Dedicated SQL Pool schema and procedures, and explicitly approved dependent procedure callers to Fabric
 
 ### Deployment Pipelines (ALM / CI-CD)
 - Use Fabric REST API to create deployment pipelines, assign workspaces to stages, and deploy stage content across dev/test/prod

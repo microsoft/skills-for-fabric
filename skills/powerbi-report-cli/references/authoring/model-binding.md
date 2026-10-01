@@ -157,7 +157,7 @@ model id, no server." The fix for a local live report-host binding is always the
 
 ## See also
 
-- SKILL.md § PBIR File Layout (see `../authoring.md`, section `pbir-file-layout`) — file layout and
+- SKILL.md § PBIR File Layout (see `../authoring-part-02.md`, section `pbir-file-layout`) — file layout and
   `$schema` versioning rules.
 - `preview.md` (see `preview.md`) — Desktop/service status, rendering, and
   screenshot guidance.

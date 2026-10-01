@@ -35,14 +35,21 @@
 > pages cannot be captured, or the screenshots cannot be reviewed, report
 > screenshot validation as blocked rather than claiming completion.
 >
-> **SCREENSHOT DESTINATION GATE — BEFORE THE FIRST MANDATORY CAPTURE**
+> **SCREENSHOT ARTIFACT LIFECYCLE — BEFORE THE FIRST MANDATORY CAPTURE**
 >
 > Before constructing or running the first screenshot command for mandatory
 > authoring validation, read and follow Screenshot artifact
-> lifecycle (see `authoring/preview.md`, section `screenshot-artifact-lifecycle`). Do not
-> capture until that lifecycle has been loaded and the user has approved the
-> screenshot parent. Use only the workflow-owned validation directory created
-> by that lifecycle; never invent or hard-code another destination.
+> lifecycle (see `authoring/preview-part-03.md`, section
+> `screenshot-artifact-lifecycle`). Classify a supplied location by intent:
+> save/export/keep/retain paths are retained output and are never the temporary
+> validation parent or cleanup target; only a location explicitly supplied for
+> temporary validation replaces the default parent. Otherwise resolve Windows
+> Local Application Data and automatically use its
+> `Power BI Report Authoring\Screenshots` directory. Do not ask the user for a
+> location or permission to save mandatory validation screenshots. Apply the
+> lifecycle's exposure warning and explicit-confirmation requirements to any
+> risky user-supplied location. Review mandatory-validation screenshots from
+> the workflow-owned child and delete only that child before every handled exit.
 >
 > **After screenshot review passes on the service host, automatically display
 > the validated report in a visible service preview, even when the user did not

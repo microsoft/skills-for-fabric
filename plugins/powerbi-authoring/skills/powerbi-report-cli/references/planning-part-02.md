@@ -17,10 +17,19 @@ Continuation of `planning.md`. Open this file directly from the skill reference 
 
 ## Design Contract Gate
 
-Before producing `_brief/report-spec.md` for approval, get a canonical
+Before producing `_brief/report-spec.md` for approval, normally get a canonical
 `Design Brief:` YAML block from the `design` mode. The planner may provide
 requirements, model inventory, page goals, and user constraints to the design
 skill, but the planner must not author a competing detailed design skeleton.
+
+**Sufficient-input fast path.** When the user requests only the locked spec and
+already supplies the audience, model schema, page plan, and visual intent,
+consult the focused `design/design-brief.md` contract and its continuation when
+needed, then produce the canonical `Design Brief:` directly. Choose
+conservative layout defaults and record them in the contract. Do not load the
+broad `design.md`, archetype catalog, tone catalog, or an unrelated local
+PBIP/TMDL project unless a required contract decision remains genuinely
+unresolved.
 
 The canonical design block must include:
 
@@ -135,9 +144,11 @@ sign-off granularity; the embedded YAML captures exact implementation intent.
 
 ## Canonical design contract
 
-Paste the exact fenced `yaml` block produced by the `design` mode here.
-Do not rewrite it from planner memory and do not replace its mechanical
-`layout_contract` with a freeform ASCII wireframe.
+Paste the exact fenced `yaml` block produced by the `design` mode here. On the
+sufficient-input fast path, construct it from the focused canonical
+`design/design-brief.md` contract instead. Do not improvise the schema from
+memory or replace its mechanical `layout_contract` with a freeform ASCII
+wireframe.
 
 The YAML block is authoritative for implementation. the `authoring` mode
 must implement this block; surrounding prose is context and conflict detection.

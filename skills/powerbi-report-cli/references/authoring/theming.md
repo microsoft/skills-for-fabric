@@ -233,7 +233,7 @@ Foundational UI colors. The 7 classes (with legacy aliases):
 Setting `background` to dark without adjusting `firstLevelElements` makes text invisible.
 Additionally, the **filter pane** does NOT inherit from structural colors —
 you must always explicitly set `outspacePane` and `filterCard` in
-`visualStyles["*"]["*"]` when changing themes. See re-theming.md § Dark Mode Authoring Checklist (see `re-theming.md`, section `dark-mode-authoring-checklist`)
+`visualStyles["*"]["*"]` when changing themes. See re-theming.md § Dark Mode Authoring Checklist (see `re-theming-part-03.md`, section `dark-mode-authoring-checklist`)
 for the complete checklist (filter pane, stylePreset override, fillCustom+id selector, objects vs VCO).
 
 ## 5. Text Classes (`textClasses`)

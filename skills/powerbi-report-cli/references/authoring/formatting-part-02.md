@@ -12,8 +12,8 @@ For shape-object discovery, available shapes, and formatting, see
 For line stroke properties (width, style, dash cap, line join, interpolation),
 marker properties (shape, size, border, rotation), and the per-series metadata
 selector pattern for line/area/scatter charts, see
-`cartesian.md` § lineStyles (see `cartesian.md`, section `linestyles--line-specific`) and
-`cartesian.md` § markers (see `cartesian.md`, section `markers--marker-styling`).
+`cartesian.md` § lineStyles (see `cartesian-part-02.md`, section `linestyles--line-specific`) and
+`cartesian.md` § markers (see `cartesian-part-02.md`, section `markers--marker-styling`).
 
 ## Row Banding (Table & Matrix)
 

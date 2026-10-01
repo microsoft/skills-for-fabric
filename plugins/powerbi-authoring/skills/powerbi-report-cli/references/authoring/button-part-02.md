@@ -61,7 +61,7 @@ Commonly used action types:
 > string:
 > `"webUrl": { "expr": { "Measure": { "Expression": { "SourceRef": { "Entity": "Metrics" } }, "Property": "Btn URL" } } }`.
 > See
-> conditional-formatting.md § Buttons and shapes (see `conditional-formatting.md`, section `buttons-and-shapes`).
+> conditional-formatting.md § Buttons and shapes (see `conditional-formatting-part-03.md`, section `buttons-and-shapes`).
 
 > **Note:** The companion property
 > (`navigationSection`, `drillthroughSection`, `bookmark`) is the raw page id or
@@ -276,7 +276,7 @@ automatically.
 
 Button color properties, the text label (`text.text`), and the Web URL action
 target support data-driven formatting. See
-conditional-formatting.md § Buttons and shapes (see `conditional-formatting.md`, section `buttons-and-shapes`)
+conditional-formatting.md § Buttons and shapes (see `conditional-formatting-part-03.md`, section `buttons-and-shapes`)
 for the supported properties, styles (field value / rules / gradient), selector
 requirements, limits, and examples.
 

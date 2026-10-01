@@ -12,6 +12,22 @@ Use this runbook for rendered inspection after PBIR validation. Always route
 through `powerbi-report-author preview`; do not invoke or describe an underlying
 Desktop or service host implementation directly.
 
+> **Required continuations.** The runbook continues in `preview-part-02.md`,
+> `preview-part-03.md`, and `preview-part-04.md`. Open the named continuation
+> when a section is identified there; do not resolve that section as a fragment
+> in this file.
+
+### Direct topic routes
+
+Open the named file directly; do not search the authoring reference tree first:
+
+| Request or decision | Read |
+|---|---|
+| Desktop status, open/attach, reload, unsaved-state handling, or exact command examples | `preview-part-02.md` |
+| Screenshot destination, retention, temporary validation, exposure warning, or cleanup | `preview-part-03.md` |
+| TMDL/model changes, `--reload-with-model`, processing, or DAX verification | `preview-part-04.md` |
+| Reviewing captured report images | `screenshot-review.md` |
+
 ## Core workflow
 
 1. Edit the report files.
@@ -19,12 +35,15 @@ Desktop or service host implementation directly.
 3. Derive the preview host and arguments from the request, conversation, and
    report context.
 4. Open or reload the preview so it contains the latest PBIR.
-5. Select and create the temporary validation screenshot directory.
+5. Follow the screenshot artifact lifecycle in `preview-part-03.md`: classify
+   retained output separately, then select and create the workflow-owned
+   temporary validation screenshot directory.
 6. Capture every affected page and review the screenshot files. Fix issues,
    validate, and repeat.
 7. When the selected host is service and review passes, automatically display
    the validated report in a visible service preview.
-8. Delete the workflow-owned screenshot directory.
+8. Delete only the workflow-owned temporary screenshot directory; never delete
+   explicitly retained output.
 9. Accept the result only after review. Keep the changes local. Never publish
    or overwrite the remote report with local changes until the user explicitly
    gives permission; if the request does not ask to publish, or you are unsure,

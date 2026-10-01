@@ -437,7 +437,7 @@ If a user asks for widths that change with the data ("make the column wider when
 the value is large"), tell them Power BI does not support conditional column
 width and offer the supported alternatives: static per-column widths (above),
 grow-to-fit auto-sizing, or an in-cell
-data bar (see `conditional-formatting.md`, section `type-4-data-bars`) to convey magnitude inside
+data bar (see `conditional-formatting-part-06.md`, section `type-4-data-bars`) to convey magnitude inside
 a fixed-width column.
 
 **Measure-driven cell text** is not conditional formatting either: a measure that

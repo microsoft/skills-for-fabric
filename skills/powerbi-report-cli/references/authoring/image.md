@@ -28,7 +28,7 @@ Each source has a different structure and different set of properties.
 
 > **Images inside table/matrix cells** (a field of image URLs rendered per row,
 > not a standalone image visual) are a different feature — see
-> conditional-formatting.md § Type 7: Image Field Values (see `conditional-formatting.md`, section `type-7-image-field-values`).
+> conditional-formatting.md § Type 7: Image Field Values (see `conditional-formatting-part-07.md`, section `type-7-image-field-values`).
 
 ### 1. Local file path to the image
 

@@ -8,11 +8,12 @@ Migrate Synapse Dedicated SQL Pool metadata and executable logic to Delta Lake t
 
 1. **Phase 1: Discovery** — Extract source metadata (tables, views, procedures, dependencies) per `dedicated-pool-discovery.md`
 2. **Phase 1b: Gap Assessment (REQUIRED BEFORE CONVERSION)** — Run compatibility check per `dedicated-pool-gap-assessment.md` to identify blockers, unsupported features, and migration risks
-3. **Phase 1c: User Approval (REQUIRED)** — Present mapping strategies (`1:1`, `N:1`, `N:N`), wait for explicit user approval, record approval evidence in manifest
+3. **Phase 1c: User Approval (REQUIRED)** — Present mapping strategies (`1:1`, `N:1`, `N:N`) and any recursively discovered ADF/Synapse procedure-caller closure, wait for explicit user approval, and record approval evidence in the manifest
 4. **Phase 2: Conversion** — Generate artifacts ONLY after gap assessment and user approval are complete
 5. **Phase 2b: Large-Procedure Audit** — Audit coverage for complex procedures per `dedicated-pool-large-procedure-audit.md`
 6. **Phase 3: Deployment** — Present the frozen deployment plan, obtain explicit deployment approval, then execute DDL via Livy and publish notebooks via REST per `dedicated-pool-deployment.md`
-7. **Phase 4: Validation** — Verify deployment success per `dedicated-pool-validation.md`
+7. **Phase 3b: Dependent Pipelines (CONDITIONAL)** — After every referenced notebook passes persisted-definition readback, migrate exact bound procedure calls in the approved ADF/Synapse pipeline closure per `dedicated-pool-dependent-pipelines.md`
+8. **Phase 4: Validation** — Verify deployment success per `dedicated-pool-validation.md`, including dependent pipeline evidence when Phase 3b is `Ready`
 
 **If the user has NOT completed gap assessment (Phase 1b) or NOT provided explicit approval (Phase 1c), STOP and guide them through those phases first. Never skip to conversion without these gates.**
 
@@ -32,14 +33,14 @@ Migrate Synapse Dedicated SQL Pool metadata and executable logic to Delta Lake t
 - Use Fabric REST APIs for workspace and Lakehouse lifecycle operations.
 - Use Fabric Livy sessions for schema execution and Fabric Notebook item definitions for stored-procedure deployment.
 - Validate source-to-target schema mappings, generated artifact syntax, notebook definitions, dependencies, and publication status without reading or comparing table rows.
-- Print structured status before and after every workflow step and for every object-level operation.
+- Keep chat status phase-oriented and store detailed object results in the manifest and telemetry.
 
 ## Status Reporting Contract
 
 Keep the user informed throughout execution; do not wait until a phase ends to report progress.
 
-- Before each step, print: `[Phase X][Step Y/N][STARTED] action; next=expected operation`.
-- After each object or restartable checkpoint, print: `[Phase X][i/N][COMPLETED|FAILED|SKIPPED] object; elapsed=...; rows=n/a; next=...`.
+- Before each phase, print: `[Phase X][STARTED] action; next=expected operation`.
+- Report failed, blocked, or manual-review objects immediately. For successful objects, print one aggregate update at a bounded batch boundary (default every 10 objects) or after 60 seconds, whichever comes first.
 - For operations running longer than 30 seconds, print a heartbeat every 30-60 seconds with the current service state and elapsed time. Report state changes immediately. Do not repeatedly print an unchanged state more often than this interval.
 - After each phase, print completed, failed, skipped, and pending counts plus the next phase or approval gate.
 - On retry or recovery, print the failed operation, bounded retry action, checkpoint used, and whether duplicate writes are prevented.
@@ -49,7 +50,7 @@ Keep the user informed throughout execution; do not wait until a phase ends to r
 Example:
 
 ```text
-[Phase 3][12/45][COMPLETED] migration_scale.dimcustomer; elapsed=18s; rows=n/a; next=migration_scale.dimproduct
+[Phase 3][20/45][PROGRESS] completed=19; failed=1; skipped=0; elapsed=4m12s; next=batch 21-30
 ```
 
 ## Phase Routing
@@ -62,7 +63,16 @@ Example:
 | 2 | Convert DDL and procedural logic | [dedicated-pool-conversion.md](dedicated-pool-conversion.md) |
 | 2b | Audit large-procedure source-block coverage and package validated artifacts | [dedicated-pool-large-procedure-audit.md](dedicated-pool-large-procedure-audit.md) |
 | 3 | Create the Lakehouse and deploy schema/code artifacts | [dedicated-pool-deployment.md](dedicated-pool-deployment.md) |
+| 3b | Migrate exact dependent procedure callers through the versioned internal contract | [dedicated-pool-dependent-pipelines.md](dedicated-pool-dependent-pipelines.md) |
 | 4 | Validate schema and generated artifacts | [dedicated-pool-validation.md](dedicated-pool-validation.md) |
+
+## Phase 3b: Dependent Pipelines
+
+Discover, normalize, compatibility-assess, and approve the recursive caller closure during Phases 1b-1c. Run transformation and deployment only after Phase 3 notebook publication and definition-readback checks succeed:
+
+Follow [dedicated-pool-dependent-pipelines.md](dedicated-pool-dependent-pipelines.md) for recursive ADF/Synapse normalization, activation states, schema `1.0`, canonical `handoffHash`, exact activity binding, selective `TridentNotebook` transformation, child-before-parent deployment, readback validation, reporting, and hash-bound resume. This is an internal sub-flow owned by `synapse-migration`; do not delegate it to `pipeline-migration`. Never republish or execute procedure notebooks from this sub-flow.
+
+Deployment order is strict: Lakehouse/schema objects, then converted procedure notebooks, then child pipelines, then parent pipelines. A `Blocked` bridge blocks only dependent pipeline deployment; report the blocker explicitly and continue validation of independently deployed schema/notebook artifacts.
 
 ## Required Inputs
 
@@ -98,13 +108,15 @@ For live or partially specified migrations, use the full workflow below.
 5a. Run the maintained target Spark parser gate over every schema/view SQL artifact and generated notebook. Then freeze the complete approved artifact set and resolved datamart/workspace/Lakehouse IDs into `run-context.json`. Any parser failure, source-contract blocker, unresolved mapping, or post-freeze hash change blocks all Fabric mutation for that datamart.
 6. Resolve the target workspace and Lakehouse through read-only Fabric REST calls. Present the frozen artifact hash, exact workspace/Lakehouse, whether the Lakehouse will be created or reused, and every planned schema/view/Notebook create, update, or replacement. Record explicit deployment approval bound to that frozen plan before any Fabric mutation; a target or artifact-hash change invalidates approval and requires a new review.
 7. Create a Livy session bound to the Lakehouse.
-8. Submit schema statements in dependency order and publish only approved, compiled stored-procedure notebooks without executing them. For audited procedures, verify all package hashes first and publish exactly the packaged notebook bytes; record each request, LRO result, target ID, and readback result in the manifest.
+8. Plan Delta column compatibility against the incremental target inventory, then submit each approved schema object as one dependency-ordered Livy request through `deploy_schema_objects`. Reuse only hash-matching successful checkpoints. Publish approved, compiled stored-procedure notebooks from validated file-backed JSON request bodies without executing them. For audited procedures, verify all package hashes first and publish exactly the packaged notebook bytes; record each request, LRO result, target ID, object timing, attempt, and readback result in the manifest.
 9. Compare source metadata with target schemas and validate generated code, source-block coverage, retry history, package integrity, dependencies, decoded persisted notebook definitions, exact Lakehouse bindings, and publication status.
 10. Report completed, failed, skipped, and manual-review objects, including the disposition of every discovery gap and an explicit statement that data migration and data parity were not performed.
 
 For multiple datamarts, require a portfolio JSON registry with one entry per datamart and unique workspace/Lakehouse target and artifact root. Record `capacityId`, workspace `region`, `capacityRegion`, current item count, planned notebook and non-notebook counts, reserved headroom, and the workspace item limit. Reject effective-region conflicts and projected item totals above the limit before mutation. Use `dedicated_pool_runtime.py --dry-run` with optional `--datamart`, `--wave`, or `--resume-failed` selectors before mutation. Evaluate workspace item limits per workspace, but batch remote Spark work by `capacityId` across workspaces that share capacity. A failed datamart becomes `Quarantined`; it does not change successful peer manifests or block independently promotable peers. Report aggregate elapsed and projected remaining seconds with success, failure, blocker, retry, and quarantine totals.
 
 Apply the status reporting contract to all 10 steps. For batch operations, use the discovered object count as `N`; for service operations such as Livy startup, report service state and elapsed time until ready or failed.
+
+Record phase telemetry with `record_phase_telemetry`: UTC start/end timestamps, duration, completed/failed/blocked/skipped counts, retry count, and token usage only when the host explicitly reports it. Persist `tokenUsage: null` with `tokenUsageStatus: Unavailable` instead of estimating a value from logs.
 
 Never seed an empty or small source pool to test migration. Report the discovered source as-is; use target-side fixtures or isolated local tests when conversion testing needs representative data.
 

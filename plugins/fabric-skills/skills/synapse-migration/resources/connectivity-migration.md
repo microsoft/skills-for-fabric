@@ -6,6 +6,8 @@ Reference for migrating Synapse Analytics connectivity patterns to Microsoft Fab
 
 ## Decision Guide: What Replaces a Linked Service?
 
+Every response that migrates or explains a Synapse Linked Service must first state the complete distinction: use **Fabric Data Connections for external databases and services**, and use **OneLake Shortcuts for ADLS Gen2 or Blob storage**. State both replacement classes even when the discovered Linked Service needs only one, then name which class applies to that specific source.
+
 | Synapse Linked Service Type | Fabric Replacement | When to Use |
 |---|---|---|
 | **Azure Data Lake Storage Gen2** | **OneLake Shortcut** (ADLS Gen2 shortcut) | Primary pattern — mount existing storage as a Lakehouse shortcut; no data copy |

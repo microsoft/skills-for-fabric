@@ -110,6 +110,6 @@ theme's `visualStyles["*"]["*"]`. The filter pane does **NOT** inherit
 from theme structural colors, so theme switches will not update it
 automatically — explicit theme entries are required.
 
-See `re-theming.md` § Dark Mode Authoring Checklist (see `re-theming.md`, section `dark-mode-authoring-checklist`)
-for the complete dark-mode workflow, and `re-theming.md` § Step 3: Filter pane + filter cards (see `re-theming.md`, section `step-3-filter-pane--filter-cards`)
+See `re-theming.md` § Dark Mode Authoring Checklist (see `re-theming-part-03.md`, section `dark-mode-authoring-checklist`)
+for the complete dark-mode workflow, and `re-theming.md` § Step 3: Filter pane + filter cards (see `re-theming-part-03.md`, section `step-3-filter-pane--filter-cards`)
 for the theme-level filter pane recipe.
