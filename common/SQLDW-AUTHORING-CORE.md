@@ -312,6 +312,12 @@ WITH (FILE_TYPE = 'PARQUET');
 - Formats: **PARQUET**, **CSV**. Sources: **ADLS Gen2**, **Azure Blob Storage**, **OneLake** (preview).
 - Authenticates as the executing Entra ID user by default. Alternatives: SAS token in CREDENTIAL clause, or workspace identity for firewall-protected storage.
 - Files ≥ 4 MB for optimal performance. ADLS Gen2 preferred over legacy Blob Storage.
+- Use COPY INTO when loading files without any transformations, where source columns map directly to target columns (1:1 mapping). Alternatives are:
+  - If data transformation is required during ingestion, use INSERT INTO ... SELECT {{expressions}} FROM OPENROWSET(...).
+  - If you need to automatically create a table during ingestion, use CTAS: CREATE TABLE AS SELECT FROM OPENROWSET(...).
+  - If you need to ingest file metadata such as file names or file paths, use INSERT INTO ... SELECT FROM OPENROWSET(...) and extract metadata using the FILENAME() or FILEPATH() functions.
+  - If the source files contain complex types (such as nested objects, arrays, or structs), use INSERT INTO ... SELECT FROM OPENROWSET(...) and extract the required attributes from the complex columns using functions such as JSON_VALUE() and JSON_QUERY().
+  - If the source data is outside supported OneLake, ADLS Gen2, or Azure Blob Storage locations, use Data Pipelines or Copy Job to move the data into Fabric before ingestion.
 
 ### OPENROWSET (Read + Transform + Ingest)
 
@@ -333,24 +339,50 @@ FROM OPENROWSET(
 ) AS raw
 WHERE amount > 0;
 
--- CSV with explicit schema
+-- Ingest into an existing table when transformation is required
+INSERT INTO dbo.StageDataTable
+SELECT *
+FROM OPENROWSET(
+    BULK 'https://storage.dfs.core.windows.net/container/raw/*.csv',
+    FORMAT = 'CSV', HEADER_ROW = TRUE
+) AS raw;
+
+-- Insert subset of rows from a CSV with explicit schema
+INSERT INTO DataTable
 SELECT * FROM OPENROWSET(
     BULK 'https://storage.dfs.core.windows.net/container/data.csv',
     FORMAT = 'CSV', HEADER_ROW = TRUE
 ) WITH (
     id int, name varchar(100), amount decimal(19,4), created date
-) AS data;
+) AS data
+WHERE amount > 0;
 
--- Wildcards and Hive-partitioned paths
-SELECT * FROM OPENROWSET(
+-- Load a partition as a new table from the Hive-partitioned paths
+CREATE TABLE Data_2023_10 AS
+SELECT *,
+        partitioned_data.filename() fname, partitioned_data.filepath() fpath
+FROM OPENROWSET(
     BULK 'https://storage.dfs.core.windows.net/container/year=*/month=*/*.parquet'
-) AS partitioned_data;
+) AS partitioned_data
+WHERE partitioned_data.filepath(1) = '2023'
+AND partitioned_data.filepath(2) = '10';
+
+-- Ingest properties of Parquet complex types as scalar columns
+INSERT INTO DataTable
+SELECT    id, title, body,
+          CAST(JSON_VALUE([user], '$.login')  AS VARCHAR(32)) as "login_name",
+          CAST(JSON_VALUE([user], '$.type') AS VARCHAR(10)) as "type"
+FROM OPENROWSET(
+   BULK 'https://storage.dfs.core.windows.net/container/*.parquet'
+) AS source_data;
+
 ```
 
 **Key details**:
+- Use `OPENROWSET` only if you need to transform source columns, extract file metadata or ingest complex types. Use `COPY INTO` if you need direct ingestion.
 - Formats: Parquet, CSV, TSV, JSONL. Available on DW (read + ingest) and SQL endpoints (read-only).
 - Complex Parquet types (maps, lists) returned as JSON text — use JSON_VALUE/OPENJSON.
-- Slower than materialized tables; ingest data for repeated access.
+- OPENROWSET() queries are typically slower than queries against Data Warehouse tables. For workloads that require repeated access, materialize the data using CREATE TABLE AS SELECT (CTAS) with OPENROWSET() as the source, rather than creating a view over OPENROWSET(). This improves query performance and reduces repeated file scans.
 
 ### Ingestion Method Comparison
 
