@@ -297,11 +297,6 @@ WITH (
     FIELDTERMINATOR = ',', ROWTERMINATOR = '\n', FIELDQUOTE = '"'
 );
 
--- Auto table creation (table need not exist)
-COPY INTO dbo.NewTable
-FROM 'https://storageaccount.dfs.core.windows.net/container/data.parquet'
-WITH (FILE_TYPE = 'PARQUET', AUTO_CREATE_TABLE = 'TRUE');
-
 -- OneLake source (preview)
 COPY INTO dbo.FactSales
 FROM 'abfss://<workspaceID>@onelake.dfs.fabric.microsoft.com/<lakehouseID>/Files/sales/'
