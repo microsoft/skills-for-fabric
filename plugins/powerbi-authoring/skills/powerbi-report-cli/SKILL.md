@@ -2,7 +2,7 @@
 name: powerbi-report-cli
 description: "Plan, design, author, preview, publish, and manage Power BI reports across requirements, page design, local PBIR/PBIP edits, validation, screenshots, Fabric upload/download, and rebinding. Use for report lifecycle work; use semantic-model-authoring for model or DAX changes and fabriciq for data questions. Triggers: plan Power BI report, design report page, edit PBIR, preview PBIP, publish report, rebind report"
 metadata:
-  version: 1.0.4
+  version: 1.0.5
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -67,6 +67,15 @@ before starting that part. The `planning` approval gate is a turn boundary:
 never build or publish until the user explicitly approves the locked spec in a
 later reply.
 
+> **GREENFIELD APPROVAL BARRIER — MANDATORY.** When a new-report request asks
+> to plan, build, and/or publish but the user has not approved a locked spec in
+> a prior reply, set the current phase to `approval_pending` and keep
+> `planning` as the only active mode. In this phase, do not load `authoring` or
+> `management`, edit/scaffold PBIR or semantic-model files, generate synthetic
+> data, call Fabric write APIs, or publish. Persist `_brief/report-spec.md`, ask
+> for explicit approval, and end the turn. The build/publish wording in the
+> original request is desired future scope, not approval to cross this barrier.
+
 ## Required Deliverable by Mode
 
 | Mode | Completion requirement |
@@ -82,10 +91,17 @@ later reply.
 
 - Select the narrowest mode that fully covers the current request.
 - Read `references/<mode>.md` end to end before the first command or file edit
-  in that mode.
+  in that mode. When an already-loaded mode explicitly routes one narrow
+  cross-mode operation to a named topic reference, treat that topic reference
+  as the complete handoff; do not load the target mode's umbrella file unless
+  the work expands beyond that operation.
 - In `planning` mode, also read `references/planning-part-02.md` before
   producing `_brief/report-spec.md`; it contains the required canonical design
   contract and approval checks.
+- Across a multi-turn task, retain a compact working state containing resolved
+  workspace/item/model IDs, local and downloaded paths, and references already
+  read. Reuse it in later turns unless the user explicitly requests a fresh
+  query or the preceding operation invalidated a value.
 - Preserve every argument and safety boundary documented by the selected mode.
 - Announce and perform an explicit mode switch when the request crosses a
   boundary.
@@ -103,6 +119,9 @@ later reply.
 - Infer facts already present in the prompt, semantic model, existing PBIP, or
   prior approved spec instead of asking again.
 - Load only the selected mode and its directly relevant topic references.
+- Reuse reference guidance already loaded in the current task. Open a new
+  reference only when the requested operation or an observed mismatch requires
+  it.
 - Preserve the user's existing project structure, schemas, host, operation,
   binding, and delivery target unless the selected mode explicitly requires a
   change.
@@ -110,6 +129,8 @@ later reply.
 ### AVOID
 
 - Acting from this dispatcher without reading the selected mode reference.
+- Reloading this dispatcher, a mode file, or a topic reference already read in
+  the current task solely because the conversation advanced to a later turn.
 - Loading a retired sibling skill name; planning, design, authoring, and
   management are modes of this skill.
 - Editing PBIR or calling Fabric APIs in `planning` or `design`.

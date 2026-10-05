@@ -2,7 +2,7 @@
 
 Common migration failures, edge cases, and resolution steps. Items are flagged during migration and surfaced in the [migration report](migration-report.md) with links back to the relevant section here.
 
-> **Philosophy**: The migration workflow does **not** block on these issues. Items are migrated as-is, failures are logged, and this guide is linked from the report so users can resolve them post-migration.
+> **Philosophy**: The legacy notebook and Spark job definition issues in this guide do **not** block artifact copying; affected items are copied as-is, failures are logged, and this guide is linked from the report for post-migration remediation. This does not override fail-closed conversion gates in other migration paths. In particular, Dedicated SQL Pool objects classified as `ManualReviewRequired` are not converted or deployed until the required decision or approval is recorded.
 
 ---
 
@@ -116,9 +116,7 @@ or
 Unsupported reader/writer feature: deletionVectors / columnMapping / v2Checkpoints
 ```
 
-**Root cause**: Synapse Spark pools may write Delta tables using protocol features that Fabric's Delta engine version doesn't support yet, or vice versa. This is rare but can happen when:
-- Synapse uses Delta Lake 2.4+ features (deletion vectors, column mapping) not yet supported by Fabric Runtime 1.3
-- Tables were upgraded to writer version 7+ with features like `deletionVectors`
+**Root cause**: Synapse Spark pools may write Delta tables using protocol features that the selected Fabric Runtime or downstream reader does not support, or the target DDL may contain logical column names that require Delta column mapping.
 
 ### Resolution Steps
 
@@ -131,24 +129,19 @@ Unsupported reader/writer feature: deletionVectors / columnMapping / v2Checkpoin
    print(f"Reader: {detail.minReaderVersion}, Writer: {detail.minWriterVersion}")
    ```
 
-2. **Check Fabric's supported protocol**:
-   | Fabric Runtime | Delta Lake Version | Max Reader Version | Max Writer Version |
-   |---|---|---|---|
-   | 1.3 (Spark 3.5) | 3.2 | 3 | 7 |
+2. **Check the selected Fabric Runtime and every downstream reader** against current Microsoft documentation. Do not use a hardcoded runtime/version matrix.
 
-3. **If reader version > Fabric's max reader version** — downgrade the table before migration:
-   ```sql
-   -- In Synapse, rewrite the table without advanced features:
-   CREATE TABLE temp_table USING DELTA AS SELECT * FROM problem_table;
-   DROP TABLE problem_table;
-   ALTER TABLE temp_table RENAME TO problem_table;
-   ```
+3. **Keep the source read-only.** If the source shortcut protocol is unsupported, record `ManualReviewRequired`; do not rewrite, drop, rename, or downgrade the source table as part of this migration.
 
-4. **If only writer features are too new** — the table is still readable. Flag for monitoring but no action needed unless Fabric needs to write back.
+4. **Plan new target DDL selectively** with `plan_delta_column_mapping`:
+   - safe logical names: normal Delta DDL;
+   - restricted names such as spaces, commas, semicolons, braces, parentheses, newlines, tabs, or equals signs: require downstream compatibility approval, then emit `TBLPROPERTIES ('delta.columnMapping.mode' = 'name')`;
+   - existing compatible target or shortcut: validate and reuse it without protocol changes;
+   - existing incompatible or uncertain target: block for manual review rather than altering it.
 
-5. **Column mapping** (`delta.columnMapping.mode`): If the source table uses column mapping (`name` mode), verify Fabric reads it correctly. Runtime 1.3 supports column mapping in read mode.
+5. **Record protocol and mapping evidence** in `expected-schema.json` and `migration-manifest.json`, including offending logical names, current mode, decision, and approval.
 
-> **Pre-migration check**: Run the protocol version check across all Delta tables during Phase 1 inventory. Flag any with `minReaderVersion > 3` as potential issues.
+> **Pre-migration check**: Inventory Delta protocol features and column mapping for every existing target or shortcut, and validate downstream compatibility before any target mutation.
 
 ---
 

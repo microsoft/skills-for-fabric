@@ -37,7 +37,10 @@ the report spec **and** continues into implementation after the user approves.
 - Use this skill for broad report creation workflows that need requirements, dependency checks, approval, and build sequencing.
 - Ask focused clarification questions one at a time and stop after the required decision is clear.
 - Lock `_brief/report-spec.md` and get approval before implementation.
-- Route design decisions through the `design` mode and file mechanics through the `authoring` mode.
+- Route design decisions through the `design` mode and file mechanics through
+  the `authoring` mode. For the sufficient-input locked-spec fast path, consult
+  only the focused canonical design-contract references and use conservative
+  defaults instead of loading the broad design workflow.
 
 ### PREFER
 
@@ -78,14 +81,21 @@ Rounds 3–4 — it does not replace it.
 1. **Ask one question at a time.** Use `ask_user` for each clarification.
 2. **Run 3-5 clarification rounds maximum.** Each round may have one primary
    question and, only if absolutely necessary, one follow-up.
-3. **Inspect the semantic model before locking the spec.** Use the semantic
-   model skill or an MCP server when available; otherwise inspect local
-   TMDL/PBIP files directly.
+3. **Establish the semantic-model inventory before locking the spec.** If the
+   user supplies enough tables, columns, measures, and relationship context to
+   bind every requested visual, treat that supplied schema as the inventory for
+   a locked-spec-only request; a single-table schema needs no relationship
+   discovery. Do not inspect an unrelated local PBIP/TMDL project merely because
+   one exists. Otherwise use the semantic model skill or an MCP server when
+   available, then fall back to local TMDL/PBIP files.
 4. **Check dependencies explicitly.** Do not assume Desktop, MCP, authoring, or
    Fabric publishing are available.
 5. **Produce one locked `_brief/report-spec.md` before building.**
-6. **Ask for approval before implementation.** Do not build until the user
-   explicitly approves.
+6. **Ask for approval before implementation.** If a new-report request also
+   says build or publish, treat that as post-approval scope: persist the locked
+   spec, ask for approval, and stop. Do not load authoring/management, create
+   implementation files, or call Fabric write APIs until a later user reply
+   explicitly approves the spec.
 7. **When approved, build end-to-end.** Model changes, PBIR generation,
    validation, Desktop preview, screenshot loop, and optional Fabric publish.
 8. **Local edits stay local unless publishing is approved.**
@@ -278,8 +288,14 @@ Success criteria:
 Goal: inspect the model and define the first-build scope boundary without
 re-asking for scope the user already gave.
 
-Use whatever model-inspection capability is available — pick the first that
-applies, in order of preference:
+If the prompt already provides enough schema detail to bind every requested
+visual, record that supplied schema as the model inventory and continue. For a
+locked-spec-only request, do not enumerate the current directory, inspect a
+different local PBIP/TMDL project, connect to a live model, or reload broad
+design references solely to reconfirm facts the user supplied.
+
+Otherwise, use whatever model-inspection capability is available — pick the
+first that applies, in order of preference:
 
 1. A semantic-model authoring skill, if installed.
 2. A modeling MCP server (e.g., `powerbi-modeling-mcp-*`) — connect to the
@@ -343,10 +359,15 @@ first-build options. Example:
 
 Goal: turn the model and scope into page architecture.
 
-Invoke or explicitly consult the `design` mode for page-level archetype
-routing and composition guidance. The design skill owns visual routing; do not
-duplicate its routing table here. Use the data shape from Round 2 to surface
-2-3 report shape options for user sign-off.
+For the sufficient-input locked-spec fast path, preserve the page plan and
+visual intent already supplied, consult only the focused canonical
+`design/design-brief.md` contract (and its continuation when needed), and choose
+conservative composition defaults without reopening broad design guidance or
+asking the user to choose a report shape. Otherwise, invoke or explicitly
+consult the `design` mode for page-level archetype routing and composition
+guidance. The design skill owns visual routing; do not duplicate its routing
+table here. Use the data shape from Round 2 to surface 2-3 report shape options
+for user sign-off.
 
 The five archetypes the design skill ships are: **Executive Summary**,
 **Operational Monitor**, **Analytical Canvas**, **Narrative Story**,
@@ -386,10 +407,14 @@ Capture slicers and interactions:
 
 Goal: lock the design identity, accessibility baseline, and delivery target.
 
-Invoke or explicitly consult the `design` mode for design identity and
-theme direction. Design identity (tone + signature) is owned by the design skill
-— do not invent a parallel vocabulary here. Use the design skill's identity
-guidance to pick a tone+signature combination, then surface it to the user.
+For the sufficient-input locked-spec fast path, use a conservative accessible
+identity, record it explicitly in the canonical contract, and defer optional
+stylistic variation to approval; do not load tone or archetype catalogs solely
+to choose among defaults. Otherwise, invoke or explicitly consult the `design`
+mode for design identity and theme direction. Design identity (tone +
+signature) is owned by the design skill — do not invent a parallel vocabulary
+here. Use the design skill's identity guidance to pick a tone+signature
+combination, then surface it to the user.
 
 Ask:
 

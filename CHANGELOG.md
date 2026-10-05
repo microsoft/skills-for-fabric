@@ -4,6 +4,34 @@ User-facing changes for the public Microsoft Fabric Skills release.
 
 ## [Unreleased]
 
+## [0.3.19] - 2026-10-01
+
+### Changed
+- **`synapse-migration`** -- Dedicated SQL Pool-to-Lakehouse migrations can now optionally repoint exact dependent Azure Data Factory and Synapse procedure callers after their generated Fabric notebooks are ready, while preserving explicit approval and no-automatic-execution safeguards.
+- **`powerbi-report-cli`** -- mandatory validation screenshots now use a
+  temporary per-run directory under the local application-data location when no
+  validation location is supplied. Explicit save/export/keep destinations are
+  retained, while project or synchronized locations receive an exposure warning.
+- **`powerbi-report-cli`** -- multi-turn publish workflows reduce repeated
+  workspace, item, file, and semantic-model discovery while preserving binding
+  validation. Definition downloads retain the required `?format=PBIR` query,
+  and publish flows resolve the supplied workspace name before asking how to
+  handle the semantic model.
+- **`powerbi-report-cli`** -- locked-spec planning now reuses a complete schema
+  and page plan supplied in the request instead of redundantly inspecting an
+  unrelated local report project.
+- **`powerbi-report-cli`** -- greenfield build-and-publish requests now stop at
+  the locked-spec approval barrier until the user approves in a later reply.
+
+### Fixed
+- **`synapse-migration`** -- generated Fabric notebooks are now rejected before publication when their parameter handling could accept missing required values, mis-handle SQL NULL, or alter source behavior.
+- **`synapse-migration`** -- Dedicated Pool discovery now handles incomplete DACPAC scripting safely, schema deployment is resumable without altering incompatible existing targets, notebook publication validates persisted definitions, and approved special-character columns are supported in new Delta tables.
+- **`synapse-migration`** -- Dedicated Pool procedures containing dynamic SQL, cursors, or control-flow loops now remain in manual review instead of being treated as automatic conversion candidates.
+- **`synapse-migration`** -- Dedicated Pool migrations now provide clearer progress and resumable recovery for large conversions while preserving detailed audit evidence.
+- **`powerbi-report-cli`** -- corrected split-reference navigation so report
+  authoring, formatting, preview, theming, and management guidance resolves to
+  the physical continuation file that contains each referenced section.
+
 ## [0.3.18] - 2026-09-24
 
 ### Added

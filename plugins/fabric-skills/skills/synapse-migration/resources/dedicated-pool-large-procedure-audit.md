@@ -20,6 +20,8 @@ Derive every immutable source filename and every source path recorded in the led
 
 Treat every path written into the ledger, package, projection, manifest, or attempt evidence as a POSIX path relative to the run artifact root. Never record an absolute path or prefix it with the requested output root such as `migration-artifacts/<run>/`. Keep each recorded constant separate from its disk path; for example, store `NOTEBOOK_REL = "notebooks/usp_AuditedLoad.ipynb"` in JSON and derive the disk location by joining the artifact root with the segments of `NOTEBOOK_REL`. Apply the same rule to source, ledger, attempt, projection, package, and manifest references.
 
+Materialize `source/<sourceStableId>.sql` from the exact immutable UTF-8 source bytes before generating the block ledger, attempts, manifest projection, or deployment package. Fail closed if that exact source file is absent, has a different stable-ID path, or its hash differs from the source hash recorded by any downstream artifact. Include the source file itself in deployment-package hashes and evidence; keeping source text only in memory or embedding it only in a generated script is not sufficient.
+
 ```text
 source/
   <sourceStableId>.sql
@@ -33,6 +35,27 @@ procedure-audit/
 ```
 
 Store source text as discovery evidence only. Never put `CREATE PROCEDURE`, `CREATE PROC`, or unconverted source text in executable notebook cells.
+When the request supplies an exact artifact path, preserve that path literally. Do not shorten a stable-ID source file such as `source/dbo.usp_AuditedLoad.sql` to `source/usp_AuditedLoad.sql`, even when the notebook uses the shorter procedure basename.
+In the run-specific generator, assign the source artifact path from the literal requested path, not from `sourceName`, the notebook basename, or another derived identifier. Before deleting or replacing any output root, assert that the configured source path exactly equals the requested stable-ID path; a mismatch blocks the atomic write. After generation, the package verifier must require that exact file and reject a different source path even when its bytes and hash match.
+
+Before packaging, verify every procedure parameter against the approved conversion contract. Optional non-null parameters must restore their declared source defaults before validation, and every approved mapping field must be copied without abbreviation into the migration manifest. Source, bridge, Spark-conf, and manifest parameter counts must match exactly or packaging is blocked.
+
+Do not turn an optional non-null source parameter into a required notebook parameter. For example, a source declaration `@BatchId BIGINT = 42` must use `BatchId = 42` in the tagged parameter cell and this exact ordering in the validation-only bridge:
+
+```python
+import re
+
+if BatchId is None:
+    BatchId = 42
+if re.fullmatch(r"[+-]?[0-9]+", str(BatchId)) is None:
+    raise ValueError("BatchId must be an integer literal")
+
+spark.conf.set("spark.synapseMigration.dbo_usp_AuditedLoad.BatchId", str(BatchId))
+```
+
+The `BatchId is None` branch restores the declared default; it must not raise `ValueError`. Keep every default restoration and validation guard before the first transport call, then emit only contiguous direct `spark.conf.set` calls.
+
+At each Spark SQL use, quote the configuration substitution before the immediate mapped-type cast, for example `CAST('${spark.synapseMigration.dbo_usp_AuditedLoad.BatchId}' AS BIGINT)`. The parser gate runs without executing the bridge, so an unquoted unset substitution would collapse to invalid `CAST( AS BIGINT)` syntax.
 
 ## Deterministic Preprocessing
 
@@ -48,7 +71,7 @@ Compute the complete deterministic block IDs before constructing notebook cells,
 
 Every emitted notebook cell must contain an explicit, unique nbformat `id` matching `^[A-Za-z0-9_-]{1,64}$`; nbformat support does not make the field optional for this workflow. For each converted block, write the mapped SQL cell's exact `id` into `targetArtifacts[].cellId`. Never record a synthetic ordinal or index-derived ledger ID that is absent from the notebook cell.
 
-For each procedure parameter, the first notebook code cell must use bare `%%configure` followed by valid JSON. Under `conf`, map the exact configuration key to an object containing both the exact source parameter name and its typed default. For example, `spark.synapseMigration.dbo_usp_AuditedLoad.BatchId` maps to `{ "parameterName": "BatchId", "defaultValue": 42 }`; do not omit `parameterName` or replace the object with a scalar.
+For each parameterized procedure, the first notebook code cell must carry the exact `parameters` tag and declare scalar Python variables with their approved source defaults. Follow it with one validation-only Python bridge that restores optional defaults, validates every value, and then emits only contiguous direct `spark.conf.set` calls with scalar string values. Reject every `%%configure` cell and every object-valued parameter map. Record the source parameter as `sourceParameter` in the migration manifest; never use `parameterName`.
 
 Do not ask a language model to choose source boundaries or block IDs. Generated scripts must produce the same ledger for identical source bytes and configuration.
 
@@ -66,9 +89,21 @@ Each block record must include:
 
 - `blockId`, `ordinal`, `parentBlockId`, `kind`, `startOffset`, `endOffset`, and `sourceHash`
 - `sourceFeatureIds`, `gapIds`, `dependencies`, and `parameterReferences`
-- `targetArtifacts` with notebook path, cell ID, and target statement hash when converted
+- `targetArtifacts` as a JSON array. For a converted block, include one or more objects with `notebookPath`, `cellId`, and `targetStatementHash`; never emit a single object. For a block with no target mapping, emit `[]`, not `null`.
 - `disposition`, `reason`, `approvalEvidence`, `attemptCount`, and `attemptHistory`
 - `validation` with parser, forbidden-construct, parameter, dependency, and reviewer results
+
+Use this exact shape for each converted mapping:
+
+```json
+"targetArtifacts": [
+  {
+    "notebookPath": "notebooks/<procedure>.ipynb",
+    "cellId": "<cell-id>",
+    "targetStatementHash": "<lowercase-sha256>"
+  }
+]
+```
 
 Any generated ledger rebuild or preprocessing script must preserve or deterministically regenerate this complete block-record schema, including `targetArtifacts`, disposition, attempt evidence, and validation state. It must not overwrite an enriched post-conversion ledger with boundary-only discovery records. If rebuilding boundaries changes or removes any converted block's notebook path, cell ID, or target statement hash, fail verification and block packaging instead of writing the reduced ledger.
 
@@ -92,13 +127,19 @@ Convert blocks in dependency order with the procedure signature, approved design
 After each attempt:
 
 1. Validate only the target statements mapped from that block with the target Spark parser and all conversion-contract checks.
-2. Record the prompt/input hash, generated target hash, validator results, sanitized error, timestamps, and attempt number.
+2. Record the prompt/input hash, generated target hash, validator results, sanitized error, timestamps, and attempt number. Create one attempt file for each `attemptHistory` entry and no others. A block excluded without a conversion attempt has `attemptCount: 0`, an empty `attemptHistory`, and no attempt file; do not manufacture attempt files for `ProcedureDeclaration`, `CommentOnly`, `WhitespaceOnly`, or other approved exclusions.
 3. Mark successful blocks `Converted`; route unsupported semantics to `ManualReviewRequired` with a precise finding.
 4. Retry only blocks in a declared retryable state. Do not regenerate successful blocks during repair.
 5. Allow at most three total attempts per block by default (`maxAttemptsPerBlock: 3`). A lower run-specific limit is allowed. Never increase the limit after conversion begins.
 6. Mark an exhausted block `Failed` and block packaging. Do not hide it behind a warning, skip, or whole-procedure success status.
 
 When a repaired block changes target dependencies, parameters, or control-flow interfaces, revalidate its directly related blocks without incrementing their conversion attempt counts unless their target text is regenerated.
+
+## Canonical Notebook Metadata
+
+For every assembled large-procedure notebook, emit the Lakehouse binding only at `metadata.dependencies.lakehouse`. It must contain `default_lakehouse`, `default_lakehouse_workspace_id`, and `default_lakehouse_name` with the resolved target values. Never add, copy, retain, or mirror that binding under `metadata.trident.lakehouse`, even when the canonical dependency binding is also present. Run `validate_spark_sql_notebook` against this final assembled notebook before hashing or packaging it; any alternate Lakehouse-binding path blocks packaging.
+
+Build each Python cell as newline-joined source and serialize it with `splitlines(keepends=True)`, so every non-final `source` entry retains its line terminator. Never emit adjacent Python source-array strings that concatenate into invalid syntax. Inside the one-shot generator, run `ast.parse` on the joined parameter-cell and bridge-cell source before writing any artifact; a parse failure must abort the generator before it emits a partial package.
 
 ## Coverage and Cross-Block Validation
 
@@ -107,11 +148,12 @@ Before packaging, require all of the following:
 - Source byte coverage is exactly 100%, with no gaps, overlaps, duplicate block IDs, or changed source hashes.
 - Every block is `Converted`, `ApprovedExclusion`, or `ManualReviewApproved`.
 - Every converted or manually approved block maps to at least one existing target notebook cell and target statement hash. Give each mapped SQL cell a `-- sourceBlock: <blockId>` line immediately after `%%sql`. Assemble and serialize the final notebook cell first, then re-read that persisted cell, remove exactly the `%%sql` line and the following source-block marker line, and compute `targetStatementHash` from every remaining UTF-8 byte, including any terminal newline. Never hash a pre-serialization statement variable or trim/normalize the payload. The producer and independent verifier must both recompute from the persisted notebook, not from shared generation state.
+- Ensure the generated cell itself begins with the two literal percent characters in `%%sql`. Do not pass that magic through Python `%` interpolation as `"%%sql"`, which emits only `%sql`; concatenate the literal header or escape it as `"%%%%sql"` when `%` formatting is unavoidable. Apply the normal conversion type mapping inside every cell, including translating source `BIT` predicates such as `IsActive = 1` to Spark SQL `IsActive = TRUE`.
 - After any generated ledger rebuild or preprocessing script runs, re-read the persisted ledger and reject every converted block whose `targetArtifacts` is missing, null, not an array, or lacks an existing notebook cell ID and matching target statement hash. Run this check before computing ledger and deployment-package hashes.
 - Every target transformation statement maps back to one or more source block IDs; generated scaffolding is labeled separately and justified.
 - Control-flow, temporary-object, dependency, parameter, output, transaction-redesign, dynamic-SQL, error-handling, and audit/logging relationships are validated across block boundaries.
 - Notebook-level parser, parameter, naming, dependency, forbidden-construct, and nbformat checks still pass after block assembly.
-- Attempt counts do not exceed the immutable retry policy and all attempt records are present.
+- Attempt counts do not exceed the immutable retry policy, every recorded attempt has exactly one attempt file, and no unrecorded attempt files exist.
 - Attempt files and deployment-package `attempts` entries exist for `Converted` blocks only. Their paths and lowercase SHA-256 hashes form the exact one-to-one set of converted block IDs; do not emit attempt evidence for `ApprovedExclusion` blocks.
 
 Coverage percentage is `accounted source bytes / sourceByteLength * 100`. It measures source accounting, not semantic equivalence. Do not claim runtime or data parity from a 100% ledger.
@@ -130,7 +172,7 @@ The package root must contain exactly these publication-gate fields at minimum: 
 
 The generated package verifier must read and assert those exact root paths before reporting success. In Python, require `type(package["coveragePercent"]) is int` and `type(package["retryPolicy"]["maxAttemptsPerBlock"]) is int` before comparing their values; `isinstance(..., int)` is insufficient because booleans are integers in Python. It must fail when `coveragePercent` is absent or nested-only, or when it is not the JSON integer `100`; when `verdict` is not `ReadyForPublication`; or when `retryPolicy.maxAttemptsPerBlock` is not the JSON integer matching the immutable run policy. Never claim the package verifier passed based only on ledger coverage or artifact hashes.
 
-The generated verifier must independently assert every recorded path against the exact artifact-root-relative contract, resolve that path below the artifact root for file access, and recompute its lowercase SHA-256 from final file bytes. It must also prove the two-way ledger/notebook mapping: every `Converted` block maps to an existing cell with its full block ID and exact statement hash, and every source-mapped notebook cell maps back to one `Converted` block. It must parse the bare first-cell `%%configure` JSON and assert each exact object-valued `parameterName` and typed `defaultValue`. Finally, it must compare the package attempt paths as a set against the attempt paths derived from `Converted` ledger blocks; producer and verifier must not share unchecked path or membership assumptions.
+The generated verifier must independently assert every recorded path against the exact artifact-root-relative contract, resolve that path below the artifact root for file access, and recompute its lowercase SHA-256 from final file bytes. It must also prove the two-way ledger/notebook mapping: every `Converted` block maps to an existing cell with its full block ID and exact statement hash, and every source-mapped notebook cell maps back to one `Converted` block. It must parse the tagged parameter cell and validation-only scalar bridge and assert the exact declared parameter, source default, Spark-conf key, and direct `str(<parameter>)` transport. Finally, it must compare the package attempt paths as a set against the attempt paths derived from `Converted` ledger blocks; producer and verifier must not share unchecked path or membership assumptions.
 
 Keep each audited procedure's source decision in `migration-manifest.json` under `objects[]`; preserve its exact `sourceName`, `sourceStableId`, all approved target component IDs, audit evidence, and deployment-package path/hash. Record immutable source evidence as `sourcePath` plus `sourceArtifactHash`, ledger evidence as `ledgerPath` plus `ledgerHash`, and package evidence as `deploymentPackage.path` plus `deploymentPackage.sha256`; every hash is lowercase SHA-256 of the referenced file bytes. Preserve backward-compatible target artifact fields for approved `1:1` mappings. Do not replace `objects[]` with a bespoke top-level procedure object.
 
@@ -144,6 +186,8 @@ Use this exact finalization order:
 4. Reopen the mutable `migration-manifest.json` object and set `deploymentPackage.path` to the package-relative path and `deploymentPackage.sha256` to that computed hash. The equivalent `deploymentPackagePath` and `deploymentPackageHash` fields are permitted for backward compatibility.
 5. Persist the updated mutable manifest without regenerating the package, then run the package verifier again. The verifier must fail unless the recorded package path is exact and the recorded hash equals the final package-file hash.
 
+Create one attempt file for each `attemptHistory` entry and no others. An `ApprovedExclusion` has `attemptCount: 0`, an empty `attemptHistory`, and no attempt file; do not hash attempt files for zero-attempt approved exclusions.
+
 Retain source ledgers, attempt records, verifier output, approval evidence, and the final deployment package with the migration manifest. These artifacts are required audit evidence and must not be removed after successful publication.
 
 ## Completion Report
@@ -155,3 +199,5 @@ The completion report must include all eight required concepts to pass verificat
 ## Completion Gate
 
 A large stored procedure is conversion-complete only when deterministic span verification passes, every block has a deployable terminal disposition, failed-block retries stay within the declared limit, cross-block and notebook validation pass, and an immutable package has verdict `ReadyForPublication`. `Pending`, `ManualReviewRequired`, `Failed`, missing attempt history, less than 100% byte coverage, an untracked target statement, or a package/hash mismatch blocks publication.
+
+If the one-shot runtime validator fails, begin the terminal report with `The T-SQL procedure was not successfully converted to Spark SQL.` Name the failed gate and preserve the artifacts without claiming `ReadyForPublication`.

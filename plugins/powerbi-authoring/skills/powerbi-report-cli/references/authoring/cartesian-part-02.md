@@ -30,7 +30,7 @@ conditional-formatting reference.
 For data-driven gradients, rules, and field-value colors, use the target matrix
 and exact expression patterns in
 conditional-formatting.md § Chart target capability
-matrix (see `conditional-formatting.md`, section `chart-target-capability-matrix`).
+matrix (see `conditional-formatting-part-02.md`, section `chart-target-capability-matrix`).
 
 Quick routing:
 
@@ -74,7 +74,7 @@ for static combo-series styling; see the capability matrix for details.
 
 For marker-specific requirements and anti-patterns, use
 conditional-formatting.md § Line, marker, legend, and series-label
-consistency (see `conditional-formatting.md`, section `line-marker-legend-and-series-label-consistency`).
+consistency (see `conditional-formatting-part-07.md`, section `line-marker-legend-and-series-label-consistency`).
 
 Scatter `categoryLabels.color` supports one static color for all category
 labels. It does not conditionally color each label to match its bubble.

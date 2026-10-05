@@ -1,7 +1,7 @@
 {
   "name": "powerbi-authoring",
   "description": "Developer skills for authoring Microsoft Power BI solutions.",
-  "version": "0.3.18",
+  "version": "0.3.19",
   "license": "MIT",
   "repository": "https://github.com/microsoft/skills-for-fabric",
   "keywords": [

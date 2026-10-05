@@ -164,7 +164,7 @@ require a selector. It supports three independent angles:
 
 Shape color properties and the text label (`text.text`) support data-driven
 formatting. See
-conditional-formatting.md § Buttons and shapes (see `conditional-formatting.md`, section `buttons-and-shapes`)
+conditional-formatting.md § Buttons and shapes (see `conditional-formatting-part-03.md`, section `buttons-and-shapes`)
 for the supported properties, styles (field value / rules / gradient), selector
 requirements, limits, and examples.
 

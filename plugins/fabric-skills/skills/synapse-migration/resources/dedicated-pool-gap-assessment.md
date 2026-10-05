@@ -2,6 +2,14 @@
 
 Generate a complete, feature-wise migration risk assessment after source discovery and before target design or conversion. This is distinct from complexity scoring: complexity estimates implementation effort, while this report identifies the business and technical risk of moving each Dedicated SQL Pool feature to a Fabric Lakehouse.
 
+Every guidance response for this assessment must open with `Target: Fabric Lakehouse.` so the approved target platform remains explicit in summaries and excerpts.
+
+Immediately after the target line, every guidance response must include both of these direct decision-gate statements before examples or illustrative risk rows:
+
+- `Do not begin conversion or artifact generation until the customer approves the complete procedure mapping, exact target notebook names, dependency grouping, and workspace placement.`
+- Project the discovered procedure count into notebook demand for every candidate strategy. For `1:1`, state the calculation explicitly, such as `1,059 discovered procedures -> 1,059 projected notebooks`. For each candidate workspace, calculate `ProjectedTotal = CurrentItems + PlannedNonNotebookItems + ProjectedNotebooks + ReservedHeadroom`, compare it with the 1,000-item limit, and label it `Fits`, `ExceedsLimit`, or `Unknown`.
+- Explicitly assess distribution, transactions and TRY/CATCH semantics, row-level security, workload management, and staging. Do not omit a category merely because discovery found no affected object; report `No gaps found` or `Unknown` with the available evidence.
+
 Non-procedure features and artifacts do not have a default one-to-one mapping: they can be retired (`1:0`), translated directly (`1:1`), decomposed into multiple artifacts (`1:N`), consolidated with other source objects (`N:1`), redesigned across several artifacts (`N:M`), or deferred pending a decision.
 
 Stored-procedure notebook cardinality is a required post-discovery customer decision. After scanning the DACPAC and supplemental catalogs, assess and present `1:1` (one procedure to one notebook), `N:1` (multiple procedures consolidated into one notebook), and `N:N` (multiple procedures redesigned across multiple shared notebooks). The user must provide the complete source-to-target mapping after reviewing the assessment. Do not select a strategy or infer consolidation from procedure count alone, and do not generate notebooks until the customer approves the strategy, every source-to-target relationship, target names, workspace placement, and any behavior-changing consolidation or sharing. Every feature-risk response must state: `Conversion remains blocked until the customer approves the complete stored-procedure mapping.`
@@ -135,7 +143,7 @@ A source-contract mismatch is an object-level finding whose evidence names the r
 The customer-facing report must contain:
 
 1. Source scope and extraction timestamp.
-2. Executive risk summary with totals by category, support level, risk, mapping cardinality, and decision status.
+2. Executive risk summary with totals by category, support level, risk, mapping cardinality, and decision status. Explicitly summarize transaction and TRY/CATCH redesign risk whenever discovered; do not leave transaction semantics only in a detailed matrix.
 3. Procedure mapping and workspace-capacity matrix comparing `1:1`, `N:1`, and `N:N`, projected notebook/workspace item totals, headroom, proposed workspace partitions, tradeoffs, and decision status.
 4. Feature-wise risk matrix with evidence, affected objects, separate likelihood and impact columns, overall risk and rationale, proposed target pattern, cardinality, owner, and decision.
 5. Detailed findings table with gap ID, affected objects, evidence, disposition, owner, and status.

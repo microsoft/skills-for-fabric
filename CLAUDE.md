@@ -170,6 +170,7 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - **Fabric Cost Estimation**: E2E skill for capacity sizing, billing mode strategy, workload CU equivalence
   - Skill: `skills/e2e-fabric-cost-estimation/SKILL.md` — estimate Fabric capacity costs, SKU sizing, RI analysis
   - Uses Azure Retail Prices API (public) and Cost Management API (auth required)
+- **Synapse Migration**: `skills/synapse-migration/SKILL.md` — migrate Synapse Spark, Lake Database/HMS, Dedicated SQL Pool schema and procedures, and explicitly approved dependent procedure callers to Fabric
 
 ## Best Practices
 

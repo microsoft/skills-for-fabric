@@ -295,10 +295,10 @@ Optional query parameter `?updateMetadata=true` updates item metadata from
 
 ### Conceptual fallback safety requirements (not an executable workflow)
 
-`powerbi-report-author >= 0.3.0-beta.0` remains required for all primary documented
+`powerbi-report-author >= 0.3.0` remains required for all primary documented
 workflows in this skill. This section is **not** permission to continue with a
 non-CLI jq/base64/find/PowerShell branch when the preflight check fails. If the
-CLI is missing or older than 0.3.0-beta.0, stop and instruct the user to install or
+CLI is missing or older than 0.3.0, stop and instruct the user to install or
 upgrade `@microsoft/powerbi-report-authoring-cli@latest` before publishing,
 downloading, or updating PBIR definitions.
 

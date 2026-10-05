@@ -143,10 +143,15 @@ iterate, then accept or explicitly discard.
   `HOST_UNAVAILABLE`, report that no matching instance exists rather than
   claiming success or silently opening a new one.
 - Before the first mandatory validation capture, follow the screenshot
-  destination and cleanup lifecycle in `references/authoring/preview.md`. Keep screenshots
-  outside the PBIP project, Git worktrees, and cloud-synchronized directories
-  by default. Reuse one workflow-owned directory across review iterations and
-  delete only that directory after the complete workflow.
+  artifact and cleanup lifecycle in `references/authoring/preview.md`.
+  Classify a supplied location by intent: save/export/keep/retain paths are
+  retained output and are never the temporary validation parent or cleanup
+  target; only a location explicitly supplied for temporary validation
+  replaces the resolved Local Application Data parent. Do not ask the user for
+  a location or permission to use the default parent. Apply the lifecycle's
+  warning and explicit-confirmation requirements to risky user-supplied paths.
+  Reuse one workflow-owned temporary child across mandatory-validation review
+  iterations and delete only that child after the complete workflow.
 - Keep the preview mode consistent: include `--headless` on a screenshot request
   when the existing service instance is headless. Use the structured
   selected-host response as the source of truth for runtime availability and

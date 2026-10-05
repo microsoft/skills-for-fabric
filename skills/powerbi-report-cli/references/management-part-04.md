@@ -13,6 +13,20 @@ Continuation of `management.md`. Open this file directly from the skill referenc
 
 ## Agentic Workflow
 
+Keep one compact run-state record for this workflow: workspace name/ID, model
+name/ID, report name/ID, local `.pbip`/`.Report`/`.SemanticModel` paths,
+downloaded-definition path, the complete
+`.../getDefinition?format=PBIR` URL, and the active LRO endpoint for the current
+operation. Populate stable IDs, paths, and URLs once and reuse them across later
+turns. The LRO endpoint is operation-scoped: replace it with the `Location` or
+operation ID returned by each new create, `getDefinition`, or
+`updateDefinition` request, poll only that endpoint, and clear it after terminal
+success or failure. Never reuse a terminal endpoint for a later operation. A
+user request to query Fabric again is an explicit exception for stable values;
+refresh only the requested value and update the record. Re-downloading after
+`updateDefinition` reuses the stored complete URL; do not reconstruct it without
+the format query.
+
 ### Publishing a local `.pbip`
 
 This is the primary entry point when a user has a local `.pbip` (report
@@ -44,10 +58,15 @@ workflow instead.
 **2. Confirm the target workspace once.** Resolve and store the workspace
 ID by name (per COMMON-CLI.md (see `../../../common/COMMON-CLI.md`, section `finding-workspaces-and-items-in-fabric`)).
 This single workspace is reused for both the model deploy (if applicable)
-and the report publish — never split them.
+and the report publish — never split them. A workspace name supplied in the
+request is a lookup key, not confirmation that the workspace exists. List and
+resolve it **before step 3**. If it is missing or ambiguous, report that and
+stop; never defer workspace resolution until after the user answers the
+semantic-model question.
 
 **3. Prompt the user about the semantic model.** Ask explicitly — do not
-silently choose:
+silently choose. This question happens only after step 2 has resolved the exact
+workspace ID:
 
 > "Do you want me to publish the local semantic model to this workspace
 > too, or connect this report to an existing semantic model already in
@@ -87,8 +106,12 @@ branches).** Download the model TMDL and run the bindings diff per
 **MUST** section of `management-part-03.md`. Even on the
 publish-the-local-model branch, the
 model skill may rename tables or apply transforms during deploy, so
-this diff is not optional. Remap any drift via the `authoring` mode
-or, if structurally divergent, prompt the user before re-authoring.
+this diff is not optional. Treat the downloaded deployed TMDL as the canonical
+schema source for the first comparison. Do not also connect to the model and
+issue separate table, column, and measure listings when that TMDL is complete
+and parseable. Escalate to targeted live-model inspection only for names the
+first diff cannot resolve. Remap any drift via the `authoring` mode or, if
+structurally divergent, prompt the user before re-authoring.
 
 **7. Rebind `definition.pbir` from `byPath` → `byConnection`.** Use
 the `authoring` mode to set:
@@ -102,10 +125,13 @@ the `authoring` mode to set:
 ```
 
 The Fabric API rejects `byPath`; this swap is mandatory on every
-local-source publish. This remains delegated to
-the authoring mode (see `authoring.md`) and MUST execute before any
-`powerbi-report-author pack` command; pack is byte-verbatim and does not repair
-dataset references.
+local-source publish. For this narrow mechanical conversion, use the API-publish
+form shown above. If more binding detail is needed, read
+`authoring/model-binding.md` directly; do not load the full `authoring.md`
+umbrella or unrelated visual-authoring references. If the binding diff in step
+6 requires broader PBIR repairs, switch to the full authoring workflow at that
+point. The conversion MUST execute before any `powerbi-report-author pack`
+command; pack is byte-verbatim and does not repair dataset references.
 
 **8. Decide create-new vs. update-existing for the report.** Default the
 report `displayName` to the `.pbip` filename without extension (e.g.
@@ -202,14 +228,14 @@ forward-slash paths; `az rest` still owns POST, `x-ms-operation-id` capture
 | `401 Unauthorized` | Wrong or missing `--resource` audience | Always pass `--resource "https://api.fabric.microsoft.com"` |
 | `403 Forbidden` | Insufficient permissions | Check workspace role (Contributor+ for write ops) |
 | `404 Not Found` | Wrong workspace or report ID | Re-resolve IDs via List APIs |
-| `CorruptedPayload` | Malformed base64 or invalid PBIR JSON, usually from unsupported manual hand-walking | Install/upgrade `powerbi-report-author >= 0.3.0-beta.0` and use `pack`/`unpack`, which avoid manual base64 and path mistakes. Do not continue with fallback recipes from this skill. |
+| `CorruptedPayload` | Malformed base64 or invalid PBIR JSON, usually from unsupported manual hand-walking | Install/upgrade `powerbi-report-author >= 0.3.0` and use `pack`/`unpack`, which avoid manual base64 and path mistakes. Do not continue with fallback recipes from this skill. |
 | `202` with no result | LRO not polled to completion | Implement LRO polling pattern |
 | `OperationNotSupportedForItem` | Report has encrypted sensitivity label | Cannot get definition for encrypted reports |
 | `ItemDisplayNameAlreadyInUse` | Duplicate name in workspace | Use a unique display name |
 | `format: "PBIR-Legacy"` | Report was created before PBIR was default | PBIR-Legacy is not supported by this skill |
 | `UNPACK_FORMAT_UNSUPPORTED` | `powerbi-report-author unpack` received PBIR-Legacy or another non-PBIR format | Re-run `getDefinition?format=PBIR`; if Fabric still returns PBIR-Legacy, stop — this skill only supports modern PBIR |
 | Visuals empty / no data after publish | PBIR entity names don't match workspace semantic model table names (e.g., local CSV table name vs workspace table name) | Download target semantic model TMDL, compare table names, update all `Entity`, `queryRef`, `nativeQueryRef`, and filter references to match |
-| `MissingDefinitionParts` on create/update even though all files are included | Unsupported manual hand-walking can emit backslashes in definition part paths (`definition\report.json`), but the Fabric API requires forward slashes. `powerbi-report-author pack` normalizes to forward slashes for you. | Install/upgrade `powerbi-report-author >= 0.3.0-beta.0` and use `pack`; do not continue with manual fallback path walkers. |
+| `MissingDefinitionParts` on create/update even though all files are included | Unsupported manual hand-walking can emit backslashes in definition part paths (`definition\report.json`), but the Fabric API requires forward slashes. `powerbi-report-author pack` normalizes to forward slashes for you. | Install/upgrade `powerbi-report-author >= 0.3.0` and use `pack`; do not continue with manual fallback path walkers. |
 | Duplicate reports appear in workspace after create | Create POST was retried after a `202 Accepted` response. Each retry risks creating a new report. | Never retry a create POST after `202`. See **Long-Running Operations (LRO)** in `management-part-02.md` for reliable operation ID capture and recovery steps. Delete any duplicates with the Delete Report API. |
 | Visuals empty after publishing a local `.pbip` via the model hand-off | The semantic-model authoring skill may rename or transform tables/columns during deploy, so the freshly deployed model's TMDL no longer matches the report's PBIR bindings. | Re-run the TMDL-diff verification against the deployed model (per **Verify semantic-model bindings after the target model is resolved** in the MUST section of `management-part-03.md`) and remap drifted bindings via the `authoring` mode. |
 | Visuals empty after publish, despite TMDL diff being clean | `definition.pbir` `byConnection` still points at a stale model ID (e.g., from `.pbi/` cache or an earlier publish), not the freshly resolved one. | Re-run step 7 of [Publishing a local .pbip](#publishing-a-local-pbip) to set `byConnection` to the actually resolved `semanticModelId`, then re-publish. |

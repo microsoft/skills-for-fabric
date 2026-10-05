@@ -88,6 +88,10 @@ rules:
     description: Use e2e-fabric-cost-estimation for Fabric capacity cost estimation, SKU sizing, and billing strategy
     reference: skills/e2e-fabric-cost-estimation/SKILL.md
 
+  - name: synapse_migration
+    description: Migrate Synapse Spark, Lake Database/HMS, Dedicated SQL Pool schema and procedures, and explicitly approved dependent procedure callers to Fabric
+    reference: skills/synapse-migration/SKILL.md
+
   - name: fabriciq_skills
     description: >
       Consumption skill is FabricIQ skill (multi-step Power BI analysis). MANDATORY: read

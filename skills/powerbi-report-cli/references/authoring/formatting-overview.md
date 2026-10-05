@@ -26,7 +26,7 @@ the host-specific workflow in preview.md (see `preview.md`).
 > only controls layers 5–6. Hardcoded colors in `page.json` (layer 4) and
 > `visual.json` (layers 2–3) override the theme and must be updated in the
 > same operation. See
-> re-theming.md § Re-theming an Existing Report (see `re-theming.md`, section `re-theming-an-existing-report`).
+> re-theming.md § Re-theming an Existing Report (see `re-theming-part-02.md`, section `re-theming-an-existing-report`).
 
 ## Static Property Value Encoding — Three Formats
 

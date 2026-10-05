@@ -38,7 +38,7 @@ or use it as the primary path.
 Install only when the fallback is needed:
 
 ```bash
-npm install -g @microsoft/powerbi-desktop-bridge-cli@beta
+npm install -g @microsoft/powerbi-desktop-bridge-cli@latest
 powerbi-desktop --version
 ```
 

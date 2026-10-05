@@ -11,6 +11,12 @@
 
 <!-- Mode reference for the `powerbi-report-cli` skill. Loaded on demand from `skills/powerbi-report-cli/SKILL.md` when the request matches the `management` mode. -->
 
+> **Required continuations.** This workflow continues in
+> `management-part-02.md`, `management-part-03.md`, and
+> `management-part-04.md`. Open the named continuation when this file routes
+> to one of its procedures; do not treat a same-named local fragment as the
+> destination.
+
 > **CRITICAL NOTES**
 > 1. To find the workspace details (including its ID) from workspace name: list all workspaces and, then, use JMESPath filtering
 > 2. To find the item details (including its ID) from workspace ID, item type, and item name: list all items of that type in that workspace and, then, use JMESPath filtering
@@ -26,6 +32,17 @@
 >    publish, confirm they agree to overwrite the existing report before calling
 >    `updateDefinition`. Do not call `updateDefinition` based only on a general
 >    publish request.
+
+> **DEFINITION-DOWNLOAD INVARIANT**
+>
+> Every initial download and every post-update verification download MUST use
+> this exact endpoint shape:
+>
+> `https://api.fabric.microsoft.com/v1/workspaces/$WS_ID/reports/$REPORT_ID/getDefinition?format=PBIR`
+>
+> Store the complete URL once after resolving the IDs and reuse it. Never rebuild
+> it later without the `?format=PBIR` query parameter, even when the report is
+> already known to use modern PBIR.
 
 # powerbi-report-cli management mode -- Power BI Report Items in Fabric
 
@@ -62,7 +79,7 @@ the resulting `semanticModelId` and binds the report to it. See
 | Tool | Role | Install |
 |---|---|---|
 | `az` CLI | **Primary**: `az rest` for Fabric REST API calls, `az login` for auth | Pre-installed in most dev environments |
-| `powerbi-report-author` (>= 0.3.0-beta.0) | **Required PBIR transport helper** for all primary documented workflows: deterministic `pack`/`unpack` for base64 encode/decode, part walking, path normalization, and Fabric request-body generation | Install or upgrade via the `authoring` mode CLI setup (`@microsoft/powerbi-report-authoring-cli@latest`) |
+| `powerbi-report-author` (>= 0.3.0) | **Required PBIR transport helper** for all primary documented workflows: deterministic `pack`/`unpack` for base64 encode/decode, part walking, path normalization, and Fabric request-body generation | Install or upgrade via the `authoring` mode CLI setup (`@microsoft/powerbi-report-authoring-cli@latest`) |
 | `jq` / `base64` | **Not supported as an executable workflow in this skill**. Mentioned only to describe safety requirements for reviewing external legacy/manual recipes. | Do not install or use as a substitute for `powerbi-report-author`; install/upgrade the CLI instead. |
 
 > **Agent check** — verify before first operation:
@@ -73,20 +90,20 @@ the resulting `semanticModelId` and binds the report to it. See
 >   echo "INSTALL: https://learn.microsoft.com/cli/azure/install-azure-cli"
 >   exit 1
 > fi
-> MIN_POWERBI_REPORT_AUTHOR_VERSION="0.3.0-beta.0"
+> MIN_POWERBI_REPORT_AUTHOR_VERSION="0.3.0"
 > POWERBI_REPORT_AUTHOR_VERSION=$(powerbi-report-author --version 2>/dev/null || true)
 > node -e 'const p=s=>{const m=/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec((s||"").trim());return m&&{n:m.slice(1,4).map(Number),pre:m[4]?m[4].split("."):[]};};const c=(a,b)=>{for(let i=0;i<3;i++){if(a.n[i]!==b.n[i])return a.n[i]-b.n[i];}if(!a.pre.length||!b.pre.length)return a.pre.length?-1:b.pre.length?1:0;for(let i=0;i<Math.max(a.pre.length,b.pre.length);i++){if(a.pre[i]===undefined)return-1;if(b.pre[i]===undefined)return 1;if(a.pre[i]===b.pre[i])continue;const an=/^\d+$/.test(a.pre[i]),bn=/^\d+$/.test(b.pre[i]);if(an&&bn)return Number(a.pre[i])-Number(b.pre[i]);if(an!==bn)return an?-1:1;return a.pre[i].localeCompare(b.pre[i]);}return 0;};const g=p(process.argv[1]),m=p(process.argv[2]);process.exit(g&&m&&c(g,m)>=0?0:1);' "$POWERBI_REPORT_AUTHOR_VERSION" "$MIN_POWERBI_REPORT_AUTHOR_VERSION" || { echo "INSTALL/UPGRADE: powerbi-report-author >= $MIN_POWERBI_REPORT_AUTHOR_VERSION required (found ${POWERBI_REPORT_AUTHOR_VERSION:-missing}). Run: npm install -g @microsoft/powerbi-report-authoring-cli@latest"; exit 1; }
 > ```
 >
 > The `npm install -g @microsoft/powerbi-report-authoring-cli@latest` command is shell-neutral; run it unchanged from Bash, PowerShell, or cmd.
-> If the `powerbi-report-author >= 0.3.0-beta.0` check fails, stop and install or
+> If the `powerbi-report-author >= 0.3.0` check fails, stop and install or
 > upgrade the CLI. Do not continue with manual jq/base64/find/PowerShell
 > directory-walking recipes.
 
 ### Deterministic PBIR Transport Helper
 
 Use `powerbi-report-author pack`/`unpack` (see `authoring/powerbi-report-author-cli.md`)
-for report definition bodies in every primary workflow. Version 0.3.0-beta.0 or newer
+for report definition bodies in every primary workflow. Version 0.3.0 or newer
 of `powerbi-report-author` is a hard requirement for this skill's executable
 create, download, and update definition paths. This skill still owns transport
 through `az rest`, LRO polling, and create/update decision; the CLI replaces

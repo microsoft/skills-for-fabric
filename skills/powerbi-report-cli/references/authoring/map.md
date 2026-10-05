@@ -306,6 +306,6 @@ in `referenceLayerUrl`; style polygons/lines/bubbles with the matching `*Color` 
 ## Add Data-Driven Formatting
 
 After configuring the roles, target layer, magnitude, and static appearance,
-follow Conditional formatting — Azure Maps layers (see `conditional-formatting.md`, section `azure-maps-layers`)
+follow Conditional formatting — Azure Maps layers (see `conditional-formatting-part-02.md`, section `azure-maps-layers`)
 to add data-driven icon-marker fill, marker rotation, 3D-column fill, or
 choropleth fill.

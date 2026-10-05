@@ -70,7 +70,7 @@ current PBIR format:
 - `definition.pbir` → `"version": "4.0"`
 
 For `$schema` URL versioning rules and the file layout, see
-SKILL.md § PBIR File Layout (see `../authoring.md`, section `pbir-file-layout`). When creating a
+SKILL.md § PBIR File Layout (see `../authoring-part-02.md`, section `pbir-file-layout`). When creating a
 new file of any type, copy the `$schema` URL from an existing file of the same
 type in the same report.
 
@@ -144,7 +144,7 @@ KPI Card 3:  x=640, y=20,  w=290, h=82
 KPI Card 4:  x=950, y=20,  w=290, h=82
 Main Chart:  x=20,  y=118, w=1240, h=582
 ```
-> Card heights follow the card sizing formula (see `card.md`, section `card-sizing-required`) —
+> Card heights follow the card sizing formula (see `card-part-02.md`, section `card-sizing-required`) —
 > derive per canvas, don't hardcode.
 
 **2×2 Grid:**
@@ -264,7 +264,7 @@ A drillthrough page adds `pageBinding` and drillthrough filters to `page.json`:
 - The `pageBinding.name` is typically `"Pod"`.
 - `pageBinding.type` is `"Drillthrough"` (or `"Tooltip"` for tooltip pages).
 - To trigger a drillthrough (or any page navigation, bookmark, or slicer action) from a button,
-  see the Drillthrough button pattern (see `button.md`, section `drillthrough-button`). The button
+  see the Drillthrough button pattern (see `button-part-03.md`, section `drillthrough-button`). The button
   enables only when a selected data point carries the drillthrough field; a
   slicer selection alone does not enable it.
 - For bookmark files, saved page/visual/filter state, groups, show/hide
@@ -281,9 +281,9 @@ selected data point in a source visual:
 3. Add `pageBinding.type: "Drillthrough"` with a parameter whose `boundFilter`
    references that filter and whose `fieldExpr` matches it.
 4. Add the target visuals and the required
-   Back button (see `button.md`, section `back-button`).
+   Back button (see `button-part-03.md`, section `back-button`).
 5. Use the source visual's drillthrough menu, or add a
-   Drillthrough button (see `button.md`, section `drillthrough-button`) when the report needs an
+   Drillthrough button (see `button-part-03.md`, section `drillthrough-button`) when the report needs an
    explicit action.
 6. Validate and reload the report, select a source data point carrying the
    field, navigate to the target, and confirm the filter context and Back action.
