@@ -1,0 +1,68 @@
+# EXAMPLE PLACEHOLDERS ONLY. Replace each candidate header and worksheet rule
+# with the approved names from your source-file owners before processing data.
+# Required-column checks are applied to the configured canonical fields.
+sources:
+  SnapPay:
+    worksheets: ["<REPLACE_WITH_SNAPPAY_SHEET>"]
+    required: [transaction_id, account_type, batch_number, amount, transaction_date]
+    columns:
+      transaction_id: ["<SnapPay transaction ID header>"]
+      account_type: ["<SnapPay account type header>"]
+      batch_number: ["<SnapPay batch number header>"]
+      amount: ["<SnapPay signed amount header>"]
+      transaction_date: ["<SnapPay transaction date header>"]
+      settlement_date: ["<SnapPay settlement date header>"]
+      status: ["<SnapPay transaction status header>"]
+      backend_id: ["<SnapPay backend ID header>"]
+      customer_reference: ["<SnapPay customer reference header>"]
+  BluePay:
+    worksheets: ["<REPLACE_WITH_BLUEPAY_SHEET>"]
+    required: [transaction_id, backend_id, amount, transaction_date]
+    columns:
+      transaction_id: ["<BluePay transaction ID header>"]
+      backend_id: ["<BluePay backend ID header>"]
+      amount: ["<BluePay signed amount header>"]
+      transaction_date: ["<BluePay transaction date header>"]
+      settlement_date: ["<BluePay settlement date header>"]
+      status: ["<BluePay transaction status header>"]
+      batch_number: ["<BluePay batch number header>"]
+      customer_reference: ["<BluePay customer reference header>"]
+  BMO:
+    worksheets: ["<REPLACE_WITH_BMO_SHEET>"]
+    required: [amount, transaction_date]
+    required_any: [backend_id, customer_reference]
+    columns:
+      transaction_id: ["<BMO transaction ID header>"]
+      customer_reference: ["<BMO customer reference header>"]
+      backend_id: ["<BMO backend ID header>"]
+      amount: ["<BMO signed amount header>"]
+      transaction_date: ["<BMO posting date header>"]
+      settlement_date: ["<BMO settlement date header>"]
+      status: ["<BMO transaction status header>"]
+      batch_number: ["<BMO batch number header>"]
+  JDE:
+    worksheets: ["<REPLACE_WITH_JDE_SHEET>"]
+    required: [batch_number, amount, transaction_date]
+    columns:
+      batch_number: ["<JD Edwards batch number header>"]
+      amount: ["<JD Edwards signed amount header>"]
+      transaction_date: ["<JD Edwards posting date header>"]
+      status: ["<JD Edwards entry status header>"]
+      transaction_id: ["<JD Edwards transaction ID header>"]
+      account_type: ["<JD Edwards account type header>"]
+      backend_id: ["<JD Edwards backend ID header>"]
+      customer_reference: ["<JD Edwards customer reference header>"]
+
+matching:
+  amount_tolerance: 0.01
+  settlement_window_days: 3
+
+sharepoint:
+  source_folders:
+    SnapPay: "SnapPay"
+    BluePay: "BluePay"
+    BMO: "BMO"
+    JDE: "JDE"
+    Adjustments: "../Adjustments"
+    Configuration: "../02 Configuration"
+    Output: "../03 Output"
