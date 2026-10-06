@@ -4,6 +4,9 @@ User-facing changes for the public Microsoft Fabric Skills release.
 
 ## [Unreleased]
 
+### Added
+- **`fabriciq`** -- guidance for clients that show the model only `structuredContent` when it is present. On those clients a small `ExecuteQuery` or `GetSemanticModelSchema` result, including a DAX error, arrives as a bare citation, so the skill could report "no data" for a query that returned rows. It now treats a citation-only response as unread and pads queries so the result arrives as an embedded CSV resource. Relates to microsoft/skills-for-fabric#99.
+
 ## [0.3.19] - 2026-10-01
 
 ### Changed
