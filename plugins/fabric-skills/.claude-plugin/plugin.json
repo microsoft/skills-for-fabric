@@ -21,6 +21,7 @@
     "./skills/fabriciq",
     "./skills/semantic-model-authoring",
     "./skills/spark-cli",
+    "./skills/fabric-map-cli",
     "./skills/sqldw-cli",
     "./skills/eventhouse-cli",
     "./skills/eventstream-cli",
