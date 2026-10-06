@@ -117,6 +117,18 @@ If a DAX query returns blank, few rows, or unexpected totals:
 | Row/value limit exceeded | Data is truncated but usable. Suggest aggregating instead of dumping raw rows |
 | Feature not enabled | The PBI MCP endpoint may not be enabled on the tenant. Ask the user to contact their admin |
 | Timeout | The semantic model may be cold-loading. Retry once. If it times out again, suggest the user retry in a few minutes |
+| Result is only an `artifact_citation` object | The client dropped the result text. Do not treat it as empty data. Follow [Citation-Only Results](#citation-only-results) |
+
+### Citation-Only Results
+
+`ExecuteQuery` and `GetSemanticModelSchema` return rows, schema, or the DAX error as a text block, and `structuredContent` carries only the `artifact_citation`. A client that sends the model only `structuredContent` when it is present shows the citation and nothing else. Results above roughly 10,000 characters per query arrive as an embedded CSV resource instead, which those clients keep. Tracked in issue #99.
+
+If a call returns only `{"artifact_citation": {...}}`:
+
+1. Never report the result as empty, zero, or blank. You have not seen it.
+2. Re-run with a padding column so each query clears the threshold, for example `EVALUATE ROW("x", 1, "_pad", REPT("x", 12000))`, or add `"_pad", REPT("x", 12000)` to a `SELECTCOLUMNS` or `ADDCOLUMNS` projection. The threshold applies per query, so pad every query in a multi-query call or send one query per call. Keep `maxRows` or a `TOPN` small — the padded CSV is read into context in full. Drop the `_pad` column when you present results.
+3. If the padded result is still citation-only, an empty result and a hidden error look identical. Probe with `EVALUATE ROW("rows", COUNTROWS(<your table expression>) + 0, "_pad", REPT("x", 12000))`. A row count means the query is valid and genuinely empty; another citation-only response means the query errored — re-check names against the schema, simplify the DAX, and retry once. If it still fails, tell the user the error text could not be read.
+4. If `GetSemanticModelSchema` is citation-only, tell the user the schema could not be read. Continue with `ExecuteQuery` only if you already know the table and column names.
 
 ### Supported Artifacts
 
