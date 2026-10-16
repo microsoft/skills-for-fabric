@@ -197,6 +197,32 @@ When a user asks "why did my refresh fail?" or "show me run history", follow thi
 
 > **Note**: Run history retention may be limited. If older runs are missing, check the Recent runs page in the Lakehouse UI.
 
+### Successful run but Full instead of Incremental
+
+A completed lineage job is not evidence of per-MLV incremental execution.
+For "why Full?" or "did the hint work?", read the
+[IR readiness resource](authoring/resources/mlv-incremental-refresh-patterns.md)
+and distinguish the following before recommending changes:
+
+- **Creation/replacement:** executing CREATE or CREATE OR REPLACE performs Full,
+  regardless of a hint. This is expected materialization, not a hint failure.
+  Diagnose a subsequent refresh of the existing MLV; do not recreate it again.
+- **Configuration:** verify Optimal rather than Full mode, Spark SQL rather
+  than PySpark decorators, Delta sources, and CDF on every direct dependency.
+- **Changes:** inserts can qualify without a hint; updates/deletes need a
+  compatible REFRESH_HINT identifying output rows. Source schema changes
+  cause Full **even with a hint**. No new Delta commits can mean No refresh.
+- **Query/efficiency:** check supported constructs, aggregate partition/grouping
+  requirements, the documented LEFT OUTER/SEMI JOIN right-side caveat, and
+  engine cost-based Full fallback. A hint is not a guarantee of IR.
+- **Evidence:** use per-view Recent runs details in the Lakehouse UI when the
+  API exposes only lineage-level completion. Report strategy as unobserved
+  if no per-view evidence is available; do not infer it from duration or status.
+
+Route definition/hint changes to authoring and follow its key-selection,
+optional-validation, and mandatory user-review workflow. Do not silently add
+a hint, choose a key, or change the user's business query while diagnosing.
+
 ## Prefer
 
 - **Daily/Weekly types** for precise time-of-day scheduling (e.g., "2 AM daily")
