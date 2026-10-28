@@ -14,7 +14,7 @@ Deep reference for migrating Synapse `SynapseNotebook` pipeline activities to Fa
 | Spark pool | `typeProperties.sparkPool.referenceName` (pool name) | **Removed** | Pool selection moves to the Fabric Environment attached to the notebook |
 | Session configuration | `typeProperties.sessionConfiguration` | **Removed** | Driver/executor size moves to Fabric Environment |
 | Spark conf overrides | `typeProperties.conf` | **Removed** | Apply via Environment or `%%configure` magic in the notebook |
-| Notebook parameters | `typeProperties.parameters` (object) | `typeProperties.notebookParameters` (object) | Key renamed; value schema is identical |
+| Notebook parameters | `typeProperties.parameters` (object) | `typeProperties.parameters` (object) | Unchanged: same key and same value schema (`{ "value": ..., "type": ... }`) |
 | Timeout format | `7.00:00:00` (d.hh:mm:ss) | `0.12:00:00` (d.hh:mm:ss) | Synapse default 7 days; Fabric max is 12 hours for interactive — adjust |
 | Retry | Same `policy` schema | Same `policy` schema | Compatible |
 
@@ -166,7 +166,7 @@ Deep reference for migrating Synapse `SynapseNotebook` pipeline activities to Fa
   "typeProperties": {
     "notebookId": "cccccccc-1111-2222-3333-444444444444",
     "workspaceId": "dddddddd-5555-6666-7777-888888888888",
-    "notebookParameters": {
+    "parameters": {
       "inputPath": {
         "value": "/data/sales/raw",
         "type": "string"
@@ -359,7 +359,8 @@ def transform_notebook_activity(activity: dict, notebook_map: dict, workspace_id
         )
     notebook_id = notebook_map[notebook_name]
 
-    # 2. Rename parameter key: parameters -> notebookParameters
+    # 2. Carry notebook parameters over unchanged: the Fabric TridentNotebook schema
+    #    uses the same `parameters` key and value shape as Synapse.
     parameters = props.pop("parameters", None)
 
     # 3. Build new typeProperties (drop sparkPool, sessionConfiguration, conf, notebook)
@@ -368,7 +369,7 @@ def transform_notebook_activity(activity: dict, notebook_map: dict, workspace_id
         "workspaceId": workspace_id,
     }
     if parameters:
-        new_props["notebookParameters"] = parameters
+        new_props["parameters"] = parameters
 
     # 4. Apply changes
     activity["type"] = "TridentNotebook"
@@ -609,7 +610,7 @@ When a pipeline calls notebooks that use different Spark pools, each notebook mu
 |---|---|---|
 | Using notebook display name instead of GUID | `notebookId` validation error at pipeline save | Get GUID from `GET /v1/workspaces/{wsId}/notebooks` |
 | Leaving `sparkPool` in `typeProperties` | Schema validation error or ignored | Remove `sparkPool` block entirely |
-| Leaving `parameters` key (not renamed) | Parameters not passed to notebook | Rename to `notebookParameters` |
+| Renaming `parameters` to `notebookParameters` | `notebookParameters` is not a TridentNotebook type property, so the values are not passed to the notebook and it runs with its defaults | Keep the key as `parameters`, the documented TridentNotebook property |
 | Timeout > 12 hours | Pipeline activity times out or validation error | Change to `0.12:00:00` (12h max for TridentNotebook) |
 | Keeping `sessionConfiguration` | Ignored by Fabric; notebook uses its attached Environment | Remove `sessionConfiguration` block |
 | Notebook not yet migrated to Fabric | `notebookId` not in `notebook_map` | Run **synapse-migration** skill for notebook content migration first |

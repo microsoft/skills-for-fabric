@@ -4,6 +4,9 @@ User-facing changes for the public Microsoft Fabric Skills release.
 
 ## [Unreleased]
 
+### Fixed
+- **`pipeline-migration`**, **`synapse-migration`** -- the TridentNotebook activity property that carries notebook parameters is `typeProperties.parameters`, as published in the DataPipeline definition reference. Both skills told users to rename the Synapse `parameters` key to `notebookParameters`, which is not a TridentNotebook property, so parameters were silently dropped. The mapping table, the JSON examples, the two Python transformation snippets, the pitfalls table and the mandatory dependent-pipeline checklist sentence now use `parameters`.
+
 ## [0.3.19] - 2026-10-01
 
 ### Changed

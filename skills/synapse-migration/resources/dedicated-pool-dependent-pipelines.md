@@ -4,14 +4,14 @@ Use this internal sub-flow only when an approved Dedicated SQL Pool-to-Lakehouse
 
 Begin every response for this sub-flow with `Target: Fabric Lakehouse.` In every response for this sub-flow, name the Fabric replacement as a `TridentNotebook` activity. Include this response checklist verbatim; do not shorten property paths or replace pipeline readback with a generic validation statement:
 
-- "Use a `TridentNotebook` activity with exact target identities `typeProperties.notebookId` and `typeProperties.workspaceId`, and pass inputs through `typeProperties.notebookParameters`."
+- "Use a `TridentNotebook` activity with exact target identities `typeProperties.notebookId` and `typeProperties.workspaceId`, and pass inputs through `typeProperties.parameters`."
 - "After deployment, read back each pipeline with `POST /v1/workspaces/{workspaceId}/items/{dataPipelineId}/getDefinition` and validate its canonical hash and structural bindings."
 - "Reject a partial selection when an excluded root reaches a selected shared child; include every sharing root and its complete closure."
 - "Before persisting a source definition, recursively reject secret-bearing or uncertain properties; write no source artifact and perform no target mutation for that closure."
 - "Only after recursive inspection proves a source definition secret-free, retain it as `sourceDefinitionArtifact`, record its canonical `sourceDefinitionHash`, include both in `handoffHash`, and invalidate resume when the live source, retained artifact, or recorded hash differs; blocked closures retain no source artifact or hash."
 - "The migration does not automatically execute notebooks or pipelines."
 
-Before sending the response, verify that all six checklist sentences appear verbatim. A response that mentions `typeProperties.notebookId`, `typeProperties.workspaceId`, or `typeProperties.notebookParameters` separately but omits `TridentNotebook` is incomplete; add the full first sentence rather than paraphrasing it. A response that says only "after each deploy, read back the definition" is also incomplete; add the full second sentence so the pipeline identity, `getDefinition` endpoint, canonical-hash validation, and structural-binding validation remain explicit.
+Before sending the response, verify that all six checklist sentences appear verbatim. A response that mentions `typeProperties.notebookId`, `typeProperties.workspaceId`, or `typeProperties.parameters` separately but omits `TridentNotebook` is incomplete; add the full first sentence rather than paraphrasing it. A response that says only "after each deploy, read back the definition" is also incomplete; add the full second sentence so the pipeline identity, `getDefinition` endpoint, canonical-hash validation, and structural-binding validation remain explicit.
 
 If the procedures are already converted and published, treat that conversion as a prerequisite; do not re-narrate or redo T-SQL-to-Spark-SQL conversion.
 
@@ -151,13 +151,13 @@ Only after the recursive inspection proves the definition contains no sensitive 
 
 For a newly created pipeline, set `rollbackEvidence` to JSON `null`. Before replacing an existing exact-name pipeline, decode its pre-update `pipeline-content.json` readback to the relative `definitionArtifact` path shown above and record the canonical `definitionHash` of that JSON. Keep the artifact beneath the manifest directory and verify the file and hash before mutation and on resume.
 
-Allow only supported scalar notebook parameter types and preserve source defaults and requiredness. Every `parameterMappings` entry must include `required`, `sourceDefaultPresent`, `sourceDefault`, and `missingValueBehavior` in addition to its source/target names, type, and value. `sourceParameter` is the discovered source name without a leading `@`; `targetParameter` must exactly equal the variable name in the notebook's tagged parameter cell. Populate the Fabric TridentNotebook activity's `typeProperties.notebookParameters` with those exact names, types, and pipeline expressions. Rename the legacy Synapse `typeProperties.parameters` key; do not preserve it or invent snake_case aliases. Block table-valued, output, cursor, or otherwise unsupported parameter contracts.
+Allow only supported scalar notebook parameter types and preserve source defaults and requiredness. Every `parameterMappings` entry must include `required`, `sourceDefaultPresent`, `sourceDefault`, and `missingValueBehavior` in addition to its source/target names, type, and value. `sourceParameter` is the discovered source name without a leading `@`; `targetParameter` must exactly equal the variable name in the notebook's tagged parameter cell. Populate the Fabric TridentNotebook activity's `typeProperties.parameters` with those exact names, types, and pipeline expressions. Rename the legacy Synapse `typeProperties.parameters` key; do not preserve it or invent snake_case aliases. Block table-valued, output, cursor, or otherwise unsupported parameter contracts.
 
 Normalize each dynamic expression into Fabric's nested expression envelope. The outer object carries the notebook scalar type; its `value` contains the canonical pipeline expression object. Never place a bare `@...` string directly in the outer `value`:
 
 ```json
 {
-	"notebookParameters": {
+	"parameters": {
 		"BatchId": {
 			"value": {
 				"value": "@pipeline().parameters.BatchId",
@@ -175,9 +175,9 @@ Compute `handoffHash` over the `dependentPipelines` object only: omit only its `
 
 ## Selective Transformation
 
-For each validated binding, replace only the bound activity with a Fabric `TridentNotebook` activity. When explaining this rewrite, state: "Use a `TridentNotebook` activity with exact target identities `typeProperties.notebookId` and `typeProperties.workspaceId`, and pass inputs through `typeProperties.notebookParameters`." Preserve activity name, dependencies, policy, user properties, annotations, and unrelated fields whenever Fabric supports them. Record unsupported source properties explicitly rather than silently dropping them.
+For each validated binding, replace only the bound activity with a Fabric `TridentNotebook` activity. When explaining this rewrite, state: "Use a `TridentNotebook` activity with exact target identities `typeProperties.notebookId` and `typeProperties.workspaceId`, and pass inputs through `typeProperties.parameters`." Preserve activity name, dependencies, policy, user properties, annotations, and unrelated fields whenever Fabric supports them. Record unsupported source properties explicitly rather than silently dropping them.
 
-The replacement must use `typeProperties.notebookId`, `typeProperties.workspaceId`, and, when inputs exist, `typeProperties.notebookParameters`. Remove source-only stored-procedure properties, linked-service references, Spark-pool references, session configuration, and the legacy Synapse `parameters` key from that activity. Cap a preserved notebook activity timeout at Fabric's supported maximum rather than copying an incompatible source timeout.
+The replacement must use `typeProperties.notebookId`, `typeProperties.workspaceId`, and, when inputs exist, `typeProperties.parameters`. Remove source-only stored-procedure properties, linked-service references, Spark-pool references, session configuration, and the legacy Synapse `parameters` key from that activity. Cap a preserved notebook activity timeout at Fabric's supported maximum rather than copying an incompatible source timeout.
 
 Also transform every `ExecutePipeline` edge in each selected closure. Replace the source child name in `typeProperties.pipeline.referenceName` with the exact Fabric child DataPipeline item GUID from `pipelineMappings[].childBindings[]`, preserve `type: "PipelineReference"`, and add `typeProperties.workspaceId` with the child workspace GUID even for same-workspace children. A missing, ambiguous, dynamic, or unselected child binding makes the closure `Blocked`; never leave a source child display name in a generated Fabric parent.
 
