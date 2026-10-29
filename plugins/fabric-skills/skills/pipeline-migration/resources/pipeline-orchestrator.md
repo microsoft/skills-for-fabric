@@ -369,7 +369,7 @@ def transform_activity(activity, nb_map, ws_id):
             )
         new_tp = {"notebookId": nb_guid, "workspaceId": ws_id}
         if tp.get("parameters"):
-            new_tp["notebookParameters"] = tp["parameters"]
+            new_tp["parameters"] = tp["parameters"]
         policy = dict(activity.get("policy", {}))
         clamped = fix_timeout(policy.get("timeout"))
         if clamped is not None:

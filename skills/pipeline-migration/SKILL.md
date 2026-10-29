@@ -224,7 +224,7 @@ Full mapping table, before/after examples, and parking decisions are in [activit
 
 ### PREFER
 - **Variable Library with Value Sets** for dev/test/prod environments — use `@pipeline().libraryVariables.<name>` with environment-specific Value Sets instead of pipeline-level parameters for environment promotion
-- **Parameterized `notebookParameters`** over hardcoded values in TridentNotebook activities — mirrors Synapse parameterized notebook pattern
+- **Parameterized `parameters`** over hardcoded values in TridentNotebook activities — mirrors Synapse parameterized notebook pattern
 - **Test notebook activities individually** before running the full migrated pipeline — notebook GUIDs are the most common source of failure
 - **OneLake Lakehouse sources/sinks** for Copy activities where applicable — eliminates the need for external connections for data already in OneLake
 

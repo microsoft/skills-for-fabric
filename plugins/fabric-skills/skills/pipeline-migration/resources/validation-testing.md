@@ -321,7 +321,7 @@ def verify_notebook_activity_output(run_result: dict, activity_name: str, expect
 | `"Item not found"` | `notebookId` GUID is wrong or notebook was deleted | Re-run notebook GUID lookup and update pipeline |
 | `"Session could not be started"` | No Fabric capacity available; Spark session failed | Check workspace capacity; try again during off-peak |
 | `"Notebook execution failed"` | Code error inside the notebook | Check notebook run history in Fabric portal |
-| `"Parameter type mismatch"` | Notebook expects `int` but pipeline passed `string` | Align parameter types in `notebookParameters` |
+| `"Parameter type mismatch"` | Notebook expects `int` but pipeline passed `string` | Align parameter types in `parameters` |
 | `"Timeout"` | Notebook ran longer than `policy.timeout` | Increase timeout (max 12h) or split notebook |
 
 ---

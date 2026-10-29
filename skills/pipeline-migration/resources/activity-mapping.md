@@ -19,7 +19,7 @@ Complete mapping of Synapse Analytics pipeline activity types to their Fabric Da
 
 | Synapse `type` | Fabric `type` | Status | Key Changes |
 |---|---|---|---|
-| `SynapseNotebook` | `TridentNotebook` | ✅ Migrated | Type rename, ref by GUID, drop `sparkPool`/`sessionConfiguration`, rename `parameters`→`notebookParameters` — see [notebook-activity-migration.md](notebook-activity-migration.md) |
+| `SynapseNotebook` | `TridentNotebook` | ✅ Migrated | Type rename, ref by GUID, drop `sparkPool`/`sessionConfiguration`, keep `parameters` unchanged — see [notebook-activity-migration.md](notebook-activity-migration.md) |
 | `Copy` | `Copy` | ✅ Migrated | Dataset refs inlined — see [dataset-inlining.md](dataset-inlining.md) |
 | `Lookup` | `Lookup` | ✅ Migrated | Dataset ref inlined |
 | `GetMetadata` | `GetMetadata` | ✅ Migrated | Dataset ref inlined |
@@ -390,7 +390,7 @@ Synapse `HDInsightSpark` activities run PySpark scripts on an HDInsight cluster.
   "typeProperties": {
     "notebookId": "<fabric-notebook-guid>",
     "workspaceId": "<fabric-workspace-guid>",
-    "notebookParameters": {
+    "parameters": {
       "runDate": {
         "value": {
           "value": "@pipeline().parameters.runDate",
