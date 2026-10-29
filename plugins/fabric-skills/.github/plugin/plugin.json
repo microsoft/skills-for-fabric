@@ -42,7 +42,8 @@
     "./skills/hdinsight-migration",
     "./skills/e2e-medallion-architecture",
     "./skills/git-integration-operations-cli",
-    "./skills/e2e-fabric-cost-estimation"
+    "./skills/e2e-fabric-cost-estimation",
+    "./skills/column-name-classification"
   ],
   "agents": [
     "./agents/FabricAdmin.agent.md",

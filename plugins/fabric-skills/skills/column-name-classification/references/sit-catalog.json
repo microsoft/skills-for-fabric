@@ -1,0 +1,1308 @@
+{
+  "source": "https://learn.microsoft.com/en-us/purview/sit-sensitive-information-type-entity-definitions",
+  "retrieved_at_utc": "2026-10-25T09:49:30.449717+00:00",
+  "source_sha256": "0cfc600f8250442fc899f882a296a2c97036de7a5acdac1690c015a7c2818fbb",
+  "scope": "Public Purview SIT index, not a Fabric-supported-types list.",
+  "entries": [
+    {
+      "name": "ABA Routing Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-aba-routing"
+    },
+    {
+      "name": "All Credential Types",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-all-creds"
+    },
+    {
+      "name": "All full names",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-all-full-names"
+    },
+    {
+      "name": "All medical terms and conditions",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-all-medical-terms-conditions"
+    },
+    {
+      "name": "All Physical Addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-all-physical-addresses"
+    },
+    {
+      "name": "Amazon S3 Client Secret Access Key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-amazon-s3-client-secret-access-key"
+    },
+    {
+      "name": "Argentina national identity (DNI) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-argentina-national-identity-numbers"
+    },
+    {
+      "name": "Argentina Unique Tax Identification Key (CUIT/CUIL)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-argentina-unique-tax-identification-key"
+    },
+    {
+      "name": "ASP.NET machine Key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-asp-net-machine-key"
+    },
+    {
+      "name": "Australia bank account number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-australia-bank-account-number"
+    },
+    {
+      "name": "Australia Driver's License Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-australia-drivers-license-number"
+    },
+    {
+      "name": "Australia medical account number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-australia-medical-account-number"
+    },
+    {
+      "name": "Australia passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-australia-passport-number"
+    },
+    {
+      "name": "Australia physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-australia-physical-addresses"
+    },
+    {
+      "name": "Australia tax file number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-australia-tax-file-number"
+    },
+    {
+      "name": "Australian Business Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-australia-business-number"
+    },
+    {
+      "name": "Australian Company Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-australia-business-number"
+    },
+    {
+      "name": "Austria Driver's License Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-austria-drivers-license-number"
+    },
+    {
+      "name": "Austria identity card",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-austria-identity-card"
+    },
+    {
+      "name": "Austria passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-austria-passport-number"
+    },
+    {
+      "name": "Austria physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-austria-physical-addresses"
+    },
+    {
+      "name": "Austria social security number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-austria-social-security-number"
+    },
+    {
+      "name": "Austria tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-austria-tax-identification-number"
+    },
+    {
+      "name": "Austria Value Added Tax (VAT) Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-austria-value-added-tax"
+    },
+    {
+      "name": "Azure App Service deployment password",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-app-service-deployment-password"
+    },
+    {
+      "name": "Azure Batch shared access key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-batch-shared-access-key"
+    },
+    {
+      "name": "Azure Bot Framework secret key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-bot-framework-secret-key"
+    },
+    {
+      "name": "Azure Bot service app secret",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-bot-service-app-secret"
+    },
+    {
+      "name": "Azure Cognitive Search API key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-cognitive-search-api-key"
+    },
+    {
+      "name": "Azure Cognitive Service key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-cognitive-service-key"
+    },
+    {
+      "name": "Azure Container Registry access key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-container-registry-access-key"
+    },
+    {
+      "name": "Azure Cosmos DB account access key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-cosmos-db-account-access-key"
+    },
+    {
+      "name": "Azure Databricks personal access token",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-databricks-personal-access-token"
+    },
+    {
+      "name": "Azure DevOps app secret",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-devops-app-secret"
+    },
+    {
+      "name": "Azure DevOps personal access token",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-devops-personal-access-token"
+    },
+    {
+      "name": "Azure DocumentDB auth key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-document-db-auth-key"
+    },
+    {
+      "name": "Azure EventGrid access key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-eventgrid-access-key"
+    },
+    {
+      "name": "Azure Function Master / API key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-function-master-api-key"
+    },
+    {
+      "name": "Azure IAAS database connection string and Azure SQL connection string",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-iaas-database-connection-string-azure-sql-connection-string"
+    },
+    {
+      "name": "Azure IoT connection string",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-iot-connection-string"
+    },
+    {
+      "name": "Azure IoT shared access key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-iot-shared-access-key"
+    },
+    {
+      "name": "Azure Logic app shared access signature",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-logic-app-shared-access-signature"
+    },
+    {
+      "name": "Azure Machine Learning web service API key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-machine-learning-web-service-api-key"
+    },
+    {
+      "name": "Azure Maps subscription key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-maps-subscription-key"
+    },
+    {
+      "name": "Azure publish setting password",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-publish-setting-password"
+    },
+    {
+      "name": "Azure Redis cache connection string",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-redis-cache-connection-string"
+    },
+    {
+      "name": "Azure Redis cache connection string password",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-redis-cache-connection-string-password"
+    },
+    {
+      "name": "Azure SAS",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-sas"
+    },
+    {
+      "name": "Azure service bus connection string",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-service-bus-connection-string"
+    },
+    {
+      "name": "Azure service bus shared access signature",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-service-bus-shared-access-signature"
+    },
+    {
+      "name": "Azure Shared Access key / Web Hook token",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-shared-access-key-web-hook-token"
+    },
+    {
+      "name": "Azure SignalR access key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-signalr-access-key"
+    },
+    {
+      "name": "Azure SQL connection string",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-sql-connection-string"
+    },
+    {
+      "name": "Azure storage account access key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-storage-account-access-key"
+    },
+    {
+      "name": "Azure storage account key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-storage-account-key"
+    },
+    {
+      "name": "Azure Storage account key (generic)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-storage-account-key-generic"
+    },
+    {
+      "name": "Azure Storage account shared access signature",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-storage-account-shared-access-signature"
+    },
+    {
+      "name": "Azure Storage account shared access signature for high risk resources",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-storage-account-shared-access-signature-high-risk-resources"
+    },
+    {
+      "name": "Azure subscription management certificate",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-subscription-management-certificate"
+    },
+    {
+      "name": "Belgium driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-belgium-drivers-license-number"
+    },
+    {
+      "name": "Belgium national number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-belgium-national-number"
+    },
+    {
+      "name": "Belgium passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-belgium-passport-number"
+    },
+    {
+      "name": "Belgium physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-belgium-physical-addresses"
+    },
+    {
+      "name": "Belgium value added tax number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-belgium-value-added-tax-number"
+    },
+    {
+      "name": "Blood test terms",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-blood-test-terms"
+    },
+    {
+      "name": "Brand medication names",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-brand-medication-names"
+    },
+    {
+      "name": "Brazil CPF number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-brazil-cpf-number"
+    },
+    {
+      "name": "Brazil legal entity number (CNPJ)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-brazil-legal-entity-number"
+    },
+    {
+      "name": "Brazil National ID Card (RG)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-brazil-national-identification-card"
+    },
+    {
+      "name": "Brazil physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-brazil-physical-addresses"
+    },
+    {
+      "name": "Bulgaria driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-bulgaria-drivers-license-number"
+    },
+    {
+      "name": "Bulgaria passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-bulgaria-passport-number"
+    },
+    {
+      "name": "Bulgaria physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-bulgaria-physical-addresses"
+    },
+    {
+      "name": "Bulgaria uniform civil number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-bulgaria-uniform-civil-number"
+    },
+    {
+      "name": "Canada bank account number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-canada-bank-account-number"
+    },
+    {
+      "name": "Canada driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-canada-drivers-license-number"
+    },
+    {
+      "name": "Canada health service number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-canada-health-service-number"
+    },
+    {
+      "name": "Canada passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-canada-passport-number"
+    },
+    {
+      "name": "Canada personal health identification number (PHIN)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-canada-personal-health-identification-number"
+    },
+    {
+      "name": "Canada physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-canada-physical-addresses"
+    },
+    {
+      "name": "Canada social insurance number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-canada-social-insurance-number"
+    },
+    {
+      "name": "Chile identity card number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-chile-identity-card-number"
+    },
+    {
+      "name": "China physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-china-physical-addresses"
+    },
+    {
+      "name": "China resident identity card (PRC) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-china-resident-identity-card-number"
+    },
+    {
+      "name": "Client secret / API key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-client-secret-api-key"
+    },
+    {
+      "name": "Colombia national ID",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-colombia-national-id"
+    },
+    {
+      "name": "Colombia tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-colombia-tax-identification-number"
+    },
+    {
+      "name": "Credit card number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-credit-card-number"
+    },
+    {
+      "name": "Croatia driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-croatia-drivers-license-number"
+    },
+    {
+      "name": "Croatia identity card number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-croatia-identity-card-number"
+    },
+    {
+      "name": "Croatia passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-croatia-passport-number"
+    },
+    {
+      "name": "Croatia personal identification (OIB) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-croatia-personal-identification-number"
+    },
+    {
+      "name": "Croatia physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-croatia-physical-addresses"
+    },
+    {
+      "name": "Cyprus Driver's License Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-cyprus-drivers-license-number"
+    },
+    {
+      "name": "Cyprus identity card",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-cyprus-identity-card"
+    },
+    {
+      "name": "Cyprus passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-cyprus-passport-number"
+    },
+    {
+      "name": "Cyprus physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-cyprus-physical-addresses"
+    },
+    {
+      "name": "Cyprus tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-cyprus-tax-identification-number"
+    },
+    {
+      "name": "Czech driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-czech-drivers-license-number"
+    },
+    {
+      "name": "Czech passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-czech-passport-number"
+    },
+    {
+      "name": "Czech personal identity number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-czech-personal-identity-number"
+    },
+    {
+      "name": "Czech Republic physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-czech-republic-physical-addresses"
+    },
+    {
+      "name": "Denmark driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-denmark-drivers-license-number"
+    },
+    {
+      "name": "Denmark passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-denmark-passport-number"
+    },
+    {
+      "name": "Denmark personal identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-denmark-personal-identification-number"
+    },
+    {
+      "name": "Denmark physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-denmark-physical-addresses"
+    },
+    {
+      "name": "Diseases",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-diseases"
+    },
+    {
+      "name": "Drug Enforcement Agency (DEA) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-drug-enforcement-agency-number"
+    },
+    {
+      "name": "Ecuador Unique Identification Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ecuador-unique-identification-number"
+    },
+    {
+      "name": "Estonia driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-estonia-drivers-license-number"
+    },
+    {
+      "name": "Estonia passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-estonia-passport-number"
+    },
+    {
+      "name": "Estonia Personal Identification Code",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-estonia-personal-identification-code"
+    },
+    {
+      "name": "Estonia physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-estonia-physical-addresses"
+    },
+    {
+      "name": "EU debit card number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-eu-debit-card-number"
+    },
+    {
+      "name": "EU driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-eu-drivers-license-number"
+    },
+    {
+      "name": "EU national identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-eu-national-identification-number"
+    },
+    {
+      "name": "EU passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-eu-passport-number"
+    },
+    {
+      "name": "EU Social Security Number (SSN) or Equivalent ID",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-eu-social-security-number-equivalent-identification"
+    },
+    {
+      "name": "EU Tax Identification Number (TIN)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-eu-tax-identification-number"
+    },
+    {
+      "name": "Finland driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-finland-drivers-license-number"
+    },
+    {
+      "name": "Finland European health insurance number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-finland-european-health-insurance-number"
+    },
+    {
+      "name": "Finland national ID",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-finland-national-id"
+    },
+    {
+      "name": "Finland passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-finland-passport-number"
+    },
+    {
+      "name": "Finland physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-finland-physical-addresses"
+    },
+    {
+      "name": "France driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-france-drivers-license-number"
+    },
+    {
+      "name": "France health insurance number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-france-health-insurance-number"
+    },
+    {
+      "name": "France national id card (CNI)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-france-national-id-card"
+    },
+    {
+      "name": "France passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-france-passport-number"
+    },
+    {
+      "name": "France physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-france-physical-addresses"
+    },
+    {
+      "name": "France social security number (INSEE)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-france-social-security-number"
+    },
+    {
+      "name": "France Tax Identification Number (num\u00e9ro SPI.)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-france-tax-identification-number"
+    },
+    {
+      "name": "France value added tax number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-france-value-added-tax-number"
+    },
+    {
+      "name": "General password",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-general-password"
+    },
+    {
+      "name": "General Symmetric key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-general-symmetric-key"
+    },
+    {
+      "name": "Generic medication names",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-generic-medication-names"
+    },
+    {
+      "name": "German Driver's License Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-germany-drivers-license-number"
+    },
+    {
+      "name": "German Passport Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-germany-passport-number"
+    },
+    {
+      "name": "Germany identity card number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-germany-identity-card-number"
+    },
+    {
+      "name": "Germany physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-germany-physical-addresses"
+    },
+    {
+      "name": "Germany tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-germany-tax-identification-number"
+    },
+    {
+      "name": "Germany value added tax number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-germany-value-added-tax-number"
+    },
+    {
+      "name": "GitHub Personal Access Token",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-github-personal-access-token"
+    },
+    {
+      "name": "Google API key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-google-api-key"
+    },
+    {
+      "name": "Greece driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-greece-drivers-license-number"
+    },
+    {
+      "name": "Greece national ID card",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-greece-national-id-card"
+    },
+    {
+      "name": "Greece passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-greece-passport-number"
+    },
+    {
+      "name": "Greece physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-greece-physical-addresses"
+    },
+    {
+      "name": "Greece Social Security Number (AMKA)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-greece-social-security-number"
+    },
+    {
+      "name": "Greek Tax Identification Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-greece-tax-identification-number"
+    },
+    {
+      "name": "Greenland physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-greenland-physical-addresses"
+    },
+    {
+      "name": "Hong Kong identity card (HKID) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-hong-kong-identity-card-number"
+    },
+    {
+      "name": "Http authorization header",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-http-authorization-header"
+    },
+    {
+      "name": "Hungarian Social Security Number (TAJ)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-hungary-social-security-number"
+    },
+    {
+      "name": "Hungarian Value Added Tax Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-hungary-value-added-tax-number"
+    },
+    {
+      "name": "Hungary driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-hungary-drivers-license-number"
+    },
+    {
+      "name": "Hungary passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-hungary-passport-number"
+    },
+    {
+      "name": "Hungary personal identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-hungary-personal-identification-number"
+    },
+    {
+      "name": "Hungary physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-hungary-physical-addresses"
+    },
+    {
+      "name": "Hungary tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-hungary-tax-identification-number"
+    },
+    {
+      "name": "Iceland physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-iceland-physical-addresses"
+    },
+    {
+      "name": "Impairments Listed In The U.S. Disability Evaluation Under Social Security",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-impairments-us-disability-evaluation-under-social-security"
+    },
+    {
+      "name": "India driver's License Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-india-drivers-license-number"
+    },
+    {
+      "name": "India GST Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-india-gst-number"
+    },
+    {
+      "name": "India permanent account number (PAN)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-india-permanent-account-number"
+    },
+    {
+      "name": "India unique identification (Aadhaar) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-india-unique-identification-number"
+    },
+    {
+      "name": "India Voter Id Card",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-india-voter-id-card"
+    },
+    {
+      "name": "Indonesia Drivers License Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-indonesia-drivers-license-number"
+    },
+    {
+      "name": "Indonesia identity card (KTP) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-indonesia-identity-card-number"
+    },
+    {
+      "name": "Indonesia passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-indonesia-passport-number"
+    },
+    {
+      "name": "International banking account number (IBAN)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-international-banking-account-number"
+    },
+    {
+      "name": "International classification of diseases (ICD-10-CM)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-international-classification-of-diseases-icd-10-cm"
+    },
+    {
+      "name": "International classification of diseases (ICD-9-CM)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-international-classification-of-diseases-icd-9-cm"
+    },
+    {
+      "name": "IP address",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ip-address"
+    },
+    {
+      "name": "IP Address v4",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ip-address-v4"
+    },
+    {
+      "name": "IP Address v6",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ip-address-v6"
+    },
+    {
+      "name": "Ireland driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ireland-drivers-license-number"
+    },
+    {
+      "name": "Ireland passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ireland-passport-number"
+    },
+    {
+      "name": "Ireland personal public service (PPS) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ireland-personal-public-service-number"
+    },
+    {
+      "name": "Ireland physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ireland-physical-addresses"
+    },
+    {
+      "name": "Israel bank account number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-israel-bank-account-number"
+    },
+    {
+      "name": "Israel National ID",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-israel-national-identification-number"
+    },
+    {
+      "name": "Italy driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-italy-drivers-license-number"
+    },
+    {
+      "name": "Italy fiscal code",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-italy-fiscal-code"
+    },
+    {
+      "name": "Italy passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-italy-passport-number"
+    },
+    {
+      "name": "Italy physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-italy-physical-addresses"
+    },
+    {
+      "name": "Italy value added tax number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-italy-value-added-tax-number"
+    },
+    {
+      "name": "Japan bank account number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-bank-account-number"
+    },
+    {
+      "name": "Japan driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-drivers-license-number"
+    },
+    {
+      "name": "Japan passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-passport-number"
+    },
+    {
+      "name": "Japan physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-physical-addresses"
+    },
+    {
+      "name": "Japan resident registration number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-resident-registration-number"
+    },
+    {
+      "name": "Japan social insurance number (SIN)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-social-insurance-number"
+    },
+    {
+      "name": "Japanese My Number Corporate",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-my-number-corporate"
+    },
+    {
+      "name": "Japanese My Number Personal",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-my-number-personal"
+    },
+    {
+      "name": "Japanese Residence Card Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-japan-residence-card-number"
+    },
+    {
+      "name": "Lab test terms",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-lab-test-terms"
+    },
+    {
+      "name": "Latvia driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-latvia-drivers-license-number"
+    },
+    {
+      "name": "Latvia passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-latvia-passport-number"
+    },
+    {
+      "name": "Latvia personal code",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-latvia-personal-code"
+    },
+    {
+      "name": "Latvia physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-latvia-physical-addresses"
+    },
+    {
+      "name": "Liechtenstein physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-liechtenstein-physical-addresses"
+    },
+    {
+      "name": "Lifestyles that relate to medical conditions",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-lifestyles-relate-to-medical-conditions"
+    },
+    {
+      "name": "Lithuania driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-lithuania-drivers-license-number"
+    },
+    {
+      "name": "Lithuania passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-lithuania-passport-number"
+    },
+    {
+      "name": "Lithuania personal code",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-lithuania-personal-code"
+    },
+    {
+      "name": "Lithuania physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-lithuania-physical-addresses"
+    },
+    {
+      "name": "Luxembourg Driver's License Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-luxemburg-drivers-license-number"
+    },
+    {
+      "name": "Luxembourg National Identification Number (Natural persons)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-luxemburg-national-identification-number-natural-persons"
+    },
+    {
+      "name": "Luxembourg National Identification Number (Non-natural persons)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-luxemburg-national-identification-number-non-natural-persons"
+    },
+    {
+      "name": "Luxembourg Passport Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-luxemburg-passport-number"
+    },
+    {
+      "name": "Luxembourg Physical Addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-luxemburg-physical-addresses"
+    },
+    {
+      "name": "Malaysia Identity Card Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-malaysia-identification-card-number"
+    },
+    {
+      "name": "Malaysia passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-malaysia-passport-number"
+    },
+    {
+      "name": "Malta driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-malta-drivers-license-number"
+    },
+    {
+      "name": "Malta identity card number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-malta-identity-card-number"
+    },
+    {
+      "name": "Malta passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-malta-passport-number"
+    },
+    {
+      "name": "Malta physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-malta-physical-addresses"
+    },
+    {
+      "name": "Malta Tax ID Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-malta-tax-identification-number"
+    },
+    {
+      "name": "Medical Specialities",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-medical-specialities"
+    },
+    {
+      "name": "Medicare Beneficiary Identifier (MBI) card",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-medicare-beneficiary-identifier-card"
+    },
+    {
+      "name": "Mexico Unique Population Registry Code (CURP)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-mexico-unique-population-registry-code"
+    },
+    {
+      "name": "Microsoft Bing maps key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-microsoft-bing-maps-key"
+    },
+    {
+      "name": "Microsoft Entra client access token",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-ad-client-access-token"
+    },
+    {
+      "name": "Microsoft Entra client secret",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-ad-client-secret"
+    },
+    {
+      "name": "Microsoft Entra user Credentials",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-azure-ad-user-credentials"
+    },
+    {
+      "name": "Netherlands citizen's service (BSN) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-netherlands-citizens-service-number"
+    },
+    {
+      "name": "Netherlands driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-netherlands-drivers-license-number"
+    },
+    {
+      "name": "Netherlands passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-netherlands-passport-number"
+    },
+    {
+      "name": "Netherlands physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-netherlands-physical-addresses"
+    },
+    {
+      "name": "Netherlands tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-netherlands-tax-identification-number"
+    },
+    {
+      "name": "Netherlands value added tax number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-netherlands-value-added-tax-number"
+    },
+    {
+      "name": "New Zealand bank account number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-new-zealand-bank-account-number"
+    },
+    {
+      "name": "New Zealand Driver License Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-new-zealand-drivers-license-number"
+    },
+    {
+      "name": "New Zealand inland revenue number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-new-zealand-inland-revenue-number"
+    },
+    {
+      "name": "New Zealand ministry of health number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-new-zealand-ministry-of-health-number"
+    },
+    {
+      "name": "New Zealand physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-new-zealand-physical-addresses"
+    },
+    {
+      "name": "New Zealand social welfare number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-new-zealand-social-welfare-number"
+    },
+    {
+      "name": "Norway Identity Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-norway-identification-number"
+    },
+    {
+      "name": "Norway physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-norway-physical-addresses"
+    },
+    {
+      "name": "Philippines National ID",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-philippines-national-identification-number"
+    },
+    {
+      "name": "Philippines passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-philippines-passport-number"
+    },
+    {
+      "name": "Philippines Unified Multi-Purpose ID Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-philippines-unified-multi-purpose-identification-number"
+    },
+    {
+      "name": "Poland driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-poland-drivers-license-number"
+    },
+    {
+      "name": "Poland identity card",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-poland-identity-card"
+    },
+    {
+      "name": "Poland national ID (PESEL)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-poland-national-id"
+    },
+    {
+      "name": "Poland Passport Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-poland-passport-number"
+    },
+    {
+      "name": "Poland physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-poland-physical-addresses"
+    },
+    {
+      "name": "Poland REGON number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-poland-regon-number"
+    },
+    {
+      "name": "Poland tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-poland-tax-identification-number"
+    },
+    {
+      "name": "Portugal citizen card number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-portugal-citizen-card-number"
+    },
+    {
+      "name": "Portugal driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-portugal-drivers-license-number"
+    },
+    {
+      "name": "Portugal passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-portugal-passport-number"
+    },
+    {
+      "name": "Portugal physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-portugal-physical-addresses"
+    },
+    {
+      "name": "Portugal tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-portugal-tax-identification-number"
+    },
+    {
+      "name": "Qatari ID Card Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-qatari-id-card-number"
+    },
+    {
+      "name": "Romania driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-romania-drivers-license-number"
+    },
+    {
+      "name": "Romania passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-romania-passport-number"
+    },
+    {
+      "name": "Romania personal numeric code (CNP)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-romania-personal-numeric-code"
+    },
+    {
+      "name": "Romania physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-romania-physical-addresses"
+    },
+    {
+      "name": "Russia physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-russia-physical-addresses"
+    },
+    {
+      "name": "Russia taxpayer identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-russia-taxpayer-identification-number"
+    },
+    {
+      "name": "Russian Passport Number (Domestic)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-russia-passport-number-domestic"
+    },
+    {
+      "name": "Russian Passport Number (International)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-russia-passport-number-international"
+    },
+    {
+      "name": "Saudi Arabia National ID",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-saudi-arabia-national-id"
+    },
+    {
+      "name": "Singapore driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-singapore-drivers-license-number"
+    },
+    {
+      "name": "Singapore national registration identity card (NRIC) number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-singapore-national-registration-identity-card-number"
+    },
+    {
+      "name": "Singapore passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-singapore-passport-number"
+    },
+    {
+      "name": "Singapore physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-singapore-physical-addresses"
+    },
+    {
+      "name": "Slack access token",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slack-access-token"
+    },
+    {
+      "name": "Slovakia driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovakia-drivers-license-number"
+    },
+    {
+      "name": "Slovakia passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovakia-passport-number"
+    },
+    {
+      "name": "Slovakia personal number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovakia-personal-number"
+    },
+    {
+      "name": "Slovakia physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovakia-physical-addresses"
+    },
+    {
+      "name": "Slovenia driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovenia-drivers-license-number"
+    },
+    {
+      "name": "Slovenia passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovenia-passport-number"
+    },
+    {
+      "name": "Slovenia physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovenia-physical-addresses"
+    },
+    {
+      "name": "Slovenia tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovenia-tax-identification-number"
+    },
+    {
+      "name": "Slovenia Unique Master Citizen Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-slovenia-unique-master-citizen-number"
+    },
+    {
+      "name": "South Africa identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-south-africa-identification-number"
+    },
+    {
+      "name": "South Africa physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-south-africa-physical-addresses"
+    },
+    {
+      "name": "South Korea driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-south-korea-drivers-license-number"
+    },
+    {
+      "name": "South Korea passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-south-korea-passport-number"
+    },
+    {
+      "name": "South Korea resident registration number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-south-korea-resident-registration-number"
+    },
+    {
+      "name": "Spain DNI",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-spain-dni"
+    },
+    {
+      "name": "Spain driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-spain-drivers-license-number"
+    },
+    {
+      "name": "Spain passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-spain-passport-number"
+    },
+    {
+      "name": "Spain physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-spain-physical-addresses"
+    },
+    {
+      "name": "Spain social security number (SSN)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-spain-social-security-number"
+    },
+    {
+      "name": "Spain tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-spain-tax-identification-number"
+    },
+    {
+      "name": "SQL Server connection string",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-sql-server-connection-string"
+    },
+    {
+      "name": "Surgical procedures",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-surgical-procedures"
+    },
+    {
+      "name": "Sweden driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-sweden-drivers-license-number"
+    },
+    {
+      "name": "Sweden national ID",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-sweden-national-id"
+    },
+    {
+      "name": "Sweden passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-sweden-passport-number"
+    },
+    {
+      "name": "Sweden physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-sweden-physical-addresses"
+    },
+    {
+      "name": "Sweden tax identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-sweden-tax-identification-number"
+    },
+    {
+      "name": "SWIFT code",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-swift-code"
+    },
+    {
+      "name": "Swiss Social Security Number AHV",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-switzerland-ssn-ahv-number"
+    },
+    {
+      "name": "Switzerland physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-switzerland-physical-addresses"
+    },
+    {
+      "name": "Taiwan National ID",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-taiwan-national-identification-number"
+    },
+    {
+      "name": "Taiwan passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-taiwan-passport-number"
+    },
+    {
+      "name": "Taiwan Resident Certificate (ARC/TARC)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-taiwan-resident-certificate-number"
+    },
+    {
+      "name": "Thai population identification code",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-thai-population-identification-code"
+    },
+    {
+      "name": "Turkey national identification number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-turkey-national-identification-number"
+    },
+    {
+      "name": "Turkey physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-turkey-physical-addresses"
+    },
+    {
+      "name": "Types of medication",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-types-of-medication"
+    },
+    {
+      "name": "U.A.E. identity card number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-uae-identity-card-number"
+    },
+    {
+      "name": "U.A.E. passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-uae-passport-number"
+    },
+    {
+      "name": "U.K. driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-uk-drivers-license-number"
+    },
+    {
+      "name": "U.K. electoral roll number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-uk-electoral-roll-number"
+    },
+    {
+      "name": "U.K. national health service number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-uk-national-health-service-number"
+    },
+    {
+      "name": "U.K. national insurance number (NINO)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-uk-national-insurance-number"
+    },
+    {
+      "name": "U.K. physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-uk-physical-addresses"
+    },
+    {
+      "name": "U.K. Unique Taxpayer Reference Number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-uk-unique-taxpayer-reference-number"
+    },
+    {
+      "name": "U.S. bank account number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-us-bank-account-number"
+    },
+    {
+      "name": "U.S. driver's license number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-us-drivers-license-number"
+    },
+    {
+      "name": "U.S. individual taxpayer identification number (ITIN)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-us-individual-taxpayer-identification-number"
+    },
+    {
+      "name": "U.S. physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-us-physical-addresses"
+    },
+    {
+      "name": "U.S. social security number (SSN)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-us-social-security-number"
+    },
+    {
+      "name": "U.S./U.K. passport number",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-us-uk-passport-number"
+    },
+    {
+      "name": "Ukraine Passport Number (Domestic)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ukraine-passport-domestic"
+    },
+    {
+      "name": "Ukraine Passport Number (International)",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ukraine-passport-international"
+    },
+    {
+      "name": "Ukraine physical addresses",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-ukraine-physical-addresses"
+    },
+    {
+      "name": "User login credentials",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-user-login-credentials"
+    },
+    {
+      "name": "X.509 certificate private key",
+      "url": "https://learn.microsoft.com/en-us/purview/sit-defn-x-509-certificate-private-key"
+    }
+  ]
+}
