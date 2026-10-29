@@ -132,8 +132,14 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 ### OneLake Catalog Governance
 - **Governance posture**: Tenant-admin and data-owner audits plus guarded remediation for domains, workspace assignment, capacity, sensitivity labels, tags, descriptions, refresh, and item identity
   - Docs: https://learn.microsoft.com/en-us/fabric/governance/onelake-catalog-govern
-  - Skill: `skills/onelake-catalog-govern-cli/SKILL.md` — select admin-audit, admin-remediate, dataowner-audit, or dataowner-remediate by API surface and intent
+  - Skill: `skills/onelake-catalog-cli/SKILL.md` — select admin-audit, admin-remediate, dataowner-audit, or dataowner-remediate by API surface and intent
   - Primary CLI tool: `az rest` against Fabric Admin/Core and Power BI REST APIs
+
+### OneLake Catalog Curation
+- **Item metadata curation**: Owner-confirmed description, display name, and tag suggestions grounded in item content, plus table and column descriptions, for one item, a list, or one workspace
+  - Docs: https://learn.microsoft.com/en-us/rest/api/fabric/core/items/update-item
+  - Skill: `skills/onelake-catalog-cli/SKILL.md` (curate mode) — suggest, confirm, apply, and verify metadata so catalog search can find the item
+  - Primary CLI tool: `az rest` against Fabric Core REST APIs (Update Item, List Tags, Apply Tags); `curl` against the OneLake table API for table and column descriptions
 
 ### Business Intelligence
 - **Semantic Models**: DAX, XMLA, Power BI integration, TMDL

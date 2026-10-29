@@ -123,10 +123,11 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 - Use empty search string with type filter to list all items of a type
 - Consumption skill: `skills/search-consumption-cli/SKILL.md`
 
-### OneLake Catalog Governance
-- Use `skills/onelake-catalog-govern-cli/SKILL.md` for permission-aware admin/data-owner audits and guarded remediation
-- Start in the audit mode for the caller's API tier before any write
+### OneLake Catalog (governance and curation)
+- Use `skills/onelake-catalog-cli/SKILL.md` for permission-aware admin/data-owner audits and guarded remediation, and for owner curation of item descriptions, display names, tags, and table and column descriptions
+- Start governance in the audit mode for the caller's API tier before any write; a direct curation request goes straight to curate
 - Treat domain assignment as governance metadata, not an access-control boundary
+- Never write item metadata before the owner reviews the proposed changes and confirms
 
 ### Semantic Models (DAX)
 - Primary CLI tool: `az rest` against the Fabric REST API

@@ -4,6 +4,17 @@ User-facing changes for the public Microsoft Fabric Skills release.
 
 ## [Unreleased]
 
+## [0.3.20] - 2026-10-29
+
+### Added
+- **`onelake-catalog-cli`** -- one skill for the OneLake catalog. It picks the right mode from your request: the four existing governance modes (tenant-admin and data-owner audits and guarded remediation of domains, workspace assignment, capacity, labels, tag definitions, workspace tags, certification, refresh and item identity), and a new **curate** mode that helps item owners make Microsoft Fabric items easier to find by suggesting a description, display name, and tags based on the item's content, plus descriptions for its tables and columns, and applying each suggestion only after the owner reviews and confirms it. Curate works on one item, a list of items, or one workspace. Governance audits report description and tag coverage; to fix the gaps you pick, they hand off to curate, which still asks you to approve every suggestion.
+
+### Changed
+- **Skill and plugin paths** -- governance moved from `skills/onelake-catalog-govern-cli` to `skills/onelake-catalog-cli` with its references at the same relative paths. Anything pinning the old path moves to the new one. Item descriptions, display names and item tags are now written only by curate mode; governance keeps workspace tags and tenant tag definitions, and no longer writes item descriptions or item tags itself.
+
+### Removed
+- **`onelake-catalog-govern-cli`** -- replaced by the governance modes of `onelake-catalog-cli`. Existing governance prompts keep working.
+
 ## [0.3.19] - 2026-10-01
 
 ### Changed

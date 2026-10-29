@@ -1,7 +1,7 @@
 {
   "name": "fabric-skills",
   "description": "Complete bundle: all Microsoft Skills for Fabric for developers and consumers",
-  "version": "0.3.19",
+  "version": "0.3.20",
   "license": "MIT",
   "repository": "https://github.com/microsoft/skills-for-fabric",
   "keywords": [
@@ -31,7 +31,7 @@
     "./skills/azmon-mirroredcatalogs-operations-cli",
     "./skills/dataflows-cli",
     "./skills/search-consumption-cli",
-    "./skills/onelake-catalog-govern-cli",
+    "./skills/onelake-catalog-cli",
     "./skills/fabriciq-ontology-cli",
     "./skills/variable-library-cli",
     "./skills/deployment-pipelines-authoring-cli",
