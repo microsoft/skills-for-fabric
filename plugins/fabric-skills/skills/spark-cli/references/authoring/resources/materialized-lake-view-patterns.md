@@ -21,11 +21,24 @@ broad cross-workload orchestration.
    - Gold: business-facing aggregates
 6. **Keep MLVs business-stable** — preserve query semantics unless the user explicitly asks for a redesign.
 7. **Use documented syntax only** — avoid undocumented or implementation-specific features by default.
+8. **Separate creation from refresh** — executing `CREATE MATERIALIZED LAKE VIEW`
+   or `CREATE OR REPLACE MATERIALIZED LAKE VIEW` performs a Full refresh,
+   regardless of whether a refresh hint is present. Subsequent eligible
+   refreshes of the existing MLV can be incremental; do not recreate it each cycle.
+9. **Review output identity before adding a refresh hint** — for updates/deletes,
+   follow [key selection and review](mlv-incremental-refresh-patterns.md#refresh-hints-and-output-key-selection-preview).
+   Validation is one optional way to identify keys. Always ask the user to
+   approve the selected output column(s), even after successful validation.
+   If validation is unavailable, report that uniqueness could not be verified
+   and ask the user to provide the unique output column(s).
 
 ### Prefer
 
 1. **Source-aligned Silver MLVs first, denormalized Silver MLVs second** — then aggregate in Gold.
-2. **`COUNT` and `SUM` for Gold metrics** when they satisfy the business requirement.
+2. **Non-distinct `COUNT`, `SUM`, `MIN`, and `MAX` for Gold metrics** when they
+   satisfy the business requirement; these do not require source partitioning
+   for IR. Other or mixed aggregates require the source-partitioning/grouping
+   conditions in the [IR guide](mlv-incremental-refresh-patterns.md).
 3. **Downstream notebooks or BI logic** for ranking, moving windows, and presentation formatting.
 4. **Cross-lakehouse 4-part naming** when reading from another workspace/lakehouse.
 5. **Partitioned outputs** when downstream reads are heavily filtered by date or a small set of dimensions.
@@ -89,7 +102,10 @@ Do **not** default to MLVs when the task is primarily:
 ## Executable PySpark authoring
 
 Use the documented `fmlv` decorators when an interactive Livy session does not
-accept MLV DDL through `spark.sql`. Keep the source and output names aligned with
+accept MLV DDL through `spark.sql` and full-refresh-only behavior is acceptable.
+If IR is required, explain the execution limitation and use a supported Spark
+SQL notebook surface instead; do not silently switch to PySpark decorators.
+Keep the source and output names aligned with
 the Spark catalog shown by `SHOW SCHEMAS` / `SHOW TABLES`.
 
 ```python
@@ -124,7 +140,8 @@ Read persisted state back with `spark.table("<qualified-mlv-name>")`.
 
 Use SQL DDL for code-generation or notebook authoring requests where the target
 runtime supports the MLV SQL parser. Do not repeatedly retry rejected SQL in a
-live session; switch to the documented PySpark API.
+live session; switch to the documented PySpark API only if full-refresh-only
+behavior meets the user's requirement.
 
 ### Live execution safety
 
@@ -241,6 +258,51 @@ FROM bronze.customers;
 
 Prefer simple expressions. Keep the logic auditable and easy to explain.
 
+## Refresh hints for updates and deletes (preview)
+
+Append-only IR does not require a hint. For supported SQL with updates/deletes,
+CDF on every source and a compatible output key declared in `REFRESH_HINT`
+enable incremental eligibility. A hint does not force IR or enforce uniqueness.
+Duplicate declared keys can cause inconsistent results without warnings.
+
+Select keys at the final grain: `order_id` may identify a source-aligned order,
+but an order-line join may require `(order_id, item_id)`. For grouped output,
+review the grouping tuple, including NULLs, rather than carrying forward a
+source transaction key. Never infer a unique key from the name alone.
+
+The following single-key example assumes the user has reviewed and approved
+`order_id`; optional data checks are in the
+[IR guide](mlv-incremental-refresh-patterns.md#optional-data-checks).
+Keep constraints and hints in their separate blocks, before partitioning and
+table properties:
+
+```sql
+ALTER TABLE bronze.orders SET TBLPROPERTIES (delta.enableChangeDataFeed = true);
+
+CREATE OR REPLACE MATERIALIZED LAKE VIEW silver.orders_clean
+(
+    CONSTRAINT valid_order_id CHECK (order_id IS NOT NULL) ON MISMATCH DROP,
+    CONSTRAINT positive_amount CHECK (amount > 0) ON MISMATCH DROP
+)
+(
+    REFRESH_HINT order_key UNIQUE (order_id)
+)
+PARTITIONED BY (order_date)
+TBLPROPERTIES (delta.enableChangeDataFeed = true)
+AS
+SELECT order_id, customer_id, product_id, order_date,
+       CAST(amount AS DECIMAL(12,2)) AS amount
+FROM bronze.orders;
+```
+
+This replacement is Full, not Incremental. Source CDF supports this MLV's
+subsequent IR; CDF on `silver.orders_clean` supports downstream consumers.
+For a composite-key example and the Validate/Skip/approval workflow, use the
+[IR guide](mlv-incremental-refresh-patterns.md#refresh-hints-and-output-key-selection-preview).
+Source schema changes still cause Full even with a hint. Preserve query-specific
+IR conditions, including the documented LEFT OUTER/SEMI JOIN right-side caveat;
+do not treat a hint as overriding unsupported SQL or aggregate requirements.
+
 ---
 
 ## Cross-lakehouse and schema organization
@@ -292,10 +354,21 @@ SHOW CREATE MATERIALIZED LAKE VIEW silver.orders_clean;
 ### Update an MLV definition
 
 You cannot alter an existing MLV definition in place. Use `CREATE OR REPLACE`
-to overwrite the current definition:
+to overwrite the current definition. Replacement performs Full materialization,
+with or without a hint. Read the existing definition first and preserve its
+constraints, refresh hint, partitioning, and table properties unless changing
+them is approved. Do not use replacement as a routine refresh mechanism.
+For the original unhinted Pattern 1 definition, retain its existing clauses:
 
 ```sql
-CREATE OR REPLACE MATERIALIZED LAKE VIEW silver.orders_clean AS
+CREATE OR REPLACE MATERIALIZED LAKE VIEW silver.orders_clean
+(
+    CONSTRAINT valid_order_id CHECK (order_id IS NOT NULL) ON MISMATCH DROP,
+    CONSTRAINT positive_amount CHECK (amount > 0) ON MISMATCH DROP
+)
+PARTITIONED BY (order_date)
+TBLPROPERTIES (delta.enableChangeDataFeed = true)
+AS
 SELECT order_id, customer_id, product_id, order_date,
        CAST(amount AS DECIMAL(12,2)) AS amount
 FROM bronze.orders;
@@ -363,6 +436,12 @@ MLVs define durable data products. **Refresh orchestration belongs to the Lakeho
 >
 > Use notebooks to *author and iterate* on MLV definitions; use Lakehouse
 > lineage and schedules to handle ordering, refresh, and retries.
+
+For subsequent refreshes, Optimal refresh can choose No refresh, Incremental,
+or Full. Updates/deletes need a compatible refresh hint and source CDF for IR;
+source schema changes still cause Full with a hint. Do not diagnose the initial
+Full caused by CREATE/replacement as a hint failure, or promise every later run
+will be Incremental. See the [refresh lifecycle](mlv-incremental-refresh-patterns.md#refresh-lifecycle-and-change-patterns).
 
 ### Scheduled refresh
 
@@ -454,6 +533,7 @@ Escalate to `e2e-medallion-architecture` or `FabricDataEngineer` when the reques
 | Get started | https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/get-started-with-materialized-lake-views | quickstart, create MLV, first MLV, CDF setup |
 | Medallion tutorial | https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/tutorial | medallion architecture, bronze-silver-gold, sales analytics |
 | Optimal refresh | https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/refresh-materialized-lake-view | incremental refresh, full refresh, no refresh, optimal refresh, CDF |
+| Deletes/updates with refresh hints (preview) | https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/optimal-refresh-handling-deletes-updates | REFRESH_HINT, unique output key, updates, deletes, key validation, schema fallback |
 | Spark SQL reference | https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/create-materialized-lake-view | CREATE, DROP, SHOW, ALTER, syntax, limitations |
 | PySpark reference | https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/create-materialized-lake-view-pyspark | PySpark, full refresh, UDFs, complex transformations |
 | Schedule refresh | https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/schedule-lineage-run | schedule, lineage, cross-lakehouse, optimal refresh toggle |
