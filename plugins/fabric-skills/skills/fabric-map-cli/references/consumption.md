@@ -152,6 +152,12 @@ the source, refresh, or update a Map to explain it.
 For mixed-source Maps, explain the Kusto and Lakehouse fragments independently
 while describing their shared settings and draw order.
 
+For external layers, distinguish imagery from vector feature services and
+report the connection, protocol, resource identifier, and saved retrieval
+configuration. Keep source queries/output fields separate from display filters
+and shared styling. Do not execute remote queries merely to explain a saved
+definition; source completeness, access, and rendering need separate evidence.
+
 For Ontology layers, include the referenced entity and spatial properties,
 and the source generation when verified. Use the adapter's format checks and
 distinguish unsupported formats from invalid definitions.

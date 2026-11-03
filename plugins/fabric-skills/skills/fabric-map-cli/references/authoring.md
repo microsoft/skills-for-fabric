@@ -190,7 +190,7 @@ response must include all three parts below:
 |---|---|
 | Lakehouse | GeoJSON, vector/raster PMTiles, and COG; compatible points, lines, polygons, heatmaps, and extrusions versus raster imagery; key file/format limits |
 | Eventhouse / KQL Database | Coordinates or GeoJSON geometry, compatible vector renderings, and result/function limits; distinguish direct table preview limits from general query results |
-| External connections | Name Geospatial Web Services for WMS/WMTS and Microsoft Planetary Computer for MPC Pro; imagery-only rendering and projection/image-format limits, not arbitrary Fabric connectors |
+| External connections | Geospatial Web Services for imagery or vector feature services, and Microsoft Planetary Computer for MPC Pro imagery; distinguish geometry, protocol, access, and format constraints, not arbitrary Fabric connectors |
 | Ontology (preview) | Entity-backed spatial layers; numeric coordinates or geometry properties; up to 100,000 returned features |
 | Variable references | Parameterize supported item/connection sources, not geometry; selected-schema and variable-type compatibility, active value set, and underlying source permissions still apply |
 
@@ -271,7 +271,8 @@ Map's schema; preserve existing mappings on unrelated changes.
 
 ### Shared data-layer settings
 
-GeoJSON, vector PMTiles and Kusto results use the same geometry-family styling.
+GeoJSON, vector PMTiles, Kusto results and external feature services use the same
+geometry-family styling.
 Source adapters supply the source discriminator, path/query part, spatial
 mapping and any internal tile-layer binding. Do not duplicate styling per
 format. Kusto uses either a latitude/longitude pair or one geometry column,
@@ -314,9 +315,9 @@ If an outline request could mean either a polygon overlay or a border-only
 style, clarify the intent unless prior context already resolves it.
 
 Validate every requested label, tooltip, color, size, and filter field against
-that exact file/internal layer or KQL entity result, including actual scalar
-types and missing/null values. Numeric styling requires numeric values, not
-numeric-looking text.
+that exact file/internal layer, KQL entity result, or feature-service result,
+including actual scalar types and missing/null values. Numeric styling requires
+numeric values, not numeric-looking text.
 Suggest real fields on a miss; never invent an alias or silently substitute one.
 Missing feature names remain missing; do not fill them from guesses. Use the
 same category/color mapping when comparing equivalent files, independent of
