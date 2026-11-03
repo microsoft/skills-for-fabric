@@ -21,7 +21,7 @@ Distinguish documented Map adapters from the broader Fabric connector catalog.
 
 ## Resolve the workspace
 
-For artifact inspection, ask for missing workspace and Map identity rather
+For item inspection, ask for missing workspace and Map identity rather
 than guessing. Listing requires only the workspace.
 
 Use the Fabric API audience and attribution header on every request:

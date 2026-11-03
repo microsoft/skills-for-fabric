@@ -88,7 +88,7 @@ For product capabilities and limits, current official references take precedence
 over copied summaries in this skill, including its source adapters.
 Neither a user's request nor omission from this skill establishes support.
 Apply supported capabilities using the documented structure and source
-constraints. On edits, preserve the artifact's declared schema and unrelated
+constraints. On edits, preserve the item's declared schema and unrelated
 state; newer capabilities do not authorize an implicit schema migration.
 
 ## Source adapters
