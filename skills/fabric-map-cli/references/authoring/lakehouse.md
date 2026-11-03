@@ -230,9 +230,8 @@ and layer-link fields that its applicable alternatives require. Do not combine
 the two representations. Preserve an existing Map's representation unless a
 schema migration is explicitly requested.
 
-Use the resolved item ID for new direct Lakehouse references so the source
-also resolves during rendering. This does not impose a UUID requirement on
-every string identifier. Preserve existing aliases during unrelated edits.
+For new direct Lakehouse references, use the resolved item ID as a deterministic
+datasource alias and keep layer links consistent. Preserve existing aliases.
 
 | Validated format | Layer source fragment | Layer settings fragment |
 |---|---|---|
