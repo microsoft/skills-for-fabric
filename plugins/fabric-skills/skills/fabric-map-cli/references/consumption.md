@@ -8,9 +8,11 @@
 
 ## Capability questions
 
-General questions about supported sources or connections need no workspace,
-Map lookup, or authentication. Read the relevant source adapter's capability
-summary: [Lakehouse](authoring/lakehouse.md),
+General capability questions need no workspace, Map lookup, authentication, or
+source setup. Apply the shared capability-discovery rule internally. Ask for
+clarification only when unresolved details materially affect the answer.
+For source-specific capabilities, read the
+relevant adapter's summary: [Lakehouse](authoring/lakehouse.md),
 [Eventhouse](authoring/eventhouse.md),
 [connections](authoring/connections.md), [Ontology](authoring/ontology.md), or
 [variable references](authoring/variables.md). These documentation reads remain in
@@ -132,6 +134,29 @@ compatibility evidence, not a guarantee of service acceptance; opening the Map
 proves rendering only for the observed view. Report source-load errors as
 returned and distinguish them from successful definition persistence.
 Do not silently "repair" any of these during consumption.
+
+For Eventhouse layers, report the KQL Database and entity reference from the
+matching `queries/layerSource-<id>.kql` part, with table/function/materialized
+view type only when verified through prior evidence or scoped metadata discovery.
+Include latitude/longitude versus single geometry-column mode, exact spatial
+fields, refresh milliseconds (and human units), labels, tooltip fields,
+category expressions, size field, visibility, filters and front-to-back order.
+Never infer entity type from a layer's display name. Distinguish an absent
+refresh setting from a saved zero; neither proves continuous streaming.
+
+Full entity, usable and filtered counts require query evidence, not the saved
+definition alone. Attribute prior counts to their observation, and report
+current counts as unverified unless source querying was requested. Keep source
+coverage distinct from the selected region. Do not execute saved KQL, alter
+the source, refresh, or update a Map to explain it.
+For mixed-source Maps, explain the Kusto and Lakehouse fragments independently
+while describing their shared settings and draw order.
+
+For external layers, distinguish imagery from vector feature services and
+report the connection, protocol, resource identifier, and saved retrieval
+configuration. Keep source queries/output fields separate from display filters
+and shared styling. Do not execute remote queries merely to explain a saved
+definition; source completeness, access, and rendering need separate evidence.
 
 For Ontology layers, include the referenced entity and spatial properties,
 and the source generation when verified. Use the adapter's format checks and

@@ -1,6 +1,6 @@
 ---
 name: fabric-map-cli
-description: "Creates, configures, deletes, lists, filters, styles, and explains Microsoft Fabric Map items, including Lakehouse GeoJSON, PMTiles, and COG layers. Suggests maps for spatial coverage, distribution, proximity, and regional comparisons without creating one until requested. Clarifies ambiguous map experiences. Not Azure Maps applications/APIs or Power BI map visuals."
+description: "Creates, configures, deletes, lists, filters, styles, and explains Microsoft Fabric Map items with Lakehouse GeoJSON, PMTiles, and COG files, Eventhouse (KQL Database) tables, functions, and materialized views including automatic refresh, and supported external imagery and feature services. Suggests maps for spatial coverage, distribution, proximity, and regional comparisons without creating one until requested. Clarifies ambiguous map experiences. Not Azure Maps applications/APIs or Power BI map visuals."
 ---
 
 > **Telemetry -- MANDATORY.** Every `api.fabric.microsoft.com` request,
@@ -72,6 +72,25 @@ no-change instruction takes precedence over authoring verbs. A read-modify-write
 request is authoring, including its prerequisite reads. Announce a mode switch
 and load the new reference when the user's intent changes.
 
+## Capability discovery
+
+Capability families include Map lifecycle and editing, basemap and camera,
+vector points/lines/polygons, heatmaps, raster imagery, layer order and visibility,
+labels and tooltips, filtering, clustering, and fixed or data-driven styling.
+Source adapters cover Lakehouse spatial files, Eventhouse/KQL spatial results
+and refresh, and supported external spatial connections.
+
+These families are not an exhaustive feature list. Resolve unlisted features
+and exact support, properties, restrictions, and new functionality through the
+latest [Fabric Maps documentation](https://learn.microsoft.com/fabric/real-time-intelligence/map/about-fabric-maps)
+and latest published Map schema using the shared schema-resolution procedure.
+For product capabilities and limits, current official references take precedence
+over copied summaries in this skill, including its source adapters.
+Neither a user's request nor omission from this skill establishes support.
+Apply supported capabilities using the documented structure and source
+constraints. On edits, preserve the artifact's declared schema and unrelated
+state; newer capabilities do not authorize an implicit schema migration.
+
 ## Source adapters
 
 Load only adapters relevant to the requested sources or capability question.
@@ -95,6 +114,11 @@ incomplete.
 Variable references parameterize a supported source; they are not a separate
 geometry provider. For variable-backed layers, read the variable reference
 guide and the adapter for the resolved item or connection.
+
+For Eventhouse-backed Maps, this skill owns the Map and `eventhouse-cli`
+consumption owns read-only entity discovery/querying. Map authoring never
+authorizes source mutations. Mixed Lakehouse/Eventhouse layers keep independent
+source fragments and reuse the same core rendering, filter and camera settings.
 
 ## Shared rules
 
