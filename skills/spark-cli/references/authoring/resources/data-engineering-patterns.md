@@ -204,6 +204,12 @@ A Fabric-native feature that materializes transformation results as Delta tables
 - ⚠️ **PySpark MLVs**: Support UDFs and complex logic, but full refresh only (no incremental)
 - ⚠️ **Batch-only**: Not suitable for real-time streaming
 - ⚠️ **Incremental limitations**: Some SQL patterns block incremental refresh (see [mlv-incremental-refresh-patterns.md](mlv-incremental-refresh-patterns.md))
+- **Refresh lifecycle**: CREATE and CREATE OR REPLACE perform Full materialization,
+  with or without a refresh hint; subsequent eligible refreshes can be incremental.
+- **Updates/deletes**: Supported SQL can qualify with CDF on every source and
+  a compatible `REFRESH_HINT` on user-approved unique output columns. Validation
+  is one optional way to identify keys; user review is still required.
+  Source schema changes cause Full even with a hint.
 
 **WHEN to use:**
 
@@ -216,7 +222,7 @@ Use this decision tree to choose between MLVs and PySpark notebooks:
 │       ├─ Does it need periodic refresh (not real-time)?
 │       │
 │       ├─ YES ─┐
-│       │       ├─ Would incremental refresh save cost (source is append-only + CDF enabled + query uses supported SQL constructs)?
+│       │       ├─ Would IR save cost (CDF on all sources AND supported SQL AND (append-only OR compatible output-key hint for updates/deletes))?
 │       │       │
 │       │       ├─ YES → ✅ **Use Materialized Lake View**
 │       │       │          (Declarative, auto-incremental, query-optimized)
@@ -240,7 +246,13 @@ Use this decision tree to choose between MLVs and PySpark notebooks:
 | **Bronze→Silver dedup** | `SELECT * FROM bronze.orders WHERE date > watermark` (then filter duplicates in notebook OR use Delta MERGE for upsert) | **Notebook or MERGE statement** | MERGE provides idempotent dedup; easier in notebook than MLV |
 | **ML feature engineering** | Complex PySpark with pandas UDFs, statistics, outlier detection | **Notebook** | Iterative logic, scikit-learn integration |
 | **Real-time KPI dashboard** | Streaming aggregation over 5-minute windows | **Eventstream** | Real-time requirement; MLVs are batch |
-| **Gold layer metrics** | `SELECT product_id, AVG(rating), COUNT(*) FROM reviews GROUP BY product_id` | **MLV** | Read-optimized, frequently queried, periodic refresh |
+| **Gold layer metrics** | `SELECT product_id, AVG(rating), COUNT(*) FROM reviews GROUP BY product_id` | **MLV** | IR only if every source is partitioned on a key included in GROUP BY; otherwise Full. Project all grouping columns. |
+
+For IR, non-distinct `SUM`, `COUNT`, `MIN`, and `MAX` do not require source
+partitioning. Mixing another aggregate, such as AVG, applies the partitioning
+condition to the whole query. Output partitioning or a hint alone cannot
+replace that condition. Follow the [IR resource](mlv-incremental-refresh-patterns.md)
+for output-key selection, Validate/Skip choice, and user approval.
 
 **Cost/performance considerations:**
 
