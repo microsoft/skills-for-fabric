@@ -15,6 +15,19 @@ node_modules/
 __pycache__/
 *.pyc
 .pytest_cache/
+*.egg-info/
+data/
+*.xlsx
+*.xlsm
+*.csv
+*.db
+*.sqlite
+.env
+.env.*
+!.env.example
+tokens/
+output/
+reports/
 
 # ADC skills package build output
 /out/
