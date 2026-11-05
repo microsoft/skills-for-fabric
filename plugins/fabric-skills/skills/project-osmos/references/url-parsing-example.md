@@ -38,21 +38,22 @@ def parse_fabric_url(url: str):
         port = parts.port
     except ValueError:
         return None
-    if parts.scheme not in {"http", "https"} or parts.username is not None:
+    if (parts.scheme != "https" or parts.username is not None
+            or parts.password is not None or port not in (None, 443)):
         return None
-    host = parts.netloc.lower()
-    if parts.hostname in {"app.fabric.microsoft.com", "app.powerbi.com"}:
-        if parts.scheme != "https" or port not in {None, 443}:
-            return None
-        host = parts.hostname
+    host = parts.hostname or ""
+    portal = re.fullmatch(
+        r"(?P<label>[a-z][a-z0-9-]{0,61}[a-z0-9]|[a-z])\.(?:fabric\.microsoft\.com|powerbi\.com)",
+        host,
+    )
+    if not portal or portal["label"] in {"api", "prod", "production"}:
+        return None
     workspace_match = WORKSPACE_PATH_RE.match(parts.path)
     if not workspace_match:
         return None
     lakehouse_match = LAKEHOUSE_PATH_RE.match(parts.path)
     lakehouse_prefix = f"/groups/{workspace_match.group('ws')}/lakehouses/".lower()
     if parts.path.lower().startswith(lakehouse_prefix) and not lakehouse_match:
-        return None
-    if host not in SUPPORTED_HOSTS:
         return None
 ```
 

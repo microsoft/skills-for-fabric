@@ -4,6 +4,50 @@ User-facing changes for the public Microsoft Fabric Skills release.
 
 ## [Unreleased]
 
+## [0.3.21] - 2026-11-05
+
+### Added
+- **`databasehub-cli`** -- added read-only database estate inventory,
+  cross-engine health, issues and suggestions, and security posture analysis
+  through Entra-authenticated Fabric APIs.
+
+### Changed
+- **`ontology-cli`** -- the unified Microsoft Fabric Ontology skill is now named `ontology-cli`. This is a breaking skill-ID rename: replace explicit `fabriciq-ontology-cli` invocations with `ontology-cli`. Natural-language Ontology requests continue to route to its authoring and consumption modes.
+- **`ontology-cli`** -- asking a question about a new-experience (V2) Fabric Ontology now goes straight to the ontology's own agent endpoint, which resolves your wording against the ontology model, queries the bound data, and returns a plain-language answer. It can also return grounded, runnable KQL, SQL, DAX or Python when you name the language and execution target. During preview, this path requires delegated user sign-in; service principals are not supported. CLI authoring remains limited to legacy V1 definitions and cannot create or upgrade V2 items.
+- `project-osmos` shows its run card and follow-up, pause/resume, deletion, and feedback guidance together immediately after a successful start or resume response, before further task operations or acting on follow-ups, while preserving confirmation and execution-capacity safeguards.
+- `project-osmos` reads task status/messages, reports progress, then returns control to the user. The startup handoff and later progress checks remain available when browser launch fails.
+- `project-osmos` selects existing tasks from conversation or recovery context, asks for confirmation when ambiguous, and distinguishes resuming a run from sending a follow-up message.
+- `project-osmos` handles explicit Resume requests for completed tasks using the same task's run endpoint. Offline request planning stays offline across follow-up turns unless the user explicitly authorizes live execution.
+- `project-osmos` keeps task-splitting and medallion-build requests assigned to Osmos in one task across all requested layers and entities, rather than substituting an architecture-planning workflow.
+- `project-osmos` preserves message IDs and submission-state recovery guidance when a custom continuation transport raises a network or incomplete-response error, without retrying or switching transports.
+
+### Removed
+- **`ontology-cli`** -- the consumption mode no longer reads an Ontology's definition and hand-writes a source query for Lakehouse, Warehouse, or Eventhouse. That path skipped the Ontology agent's grounding and validation. For supported new-experience Ontologies, ask the Ontology directly; when you request runnable code, the answer is grounded in its real bindings.
+- **`ontology-cli`** -- V1 Ontologies no longer support natural-language consumption. The skill stops without querying and tells you to upgrade or recreate the item in the new Ontology experience; it never substitutes a legacy or hand-written source query.
+
+### Fixed
+- **`ontology-cli`** -- response-capture examples preserve the prepared question or schema request instead of replacing it with a discovery request.
+- **`ontology-cli`** -- validates absolute PowerShell request-file paths before contacting the Ontology Agent, preventing malformed requests when the shell and .NET working directories differ.
+- **`ontology-cli`** -- legacy authoring validates Eventhouse binding identities before confirmation, preventing a KQL database ID from being used where the parent Eventhouse item ID is required.
+- **`ontology-cli`** -- preserves the saved Ontology Agent answer when a streamed response is followed by a progress notification, without repeating the billed request.
+- **`ontology-cli`** -- honors explicit verbatim schema requests by constructing and checking replies against the saved service text, preserving identifiers instead of abbreviating them or switching to a summary.
+- **`ontology-cli`** -- includes the complete authoring change-set preview, including retained parts, in the final confirmation message instead of leaving it only in earlier output.
+- **`ontology-cli`** -- submits confirmed authoring request files without Windows JSON-quoting loss and reads definitions back in the same PowerShell process; a failed write requires fresh confirmation before another attempt.
+- `project-osmos` rejects invalid Lakehouse URLs before authentication or execution and may request a valid URL for the intended environment without automatically switching targets. It returns the complete requested offline plan on each follow-up turn; explanation-only requests do not authenticate or change saved task state.
+- `project-osmos` uses canonical task endpoints; existing tasks keep their IDs and history without migration.
+- `project-osmos` checks workspace capacity before execution, explains trial-capacity restrictions and unknown eligibility, and keeps read-only task inspection available. Generic Spark failures no longer trigger an automatic retry.
+- `project-osmos` rejects untrusted saved task hosts and redirects, and stops saved-task execution when the workspace no longer has a capacity assignment.
+- `project-osmos` retains follow-up message recovery IDs when a transport or run-conflict lookup fails, distinguishing an unconfirmed submission from a message already posted.
+- `project-osmos` also preserves follow-up recovery context for truncated HTTP responses and refuses redirects during capacity metadata checks.
+- `project-osmos` preserves saved tenant and capacity context in PowerShell check-only preflight, validates saved backend routes separately from browser URLs, and distinguishes missing capacity assignments from unknown SKU eligibility.
+- `project-osmos` handles selected Fabric targets, authentication and same-task continuation in one skill, without an additional plugin or token library. Existing saved routing remains usable; production capacity policy stays scoped to production.
+- `project-osmos` preserves the target from a Lakehouse URL or saved routing through credential refresh, task links and uploads, without silently substituting production.
+- `project-osmos` stops execution, including standalone capacity checks, when the current workspace capacity assignment is unreadable, missing or invalid; acknowledging unknown SKU eligibility cannot bypass that check. Capacity-SKU read timeouts leave eligibility unknown and require explicit acknowledgment.
+- **`git-integration-operations-cli`** - Generates or condenses Fabric Git
+  commit comments to the API's 300-character maximum before submission,
+  validates externally supplied pipeline comments locally, and handles
+  synchronous, asynchronous, throttled and failed commit responses explicitly.
+
 ## [0.3.20] - 2026-10-29
 
 ### Added

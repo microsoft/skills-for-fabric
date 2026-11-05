@@ -8,8 +8,9 @@ prints `{"status_code": <code>, "text": <parsed body>}`, so response fields are
 read with `jq -r '.text.<field>'`. Request bodies are passed with `-i` as either
 a file path or an inline JSON string (`fab api` never reads a body from stdin).
 Long-running operations return
-`202`; capture `x-ms-operation-id` from `--show_headers` and poll
-`operations/{id}` until `.text.status` is `Succeeded`.
+`202`; capture `x-ms-operation-id` from `--show_headers`, poll `operations/{id}`
+until `.text.status` is `Succeeded`, then read any response body from
+`operations/{id}/result`.
 
 Prerequisites for every template below:
 
@@ -23,25 +24,14 @@ Prerequisites for every template below:
   `ConfiguredConnection` (a Fabric cloud connection holding the git credentials).
   See [SKILL.md § Create the Git provider connection (service principal)](../SKILL.md#create-the-git-provider-connection-service-principal).
 
-## Reusable helper: poll a long-running operation
+## Shared helpers
 
-```bash
-# Usage: wait_for_lro "<operation-id>"
-wait_for_lro() {
-  local op="$1" st i
-  # Bounded poll (~10 min at 5s) so a stuck Running aborts instead of hanging
-  # until the pipeline job timeout; Failed/Undefined are terminal too.
-  for i in $(seq 1 120); do
-    st=$(fab api "operations/${op}" | jq -r '.text.status')
-    case "$st" in
-      Succeeded)        echo "LRO ${op}: Succeeded"; return 0 ;;
-      Failed|Undefined) echo "LRO ${op}: ${st}"; fab api "operations/${op}" | jq '.text.error'; return 1 ;;
-      *)                sleep 5 ;;
-    esac
-  done
-  echo "LRO ${op}: timed out after ~10m (last status: ${st:-unknown})"; return 1
-}
-```
+Every template sources `fabric-git-helpers.sh`. Create it once in your repository
+from the helper block in
+[SKILL.md § Commit to Git](../SKILL.md#commit-to-git) (`hdr`, `fab_json`,
+`wait_for_lro`, `git_status`, `build_commit_body`, `commit_to_git`). One copy
+keeps HTTP-status checks, `Retry-After` handling, LRO result reads and the
+comment-length dispatch consistent across scripts.
 
 ## Bash: service principal status check, then update
 
@@ -52,12 +42,12 @@ Git only when the branch is ahead.
 #!/usr/bin/env bash
 set -euo pipefail
 # Prerequisites: install CLI and authenticate — see Prerequisites section above.
-
+source ./fabric-git-helpers.sh
 WORKSPACE_ID="${WORKSPACE_ID:?Set WORKSPACE_ID}"
 
-STATUS=$(fab api "workspaces/${WORKSPACE_ID}/git/status")
-REMOTE=$(echo "$STATUS" | jq -r '.text.remoteCommitHash')
-HEAD=$(echo "$STATUS" | jq -r '.text.workspaceHead')
+STATUS=$(git_status "$WORKSPACE_ID")
+REMOTE=$(jq -r '.remoteCommitHash' <<<"$STATUS")
+HEAD=$(jq -r '.workspaceHead' <<<"$STATUS")
 echo "workspaceHead=$HEAD remoteCommitHash=$REMOTE"
 
 if [ "$REMOTE" != "$HEAD" ]; then
@@ -69,11 +59,12 @@ if [ "$REMOTE" != "$HEAD" ]; then
   "options": { "allowOverrideItems": true }
 }
 JSON
-  RESP=$(fab api -X post "workspaces/${WORKSPACE_ID}/git/updateFromGit" -i update.json --show_headers)
-  # updateFromGit may finish synchronously (200) or async (202); only poll when async.
-  if [ "$(echo "$RESP" | jq -r '.status_code')" = "202" ]; then
-    wait_for_lro "$(echo "$RESP" | jq -r '.headers["x-ms-operation-id"]')"
-  fi
+  R=$(fab_json -X post "workspaces/${WORKSPACE_ID}/git/updateFromGit" -i update.json) || exit 1
+  case "$(jq -r '.status_code' <<<"$R")" in
+    200) ;;
+    202) wait_for_lro "$(hdr x-ms-operation-id <<<"$R")" || exit 1 ;;
+    *)   echo "updateFromGit: HTTP $(jq -r '.status_code' <<<"$R")" >&2; jq '.text' <<<"$R" >&2; exit 1 ;;
+  esac
 else
   echo "Workspace already in sync; nothing to update."
 fi
@@ -85,27 +76,23 @@ fi
 #!/usr/bin/env bash
 set -euo pipefail
 # Assumes fab auth login already ran.
+source ./fabric-git-helpers.sh
 WORKSPACE_ID="${WORKSPACE_ID:?Set WORKSPACE_ID}"
 COMMIT_MSG="${COMMIT_MSG:-Automated commit from CI/CD pipeline}"
 
-STATUS=$(fab api "workspaces/${WORKSPACE_ID}/git/status")
-HEAD=$(echo "$STATUS" | jq -r '.text.workspaceHead')
-COUNT=$(echo "$STATUS" | jq '.text.changes | length')
-
-if [ "$COUNT" -eq 0 ]; then
+STATUS=$(git_status "$WORKSPACE_ID")
+if [ "$(jq '.changes | length' <<<"$STATUS")" -eq 0 ]; then
   echo "No workspace changes to commit."
   exit 0
 fi
 
-# jq builds a JSON-safe body so a comment with a quote, backslash, or newline
-# can't corrupt the request (COMMIT_MSG often comes from a git title or PR message).
-jq -n --arg head "$HEAD" --arg msg "$COMMIT_MSG" \
-  '{mode:"All", workspaceHead:$head, comment:$msg}' > commit.json
-RESP=$(fab api -X post "workspaces/${WORKSPACE_ID}/git/commitToGit" -i commit.json --show_headers)
-# commitToGit may finish synchronously (200) or async (202); only poll when async.
-if [ "$(echo "$RESP" | jq -r '.status_code')" = "202" ]; then
-  wait_for_lro "$(echo "$RESP" | jq -r '.headers["x-ms-operation-id"]')"
-fi
+# A pipeline cannot safely summarize operator-supplied text: an oversized
+# COMMIT_MSG stops here (exit 2) before any API call.
+build_commit_body "$(jq -r '.workspaceHead' <<<"$STATUS")" "$COMMIT_MSG" > commit.json \
+  || { rm -f commit.json; exit 2; }
+rc=0; commit_to_git "$WORKSPACE_ID" commit.json || rc=$?
+# rc 3: Fabric rejected the comment length; shorten COMMIT_MSG and rerun once.
+exit "$rc"
 ```
 
 ## Azure DevOps pipeline (YAML)
@@ -130,9 +117,11 @@ steps:
         set -euo pipefail
         # Prerequisites: install CLI and authenticate — see Prerequisites section above.
 
-        STATUS=$(fab api "workspaces/$(WORKSPACE_ID)/git/status")
-        REMOTE=$(echo "$STATUS" | jq -r '.text.remoteCommitHash')
-        HEAD=$(echo "$STATUS" | jq -r '.text.workspaceHead')
+        source ./fabric-git-helpers.sh
+
+        STATUS=$(git_status "$(WORKSPACE_ID)")
+        REMOTE=$(jq -r '.remoteCommitHash' <<<"$STATUS")
+        HEAD=$(jq -r '.workspaceHead' <<<"$STATUS")
 
         cat > update.json <<JSON
         { "workspaceHead": "$HEAD", "remoteCommitHash": "$REMOTE",
@@ -140,17 +129,12 @@ steps:
           "options": { "allowOverrideItems": true } }
         JSON
 
-        RESP=$(fab api -X post "workspaces/$(WORKSPACE_ID)/git/updateFromGit" -i update.json --show_headers)
-        if [ "$(echo "$RESP" | jq -r '.status_code')" = "202" ]; then
-          OP=$(echo "$RESP" | jq -r '.headers["x-ms-operation-id"]')
-          for i in $(seq 1 120); do
-            ST=$(fab api "operations/$OP" | jq -r '.text.status')
-            [ "$ST" = "Succeeded" ] && break
-            case "$ST" in Failed|Undefined) fab api "operations/$OP" | jq '.text.error'; exit 1 ;; esac
-            [ "$i" = "120" ] && { echo "timed out waiting for $OP"; exit 1; }
-            sleep 5
-          done
-        fi
+        R=$(fab_json -X post "workspaces/$(WORKSPACE_ID)/git/updateFromGit" -i update.json) || exit 1
+        case "$(jq -r '.status_code' <<<"$R")" in
+          200) ;;
+          202) wait_for_lro "$(hdr x-ms-operation-id <<<"$R")" || exit 1 ;;
+          *)   echo "updateFromGit: HTTP $(jq -r '.status_code' <<<"$R")" >&2; jq '.text' <<<"$R" >&2; exit 1 ;;
+        esac
 ```
 
 ## GitHub Actions workflow
@@ -173,9 +157,10 @@ jobs:
           WS: ${{ secrets.WORKSPACE_ID }}
         run: |
           set -euo pipefail
-          STATUS=$(fab api "workspaces/$WS/git/status")
-          REMOTE=$(echo "$STATUS" | jq -r '.text.remoteCommitHash')
-          HEAD=$(echo "$STATUS" | jq -r '.text.workspaceHead')
+          source ./fabric-git-helpers.sh
+          STATUS=$(git_status "$WS")
+          REMOTE=$(jq -r '.remoteCommitHash' <<<"$STATUS")
+          HEAD=$(jq -r '.workspaceHead' <<<"$STATUS")
 
           cat > update.json <<JSON
           { "workspaceHead": "$HEAD", "remoteCommitHash": "$REMOTE",
@@ -183,17 +168,12 @@ jobs:
             "options": { "allowOverrideItems": true } }
           JSON
 
-          RESP=$(fab api -X post "workspaces/$WS/git/updateFromGit" -i update.json --show_headers)
-          if [ "$(echo "$RESP" | jq -r '.status_code')" = "202" ]; then
-            OP=$(echo "$RESP" | jq -r '.headers["x-ms-operation-id"]')
-            for i in $(seq 1 120); do
-              ST=$(fab api "operations/$OP" | jq -r '.text.status')
-              [ "$ST" = "Succeeded" ] && break
-              case "$ST" in Failed|Undefined) fab api "operations/$OP" | jq '.text.error'; exit 1 ;; esac
-              [ "$i" = "120" ] && { echo "timed out waiting for $OP"; exit 1; }
-              sleep 5
-            done
-          fi
+          R=$(fab_json -X post "workspaces/$WS/git/updateFromGit" -i update.json) || exit 1
+          case "$(jq -r '.status_code' <<<"$R")" in
+            200) ;;
+            202) wait_for_lro "$(hdr x-ms-operation-id <<<"$R")" || exit 1 ;;
+            *)   echo "updateFromGit: HTTP $(jq -r '.status_code' <<<"$R")" >&2; jq '.text' <<<"$R" >&2; exit 1 ;;
+          esac
 ```
 
 ## Notes

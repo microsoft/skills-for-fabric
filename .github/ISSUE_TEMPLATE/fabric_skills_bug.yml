@@ -25,6 +25,7 @@ body:
         - Data engineering (Spark / lakehouse / notebooks)
         - SQL Data Warehouse
         - SQL database
+        - Database Hub
         - Dataflows Gen2
         - Eventhouse / KQL
         - Event Schema Set / Real-Time Intelligence

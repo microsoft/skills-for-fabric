@@ -33,6 +33,11 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 - Include partition columns for large tables
 - Run OPTIMIZE and VACUUM for table maintenance
 - Use `skills/project-osmos/SKILL.md` when a local agent should carry a complex Lakehouse, OneLake, notebook, or Spark outcome end to end; Fabric portal Copilot returns availability guidance without Project Osmos API calls.
+- Project Osmos owns target selection, MWC authentication and continuation in one skill. Use the selected Lakehouse URL or saved routing with its bundled resolver.
+- Preserve the selected target, task IDs and saved `/aichat` or `/tasks` routes. Validate credential destinations, let the service enforce access, and never substitute production. Recheck assignments before execution; the production SKU policy applies only to production.
+- Immediately after a successful Osmos POST /{taskId}/run response, show the run card and complete controls/feedback notice together in chat before further task operations or acting on follow-ups. Read task status/messages, report progress, then return control to the user; preserve cancel/delete confirmations and production resume capacity preflight.
+- Load project-osmos for task controls and offline plans; select the existing task from conversation/recovery context and confirm ambiguity. Explicit Resume of a Completed task uses the same task's empty-body /run after execution checks, not a follow-up message. Offline mode persists across turns; Resume alone is not live execution consent. Return the complete requested offline plan each turn. Reject invalid portal URLs before calls; may request a valid URL for the intended environment without automatically switching targets.
+- Explanation-only requests do not authorize sign-in, API calls or saved-state changes.
 - Use `skills/spark-cli/SKILL.md` for notebook authoring and runs, Livy analysis, Spark diagnostics, and the full Materialized Lake View lifecycle.
 - MLV authoring resources: `skills/spark-cli/references/authoring/resources/materialized-lake-view-patterns.md` and `skills/spark-cli/references/authoring/resources/mlv-incremental-refresh-patterns.md`.
 
@@ -48,6 +53,12 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 - OLTP database with an enforced T-SQL surface (PK/FK/constraints), Query Store, and DMVs - distinct from the Warehouse
 - Connect over TDS with `sqlcmd` to the SQL database (read-write) endpoint, not the SQL analytics endpoint, for authoring and diagnostics
 - Skill: `skills/sqldb-cli/SKILL.md` — one mode dispatcher; `authoring` for DDL/DML, constraints and indexes, `consumption` for read-only T-SQL, `operations` for Query Store / DMV diagnostics
+
+### Database Hub (cross-engine estate)
+- Use `skills/databasehub-cli/SKILL.md` for read-only estate counts, inventory, SQL/PostgreSQL CPU-storage-memory health, Cosmos DB availability/RU use, issues/suggestions, and authentication/auditing/CMK posture
+- Fabric SQL Database support is inventory-only; use `sqldb-cli` for one-item OLTP query and performance work
+- Use `sqldw-cli` only for Warehouse, Lakehouse SQL endpoint, or mirrored-database work
+- Primary CLI tool: `az rest` against Entra-authenticated Fabric APIs
 
 ### Notebooks
 - Tag first cell as "parameters" for parameterized notebooks
@@ -114,8 +125,10 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 - ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](../agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
 
 ### Fabric IQ / Ontology (preview)
-- Use the Fabric item-definition REST API (Create / Get / Update Item Definition) with `InlineBase64` parts
-- Skill: `skills/fabriciq-ontology-cli/SKILL.md` — select authoring or consumption mode for Ontology definition changes, grounding, lineage, and graph walks
+- Windows authoring submits the confirmed request file once and decodes readback in the same PowerShell process.
+- For legacy V1 authoring, use the Fabric item-definition REST API (Create / Get / Update Item Definition) with `InlineBase64` parts
+- For questions over an existing new-experience (V2) Ontology, use its item-scoped Ontology Agent MCP endpoint; call `tools/list` first and continue only when `ask_ontology` is present. Do not fetch the item definition or hand-write a source query
+- Skill: `skills/ontology-cli/SKILL.md` — legacy V1 definition authoring (Kusto bindings use parent Eventhouse IDs) and V2-grounded questions; validate absolute PowerShell payload paths before POST and preserve the prepared request during response capture, verify verbatim replies against saved output and include complete authoring previews in final confirmation messages. V2 creation/upgrade is unavailable here, report authoring stays with `powerbi-report-cli`, and model/DAX changes with `semantic-model-authoring`
 
 ### Catalog Search (Item Discovery)
 - Use `POST /v1/catalog/search` to find items across workspaces by name, description, or workspace name

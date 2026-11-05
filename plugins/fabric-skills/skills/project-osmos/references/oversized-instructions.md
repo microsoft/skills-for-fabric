@@ -4,7 +4,7 @@ Use this fallback only when the complete handoff remains above 9,500 characters 
 
 1. Generate the task UUID before task creation.
 2. Write the complete UTF-8 handoff to a local file with `## User outcome` first and `## Execution plan` immediately below it.
-3. Acquire a OneLake token for `https://storage.azure.com/` and store it in a temporary mode-600 file. Never put the token on the command line.
+3. Acquire a OneLake token for `https://storage.azure.com/` in the same selected resource tenant and store it in a temporary mode-600 file. Add `--tenant <resource-tenant-id>` when an override was used for authentication. Never put the token on the command line.
 
 ```bash
 ONELAKE_TOKEN_FILE=$(mktemp "${TMPDIR:-/tmp}/osmos-onelake-token.XXXXXX")
@@ -24,11 +24,12 @@ az account get-access-token \
   --source "$FULL_INSTRUCTION_FILE" \
   --workspace-id "$WORKSPACE_ID" \
   --lakehouse-id "$LAKEHOUSE_ID" \
+  --routing .dataprojects/auth/routing.json \
   --destination "Files/ProjectOsmos/tasks/$TASK_ID/instruction.md" \
   --token-file "$ONELAKE_TOKEN_FILE"
 ```
 
-5. If upload fails, stop before task creation. Do not truncate, paraphrase, ask the user to shorten the outcome, or choose another destination silently.
+5. The routing file supplies the OneLake origin from the selected Lakehouse's service-issued `oneLakeFilesPath`. Outside production, missing endpoint metadata is a blocker, never permission to use the production OneLake default. If upload fails, stop before task creation. Do not truncate, paraphrase, ask the user to shorten the outcome, or choose another destination silently.
 6. Use this bootstrap as both the task `instruction` and initial user message:
 
 ```text

@@ -3,7 +3,7 @@
 #     apm install microsoft/skills-for-fabric --skill git-integration-operations-cli
 
 name: git-integration-operations-cli
-version: 0.1.0
+version: 0.1.1
 description: "Runs the Fabric Git integration lifecycle through fab api or az rest, including connecting a workspace to Azure DevOps or GitHub, committing, updating from Git, reading sync status, resolving conflicts, disconnecting a..."
 author: Microsoft Fabric
 license: MIT

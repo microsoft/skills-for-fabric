@@ -1,82 +1,93 @@
 # Authentication and route construction
 
-Build the direct SparkCore task route after resolving workspace and Lakehouse IDs from Fabric page context, Microsoft Fabric Skills discovery, or a validated Lakehouse browser URL.
+Use the bundled resolver for the selected Fabric target. No additional skill,
+SynapseML, Spark runtime or token-library installation is required locally.
+Shared Azure CLI sign-in prerequisites remain in `common/COMMON-CLI.md`.
+The bundled CLI entry points are `scripts/resolve-auth-and-routing.py` and
+`scripts/resolve-auth-and-routing.ps1`, relative to the loaded skill directory.
+The PowerShell wrapper delegates to Python.
+Use the validated portal host's single DNS label to derive
+the API origin: `app` maps to `https://api.fabric.microsoft.com`; another
+validated label maps to `https://<label>api.fabric.microsoft.com`. This is the
+rule implemented by `task_routes.portal_target()`. Retain the supplied target
+and any matching saved origin;
+this mapping is not evidence that the endpoint is deployed or accessible.
 
-Use `common/COMMON-CLI.md` authentication recipes for shared Azure CLI login and token prerequisites. This reference owns only the Project Osmos-specific Power BI audience, MWC exchange, and capacity-scoped SparkCore route.
+## Token flow
 
-## Optional resource tenant override
+The public [SynapseML MWC exchange example](https://github.com/microsoft/SynapseML/blob/e8b71d877fa9e5517d6e5a4e384a3994a179b315/core/src/test/scala/com/microsoft/azure/synapse/ml/fabric/FabricTokenProvider.scala#L42-L65)
+demonstrates the token request. It is an implementation example, not a complete
+versioned REST contract. The local helper implements the exchange without
+depending on SynapseML:
 
-Use the current Azure CLI session by default. Do not ask for a tenant ID before attempting authentication. If the user already supplied the Microsoft Entra tenant ID that owns the workspace, pass it explicitly; guest users may need this resource-tenant override when their current session is in their home tenant. Ask for the resource tenant only when authentication or workspace lookup shows that the current session cannot access the target tenant.
+1. Acquire a Power BI bearer for `https://analysis.windows.net/powerbi/api`
+   using the current Azure CLI session. Use an explicit resource-tenant override
+   only if supplied, or after access failure establishes that it is needed.
+2. Read workspace and Lakehouse metadata on the selected target. Capture the
+   workspace `capacityId`; apply the capacity policy from the skill index before execution.
+3. POST to `<selected-api-origin>/metadata/v201606/generatemwctoken` with
+   `capacityObjectId`, `workloadType: SparkCore`, `workspaceObjectId`, and
+   `artifactObjectIds: [<lakehouse-id>]`.
+4. Use the returned `Token` and `TargetUriHost` for task calls. Never construct
+   the workload host from an environment name or capacity ID.
 
-## Public Fabric route
+Every Fabric metadata/token request carries `x-ms-fabric-skill: project-osmos`,
+including the home-cluster retry. Only `Tenant not authorized for cluster`
+permits retrying the exchange on the trusted home-cluster origin returned by
+selected-target metadata. Other errors stop; redirects are not followed.
 
-Use a Power BI bearer token, workspace capacity lookup, MWC token generation, and a capacity-scoped SparkCore route.
+The service enforces token validity and artifact permissions. Local validation
+restricts credential destinations to matching Fabric API origins and documented
+[Fabric backend domains](https://learn.microsoft.com/en-us/fabric/security/fabric-allow-list-urls#notebook).
+It does not infer authorization or environment membership from workload-host names.
 
-Public hosts:
-| Purpose | Host |
-| --- | --- |
-| Workspace metadata and capacity lookup | `https://api.fabric.microsoft.com` |
-| MWC token exchange | `https://api.fabric.microsoft.com/metadata/v201606/generatemwctoken` |
+## Resolve and save context
 
-The tested helpers add `x-ms-fabric-skill: project-osmos` to every Fabric metadata and MWC token-exchange request, including a home-cluster retry.
-They accept only `https://api.fabric.microsoft.com` as the caller-supplied public
-Fabric API host and validate workspace and Lakehouse IDs as UUIDs before making
-an authenticated request. Routed home-cluster and SparkCore hosts are accepted
-only from Fabric service responses.
-
-> **Use `TargetUriHost` for SparkCore:** The `generatemwctoken` response includes a `TargetUriHost` field that is the routed SparkCore host for that capacity. Use it directly as the workload host instead of guessing a generic hostname.
-
-### Token and route steps
-
-1. Use the current Azure CLI session. If no session is available, run `az login --allow-no-subscriptions`. For a supplied resource-tenant override, run `az login --tenant <resource-tenant-id> --allow-no-subscriptions`.
-2. Get a Power BI bearer token with `az account get-access-token --resource https://analysis.windows.net/powerbi/api`. Add `--tenant <resource-tenant-id>` only when an override was supplied.
-3. Call the workspace metadata endpoint and capture the API `capacityId` field. Use it as the route/token capacity ID, and persist it in `routing.json` as `capacity_id`.
-4. Call the public Fabric `generatemwctoken` endpoint with:
-   - `capacityObjectId`
-   - `workloadType` set to `SparkCore`
-   - `workspaceObjectId`
-   - `artifactObjectIds` containing the lakehouse ID
-5. If token generation succeeds, use the returned token in the task route.
-
-Do not guess or substitute another token-exchange host. Use the tested helper scripts below to perform this same flow. They capture the routed home cluster from Fabric response headers and retry `generatemwctoken` there only for the specific `Tenant not authorized for cluster` response. `TargetUriHost` is still used only after token generation succeeds, as the SparkCore workload host for later task calls.
-
-### Tested auth helper scripts
-
-The helpers write `routing.json`, a private `mwc-token` file, `env.sh` for Bash, and `env.ps1` for PowerShell. Use the generated environment file for task lifecycle and follow-up calls.
-The examples below run from the loaded skill directory so the same `scripts/...` paths work in both the source checkout and the packaged ADC bundle.
+Run from the loaded skill directory, using the existing Python 3.11+ interpreter
+selected by the runtime reference in the skill index:
 
 ```bash
 "${PYTHON_RUNNER[@]}" scripts/resolve-auth-and-routing.py \
-  --workspace-id <workspace-id> \
-  --lakehouse-id <lakehouse-id> \
-  --output-dir .dataprojects/auth
+  --workspace-id <workspace-id> --lakehouse-id <lakehouse-id> \
+  --portal-url "<selected-lakehouse-url>" --output-dir .dataprojects/auth
 source .dataprojects/auth/env.sh
 ```
 
-For a guest or cross-tenant workspace, add `--resource-tenant-id <resource-tenant-id>`.
-
 ```powershell
 pwsh -NoProfile -File scripts/resolve-auth-and-routing.ps1 `
-  -WorkspaceId <workspace-id> `
-  -LakehouseId <lakehouse-id> `
-  -OutputDir .dataprojects/auth
+  -WorkspaceId <workspace-id> -LakehouseId <lakehouse-id> `
+  -PortalUrl "<selected-lakehouse-url>" -OutputDir .dataprojects/auth
 . .dataprojects/auth/env.ps1
 ```
 
-For a guest or cross-tenant workspace, add `-ResourceTenantId <resource-tenant-id>`. The Python helper still accepts `--tenant-id`, and the PowerShell wrapper still accepts `-TenantId`, as compatibility aliases.
+Omit the portal URL only for independently selected production context or when
+refreshing saved routing. `--fabric-api-host` cannot override the selected target.
+The helper writes `routing.json`, a private `mwc-token`, `env.sh` and `env.ps1`.
+For a supplied resource tenant, add `--resource-tenant-id` or `-ResourceTenantId`;
+`--tenant-id` and `-TenantId` remain compatibility aliases.
 
-Direct route shape:
+New task base:
+
 ```text
-${TASKS_BASE}
-```
-Public Fabric routes normally use:
-```text
-Authorization: mwctoken <contents of TOKEN_FILE>
+<TargetUriHost>/webapi/capacities/<capacityId>/workloads/SparkCore/SparkCoreService/direct/v1/workspaces/<workspaceId>/artifacts/<lakehouseId>/tasks
 ```
 
+Task calls use `Authorization: mwctoken <token>`. Keep tokens out of
+command-line arguments, chat, logs and displayed output.
 
-## Secret handling
+## Same-task credential refresh
 
-- Prefer token environment variables over command-line token arguments.
-- Do not print bearer tokens, MWC tokens, certificate payloads, or tenant secrets.
-- Redact auth headers from any logs copied into issues or PRs.
+Reuse the usual output directory: existing `routing.json` automatically selects
+the original target and resource tenant. Alternatively pass
+`--existing-routing <original-routing.json>` (`-ExistingRouting`) when writing
+fresh credentials into a different private directory.
+
+Both paths verify workspace, Lakehouse, capacity, API origin and workload origin
+before writing. Preserve the exact saved `/tasks` or `/aichat` base, task IDs,
+message/dedup IDs and recovery files. Never overwrite another task's context.
+Saved routing from earlier installations remains usable.
+
+For read-only refresh add `--purpose inspect` (`-Purpose inspect`); execution
+checks still apply before a later mutation. Authentication is not task authorization.
+Stop on assignment/route changes instead of relocating or recreating the task.
+Network failures require retry after resolving the cause, not an eligibility override.

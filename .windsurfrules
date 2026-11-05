@@ -57,10 +57,19 @@ rules:
   - name: project_osmos
     description: Use project-osmos for complex long-running Lakehouse, OneLake, notebook, or Spark outcomes from local agents; in Fabric portal Copilot return availability guidance without API calls
     reference: skills/project-osmos/SKILL.md
+    execution: Project Osmos owns target selection, MWC authentication and continuation in one skill. Use the selected Lakehouse URL or saved routing with its bundled resolver.
+    target: Preserve the selected target, task IDs and saved /aichat or /tasks routes. Validate credential destinations, let the service enforce access, and never substitute production. Recheck assignments before execution; the production SKU policy applies only to production.
+    post_start: Immediately after a successful POST /{taskId}/run response, show the run card and complete controls/feedback notice together in chat before further task operations or acting on follow-ups. Read task status/messages, report progress, then return control to the user; preserve cancel/delete confirmations and production resume capacity preflight
+    resume: Load project-osmos for task controls and offline plans; select the existing task from conversation/recovery context and confirm ambiguity. Explicit Resume of a Completed task uses the same task's empty-body /run after execution checks, not a follow-up message. Offline mode persists across turns; Resume alone is not live execution consent. Return the complete requested offline plan each turn. Reject invalid portal URLs before calls; may request a valid URL for the intended environment without automatically switching targets.
+    explanation_only: Explanation-only requests do not authorize sign-in, API calls or saved-state changes.
 
   - name: azmon_operations
     description: Use azmon-mirroredcatalogs-operations-cli to onboard Azure Monitor / App Insights / Log Analytics observability data into Fabric and correlate telemetry with business data for business-impact insights, an optional Real-Time (KQL) dashboard, and opt-in Operations Agent instructions
     reference: skills/azmon-mirroredcatalogs-operations-cli/SKILL.md
+
+  - name: databasehub
+    description: Use databasehub-cli for read-only cross-engine database estate inventory, SQL/PostgreSQL health, Cosmos DB availability and RU use, findings, and authentication/auditing/CMK posture; Fabric SQL is inventory-only
+    reference: skills/databasehub-cli/SKILL.md
 
   # Dataflows Gen2 (Data Integration)
   - name: dataflows_skills
@@ -100,8 +109,8 @@ rules:
     reference: skills/fabriciq/SKILL.md
 
   - name: ontology
-    description: Fabric IQ Ontology (preview) — authoring and consumption modes
-    reference: skills/fabriciq-ontology-cli/SKILL.md
+    description: Fabric IQ Ontology (preview) — author legacy V1 definitions (Kusto bindings use parent Eventhouse IDs) or answer V2-grounded questions; validate absolute PowerShell payload paths before POST and preserve the prepared request during response capture, verify verbatim replies against saved output and include complete authoring previews in final confirmation messages. Windows authoring submits the confirmed file once and decodes readback in the same shell. V2 creation/upgrade is unavailable here, and report/model authoring stays with owning skills
+    reference: skills/ontology-cli/SKILL.md
 
   - name: variable_library_authoring
     description: >

@@ -17,6 +17,7 @@ import uuid
 from pathlib import Path, PurePosixPath
 
 from python_runtime import require_supported_python
+from task_routes import PUBLIC_API, onelake_origin, validate_routing
 
 
 require_supported_python()
@@ -42,9 +43,12 @@ def validated_destination(value: str) -> PurePosixPath:
     return destination
 
 
-def build_url(workspace_id: str, lakehouse_id: str, path: PurePosixPath, query: dict[str, str]) -> str:
+def build_url(
+    workspace_id: str, lakehouse_id: str, path: PurePosixPath, query: dict[str, str],
+    host: str = ONELAKE_HOST,
+) -> str:
     return (
-        f"{ONELAKE_HOST}/{workspace_id}/{lakehouse_id}/"
+        f"{onelake_origin(host)}/{workspace_id}/{lakehouse_id}/"
         f"{urllib.parse.quote(path.as_posix(), safe='/')}?{urllib.parse.urlencode(query)}"
     )
 
@@ -70,7 +74,11 @@ def send_request(
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        class RejectRedirects(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                return None
+
+        with urllib.request.build_opener(RejectRedirects()).open(request, timeout=timeout_seconds) as response:
             if response.status not in allowed_statuses:
                 raise RuntimeError(f"OneLake returned HTTP {response.status}")
     except urllib.error.HTTPError as exc:
@@ -88,6 +96,7 @@ def upload(
     destination: PurePosixPath,
     token: str,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    onelake_host: str = ONELAKE_HOST,
 ) -> dict[str, int | str]:
     content = source.read_bytes()
 
@@ -96,7 +105,7 @@ def upload(
         current /= part
         send_request(
             "PUT",
-            build_url(workspace_id, lakehouse_id, current, {"resource": "directory"}),
+            build_url(workspace_id, lakehouse_id, current, {"resource": "directory"}, onelake_host),
             token,
             allowed_statuses=(201,),
             allowed_errors=((409, "PathAlreadyExists"),),
@@ -105,7 +114,7 @@ def upload(
 
     send_request(
         "PUT",
-        build_url(workspace_id, lakehouse_id, destination, {"resource": "file"}),
+        build_url(workspace_id, lakehouse_id, destination, {"resource": "file"}, onelake_host),
         token,
         allowed_statuses=(201,),
         timeout_seconds=timeout_seconds,
@@ -117,6 +126,7 @@ def upload(
             lakehouse_id,
             destination,
             {"action": "append", "position": "0"},
+            onelake_host,
         ),
         token,
         data=content,
@@ -130,6 +140,7 @@ def upload(
             lakehouse_id,
             destination,
             {"action": "flush", "position": str(len(content))},
+            onelake_host,
         ),
         token,
         allowed_statuses=(200,),
@@ -157,22 +168,39 @@ def main() -> int:
     parser.add_argument("--lakehouse-id", required=True)
     parser.add_argument("--destination", required=True)
     parser.add_argument("--token-file", required=True, type=Path)
+    parser.add_argument("--routing", type=Path, help="Selected target's routing.json, including its service-issued OneLake origin.")
     parser.add_argument("--timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
     args = parser.parse_args()
 
     if args.timeout_seconds <= 0:
         raise SystemExit("--timeout-seconds must be greater than zero")
+    workspace_id = validated_uuid(args.workspace_id, "--workspace-id")
+    lakehouse_id = validated_uuid(args.lakehouse_id, "--lakehouse-id")
+    destination = validated_destination(args.destination)
+    host = ONELAKE_HOST
+    if args.routing:
+        routing = json.loads(args.routing.read_text(encoding="utf-8"))
+        validate_routing(routing)
+        if routing["workspace_id"] != workspace_id or routing["lakehouse_id"] != lakehouse_id:
+            raise ValueError("Upload context differs from selected routing")
+        host = routing.get("onelake_host")
+        if not host and routing["fabric_api_host"] == PUBLIC_API:
+            host = ONELAKE_HOST
+        if not host:
+            raise ValueError("Selected target lacks a service-issued OneLake origin; stop before upload")
+        host = onelake_origin(host)
     token = read_private_token_file(args.token_file)
     if not token:
         raise SystemExit("--token-file is empty")
 
     result = upload(
         args.source,
-        validated_uuid(args.workspace_id, "--workspace-id"),
-        validated_uuid(args.lakehouse_id, "--lakehouse-id"),
-        validated_destination(args.destination),
+        workspace_id,
+        lakehouse_id,
+        destination,
         token,
         timeout_seconds=args.timeout_seconds,
+        onelake_host=host,
     )
     print(json.dumps(result, separators=(",", ":"), sort_keys=True))
     return 0

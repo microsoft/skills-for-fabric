@@ -23,11 +23,12 @@ metadata:
 >    operation: with `fab`, read `x-ms-operation-id` from `--show_headers` and poll
 >    `fab api operations/{id}` until `status` is `Succeeded`; with the `az rest`
 >    fallback, poll the `Location` / `x-ms-operation-id` header (see COMMON-CORE
->    long-running operation polling). THEN read `git/status` to confirm
->    `workspaceHead == remoteCommitHash`. Prefer the operation poll to confirm
->    completion; if you poll `git/status` instead, treat an in-progress (`202`) or
->    not-yet-synced response as "still running" and do not act on its `changes`
->    until the heads match. (Learn: rest/api/fabric/core/git and
+>    long-running operation polling). When a `202` came from `git/status` itself,
+>    read its body from `operations/{id}/result` (the `git_status` helper does
+>    this); calling `git/status` again can just return another `202`. After a
+>    `commitToGit` / `updateFromGit` operation succeeds, read status with
+>    `git_status` to confirm `workspaceHead == remoteCommitHash`, and do not act
+>    on its `changes` until the heads match. (Learn: rest/api/fabric/core/git and
 >    fabric/cicd/git-integration/git-automation.)
 > 4. `updateFromGit` requires the workspace's **current** `workspaceHead`; a stale
 >    value returns `400 WorkspaceHeadMismatch`. Always read `git/status` first.
@@ -90,6 +91,11 @@ outside the repo):
 ### MUST DO
 - Read `git/status` and pass the current `workspaceHead` into every `commitToGit`
   and `updateFromGit` call.
+- Generate a meaningful `commitToGit` comment of at most 300 characters. If the
+  requested text is longer, rewrite it concisely before the API call while
+  preserving intent; do not silently cut it mid-sentence. Retry once, with a
+  rewritten comment strictly shorter than the rejected one, only when Fabric
+  explicitly reports a comment-length validation error.
 - Poll `git/status` after each async operation until
   `workspaceHead == remoteCommitHash` **and** the `changes` array is empty. A
   `202`/`Succeeded` status is not proof of a correct sync — validate the state.
@@ -321,35 +327,122 @@ rest/api/fabric/core/connections/create-connection.)
 ## Commit to Git
 
 Push workspace items to the connected branch. Read the head first, then commit.
+The optional `comment` becomes the Git commit message and has a 300-character
+maximum. Generate or semantically condense it to fit before the first request.
+If there is no useful comment, omit the field and let the Git provider supply
+its default.
+
+These helpers are the canonical pattern for every snippet in this skill and in
+[references/automation-templates.md](references/automation-templates.md):
 
 ```bash
-# Read current head. git/status can return 202 (LRO) with no body — capture the
-# status code with --show_headers and poll before reading, or workspaceHead comes
-# back as "null" and the commit below fails with a misleading 400.
-RESP=$(fab api "workspaces/${WORKSPACE_ID}/git/status" --show_headers)
-if [ "$(echo "$RESP" | jq -r '.status_code')" = "202" ]; then
-  OP=$(echo "$RESP" | jq -r '.headers["x-ms-operation-id"]')
-  until [ "$(fab api "operations/${OP}" | jq -r '.text.status')" = "Succeeded" ]; do sleep 5; done
-  RESP=$(fab api "workspaces/${WORKSPACE_ID}/git/status" --show_headers)   # now 200 with body
-fi
-HEAD=$(echo "$RESP" | jq -r '.text.workspaceHead')
+# Read one response header case-insensitively from a `fab api --show_headers` result.
+hdr() { jq -r --arg h "$1" '[(.headers // {}) | to_entries[]
+  | select(.key | ascii_downcase == $h) | .value][0] // empty'; }
 
-# Commit all pending changes. Build the body with jq so the comment is always
-# valid JSON even if it contains a quote, backslash, or newline.
-jq -n --arg head "$HEAD" --arg msg "Author items" \
-  '{mode:"All", workspaceHead:$head, comment:$msg}' > commit.json
-RESP=$(fab api -X post "workspaces/${WORKSPACE_ID}/git/commitToGit" -i commit.json --show_headers)
-# commitToGit may complete synchronously (200) or async (202). Only poll when async.
-if [ "$(echo "$RESP" | jq -r '.status_code')" = "202" ]; then
-  OP=$(echo "$RESP" | jq -r '.headers["x-ms-operation-id"]')
-  until [ "$(fab api "operations/${OP}" | jq -r '.text.status')" = "Succeeded" ]; do sleep 5; done
-fi
+# Run `fab api` and require a parseable {status_code,text} envelope.
+fab_json() {
+  local r
+  r=$(fab api "$@" -H "x-ms-fabric-skill=git-integration-operations-cli" --show_headers 2>/dev/null) || true
+  jq -e 'has("status_code")' >/dev/null 2>&1 <<<"$r" \
+    || { echo "fab api $*: no parseable response" >&2; return 1; }
+  printf '%s\n' "$r"
+}
+
+# Poll an LRO (~10 min bound). Check the HTTP status before the body, honour
+# Retry-After on 429/503, and fail on any other non-200. With "result", print the
+# completed operation's body from operations/{id}/result.
+wait_for_lro() {
+  local op="$1" want="${2:-}" r sc st="" delay i
+  [ -n "$op" ] && [ "$op" != "null" ] \
+    || { echo "wait_for_lro: missing x-ms-operation-id" >&2; return 1; }
+  for i in $(seq 1 120); do
+    r=$(fab_json "operations/${op}") || return 1
+    sc=$(jq -r '.status_code' <<<"$r")
+    delay=$(hdr retry-after <<<"$r"); [[ "$delay" =~ ^[0-9]+$ ]] || delay=5
+    case "$sc" in
+      200) ;;
+      429|503) sleep "$delay"; continue ;;
+      *) echo "LRO ${op}: HTTP ${sc}" >&2; jq '.text' <<<"$r" >&2; return 1 ;;
+    esac
+    st=$(jq -r '.text.status' <<<"$r")
+    case "$st" in
+      Succeeded)
+        [ "$want" = "result" ] || return 0
+        r=$(fab_json "operations/${op}/result") || return 1
+        [ "$(jq -r '.status_code' <<<"$r")" = "200" ] \
+          || { echo "LRO ${op}: result HTTP $(jq -r '.status_code' <<<"$r")" >&2; return 1; }
+        jq -c '.text' <<<"$r"; return 0 ;;
+      Failed|Undefined) echo "LRO ${op}: ${st}" >&2; jq '.text.error' <<<"$r" >&2; return 1 ;;
+    esac
+    sleep "$delay"
+  done
+  echo "LRO ${op}: timed out (last status: ${st:-unknown})" >&2; return 1
+}
+
+# Print the git/status body. A 202 is resolved from the LRO result, never by
+# calling git/status again (which can return another 202).
+git_status() {
+  local r sc
+  r=$(fab_json "workspaces/$1/git/status") || return 1
+  sc=$(jq -r '.status_code' <<<"$r")
+  case "$sc" in
+    200) jq -c '.text' <<<"$r" ;;
+    202) wait_for_lro "$(hdr x-ms-operation-id <<<"$r")" result ;;
+    *)   echo "git/status: HTTP ${sc}" >&2; jq '.text' <<<"$r" >&2; return 1 ;;
+  esac
+}
+
+# Write a commit body to stdout. Fails on a missing head or a comment over 300
+# UTF-16 code units (the service count; jq `length` undercounts emoji).
+build_commit_body() {
+  jq -en --arg head "$1" --arg msg "$2" '
+    def u16: [explode[] | if . > 65535 then 2 else 1 end] | add // 0;
+    if ($head | length) == 0 or $head == "null" then
+      error("workspaceHead must be non-empty and non-null.")
+    elif ($msg | u16) > 300 then
+      error("Commit comment must be 300 characters or fewer.")
+    else
+      {mode:"All", workspaceHead:$head}
+      + if ($msg | length) > 0 then {comment:$msg} else {} end
+    end'
+}
+
+# Returns 0 committed, 3 service rejected the comment length, 1 any other failure.
+commit_to_git() {
+  local r sc
+  r=$(fab_json -X post "workspaces/$1/git/commitToGit" -i "$2") || return 1
+  sc=$(jq -r '.status_code' <<<"$r")
+  case "$sc" in
+    200) return 0 ;;
+    202) wait_for_lro "$(hdr x-ms-operation-id <<<"$r")"; return ;;
+    400)
+      if jq -e '.text | tostring | ascii_downcase
+          | test("comment") and test("300|length")' >/dev/null <<<"$r"; then
+        echo "commitToGit: comment too long" >&2; return 3
+      fi ;;
+  esac
+  echo "commitToGit: HTTP ${sc}" >&2; jq '.text' <<<"$r" >&2; return 1
+}
 ```
 
-Use `"mode": "Selective"` with an `items` array to commit a subset. `commitToGit`
-completes either synchronously (`200`, already settled) or asynchronously (`202`
-with an `x-ms-operation-id` to poll) — branch on `.status_code` as above rather
-than assuming `202`.
+Commit all pending changes:
+
+```bash
+STATUS=$(git_status "$WORKSPACE_ID") || exit 1
+HEAD=$(jq -r '.workspaceHead' <<<"$STATUS")
+COMMIT_MSG="Author items"
+build_commit_body "$HEAD" "$COMMIT_MSG" > commit.json || { rm -f commit.json; exit 2; }
+rc=0; commit_to_git "$WORKSPACE_ID" commit.json || rc=$?
+exit "$rc"
+```
+
+Exit `2` means the request was never sent: fix the head or condense the comment.
+Exit `3` means Fabric rejected the comment length: rewrite it strictly shorter
+than the rejected comment (resending the same text gets the same `400`) and run
+the commit once more. Treat any other non-zero exit as a failure and do not retry it
+as a length problem. Use `"mode": "Selective"` with an `items` array to commit a
+subset.
 
 ## Update from Git
 
@@ -357,10 +450,10 @@ Pull committed items into a workspace (for example, a downstream or target
 workspace connected to the same branch/folder).
 
 ```bash
-# Read both hashes from the target workspace
-STATUS=$(fab api "workspaces/${TARGET_WS}/git/status")
-TH=$(echo "$STATUS" | jq -r '.text.workspaceHead')
-REMOTE=$(echo "$STATUS" | jq -r '.text.remoteCommitHash')
+# Read both hashes from the target workspace (git_status: see Commit to Git)
+STATUS=$(git_status "$TARGET_WS") || exit 1
+TH=$(jq -r '.workspaceHead' <<<"$STATUS")
+REMOTE=$(jq -r '.remoteCommitHash' <<<"$STATUS")
 
 cat > update.json <<JSON
 {
@@ -383,10 +476,10 @@ Poll until the workspace and remote heads match. Both `commitToGit` and
 
 ```bash
 for i in $(seq 1 30); do
-  S=$(fab api "workspaces/${WORKSPACE_ID}/git/status")
-  WH=$(echo "$S" | jq -r '.text.workspaceHead')
-  RC=$(echo "$S" | jq -r '.text.remoteCommitHash')
-  CH=$(echo "$S" | jq -r '.text.changes | length')
+  S=$(git_status "$WORKSPACE_ID") || exit 1
+  WH=$(jq -r '.workspaceHead' <<<"$S")
+  RC=$(jq -r '.remoteCommitHash' <<<"$S")
+  CH=$(jq -r '.changes | length' <<<"$S")
   # Success = heads match AND no residual changes. Heads matching alone can still
   # leave uncommitted/unapplied diffs; validate both before declaring "synced".
   [ "$WH" = "$RC" ] && [ "$CH" = "0" ] && { echo "synced at $WH"; break; }
@@ -394,17 +487,18 @@ for i in $(seq 1 30); do
 done
 ```
 
-For an operation still in flight (a `202` from commit/update), poll the LRO
-directly instead of guessing from heads:
+For an operation still in flight, dispatch on the response code before polling.
+`commit_to_git` from [Commit to Git](#commit-to-git) already does this: `200`
+returns at once, `202` polls the `x-ms-operation-id` it returned, and anything
+else fails without polling. For `updateFromGit`, use the same pattern:
 
 ```bash
-# Capture x-ms-operation-id from the 202, then poll until Succeeded
-OP_ID=$(fab api -X post "workspaces/${WORKSPACE_ID}/git/commitToGit" -i commit.json \
-  --show_headers | jq -r '.headers["x-ms-operation-id"]')
-while :; do
-  ST=$(fab api "operations/${OP_ID}" | jq -r '.text.status')
-  case "$ST" in Succeeded) break ;; Failed) echo "op failed"; break ;; *) sleep 5 ;; esac
-done
+R=$(fab_json -X post "workspaces/${WORKSPACE_ID}/git/updateFromGit" -i update.json) || exit 1
+case "$(jq -r '.status_code' <<<"$R")" in
+  200) ;;
+  202) wait_for_lro "$(hdr x-ms-operation-id <<<"$R")" || exit 1 ;;
+  *)   echo "updateFromGit: HTTP $(jq -r '.status_code' <<<"$R")" >&2; jq '.text' <<<"$R" >&2; exit 1 ;;
+esac
 ```
 
 `git/status` also returns a `changes` array — a non-empty array means there are
@@ -581,7 +675,7 @@ parameterization it feeds.
 | `InsufficientPrivileges` / `403` | Caller lacks the role the operation needs (connect/disconnect need **Admin**; commit/update need at least **Contributor** with write on all items) | Grant the caller the required role: Admin to connect/disconnect, or Contributor with write on all items to commit/update |
 | `PrincipalTypeNotSupported` | Service principal using automatic credentials (or GitHub) | Switch to a `ConfiguredConnection` in `myGitCredentials` |
 | `commitToGitRequest is required` (with `fab api`) | Body piped via stdin | Write the body to a file, pass `-i body.json` |
-| Operation returns `202` then nothing changes | Async not yet complete | Poll `operations/{id}` (from `--show_headers`), or poll `git/status` until heads match |
+| Operation returns `202` then nothing changes | Async not yet complete | Poll `operations/{id}` (from `--show_headers`) with `wait_for_lro`; then check heads with `git_status`, which resolves a `202` from `operations/{id}/result` |
 | Operation stuck in `Running` for a long time | Large workspace or a second Git op is queued | Keep polling with a sane timeout (about 10 min); never start a second Git op concurrently |
 | `401 Unauthorized` | Wrong token audience | Run `fab auth login` (fab sets the audience automatically); on the `az rest` fallback pass `--resource https://api.fabric.microsoft.com` |
 | `WorkspaceRelationRootDirectoryMismatch` on `git/workspaceRelations` | Base and branch workspaces are connected to different Git roots | Connect both to the SAME repo/org/project/directory (Azure DevOps) or repo URL/directory (GitHub), differing only by `branchName`, then retry |
@@ -594,12 +688,12 @@ parameterization it feeds.
 ### Example 1: Commit source, then deploy into a target workspace
 
 ```bash
-# Commit everything in the source workspace (jq builds a JSON-safe body)
-SRC_HEAD=$(fab api "workspaces/${SRC_WS}/git/status" | jq -r '.text.workspaceHead')
-jq -n --arg head "$SRC_HEAD" --arg msg "Deploy v1" \
-  '{mode:"All", workspaceHead:$head, comment:$msg}' > commit.json
-fab api -X post "workspaces/${SRC_WS}/git/commitToGit" -i commit.json
-# ...poll src status until synced, then updateFromGit into ${TARGET_WS} (see above)
+# Uses the helpers from "Commit to Git".
+SRC_STATUS=$(git_status "$SRC_WS") || exit 1
+build_commit_body "$(jq -r '.workspaceHead' <<<"$SRC_STATUS")" "Deploy v1" > commit.json \
+  || { rm -f commit.json; exit 2; }
+commit_to_git "$SRC_WS" commit.json || exit $?
+# ...check sync status of ${SRC_WS}, then updateFromGit into ${TARGET_WS} (see above)
 ```
 
 ### Example 2: `az rest` fallback equivalents
@@ -614,10 +708,13 @@ az rest --method GET \
   --url "https://api.fabric.microsoft.com/v1/workspaces/${WORKSPACE_ID}/git/status" \
   --resource "https://api.fabric.microsoft.com"
 
-# commit (body inline)
+# commit (body from build_commit_body in "Commit to Git"). az rest prints only
+# the body and exits non-zero on 4xx/5xx; it does not expose x-ms-operation-id,
+# so confirm completion with the "Check Sync Status" loop.
+build_commit_body "$HEAD" "Author items" > commit.json || { rm -f commit.json; exit 2; }
 az rest --method POST \
   --url "https://api.fabric.microsoft.com/v1/workspaces/${WORKSPACE_ID}/git/commitToGit" \
   --resource "https://api.fabric.microsoft.com" \
   --headers "Content-Type=application/json" \
-  --body "{\"mode\":\"All\",\"workspaceHead\":\"${HEAD}\",\"comment\":\"Author items\"}"
+  --body @commit.json
 ```
