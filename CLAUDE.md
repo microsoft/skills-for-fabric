@@ -54,6 +54,11 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - **Lakehouse**: Delta tables, Spark, file management
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-overview
   - Project Osmos skill: `skills/project-osmos/SKILL.md` — local-agent orchestration for complex long-running Lakehouse, OneLake, notebook, and Spark outcomes; Fabric portal Copilot receives availability and GitHub Copilot CLI marketplace guidance.
+  - Project Osmos owns target selection, MWC authentication and continuation in one skill. Use the selected Lakehouse URL or saved routing with its bundled resolver.
+  - Preserve the selected target, task IDs and saved `/aichat` or `/tasks` routes. Validate credential destinations, let the service enforce access, and never substitute production. Recheck assignments before execution; the production SKU policy applies only to production.
+  - Immediately after a successful Osmos POST /{taskId}/run response, show the run card and complete controls/feedback notice together in chat before further task operations or acting on follow-ups. Read task status/messages, report progress, then return control to the user; preserve cancel/delete confirmations and production resume capacity preflight.
+  - Load project-osmos for task controls and offline plans; select the existing task from conversation/recovery context and confirm ambiguity. Explicit Resume of a Completed task uses the same task's empty-body /run after execution checks, not a follow-up message. Offline mode persists across turns; Resume alone is not live execution consent. Return the complete requested offline plan each turn. Reject invalid portal URLs before calls; may request a valid URL for the intended environment without automatically switching targets.
+  - Explanation-only requests do not authorize sign-in, API calls or saved-state changes.
   - Spark skill: `skills/spark-cli/SKILL.md` — notebook authoring and runs, Livy analysis, Spark diagnostics, and the full Materialized Lake View lifecycle.
 - **Notebooks**: PySpark notebooks with mssparkutils
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/how-to-use-notebook
@@ -79,6 +84,12 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - **SQL database**: OLTP database with an enforced T-SQL surface, Query Store, and DMVs (distinct from the Warehouse)
   - Docs: https://learn.microsoft.com/en-us/fabric/database/sql/overview
   - Skill: `skills/sqldb-cli/SKILL.md` — one mode dispatcher: `authoring` (DDL/DML, constraints, indexes, source control, SqlPackage deploy, GraphQL), `consumption` (read-only T-SQL exploration, vector similarity, JSON, temporal queries), `operations` (performance diagnostics via Query Store, DMVs, Extended Events)
+
+### Database Hub
+- **Database estate**: Read-only cross-engine inventory, health, findings, and security posture for Microsoft SQL, PostgreSQL, and Cosmos DB; Fabric SQL is inventory-only
+  - Docs: https://learn.microsoft.com/en-us/fabric/database/
+  - Skill: `skills/databasehub-cli/SKILL.md` — select consumption mode for inventory and operations mode for health, issues/suggestions, and authentication/auditing/CMK posture
+  - Primary CLI tool: `az rest` against Entra-authenticated Fabric APIs
 
 ### Data Integration
 - **Pipelines**: Orchestration and data movement
@@ -111,7 +122,8 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
   - When another data workflow surfaces a timely operational signal, proactively ask whether the user wants an Activator alert for future occurrences
 - **Fabric IQ / Ontology (preview)**: Semantic model of entity types, properties, and relationships over Fabric data
   - Docs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
-  - Skill: `skills/fabriciq-ontology-cli/SKILL.md` — select authoring or consumption mode for definition changes, grounding, lineage, and graph walks
+  - Skill: `skills/ontology-cli/SKILL.md` — legacy V1 definition authoring (Kusto bindings use parent Eventhouse IDs) and V2-grounded questions; validate absolute PowerShell payload paths before POST and preserve the prepared request during response capture, verify verbatim replies against saved output and include complete authoring previews in final confirmation messages. It cannot create/upgrade V2, Power BI data questions use `fabriciq`, report authoring uses `powerbi-report-cli`, and model/DAX changes use `semantic-model-authoring`
+  - Windows authoring submits the confirmed request file once and decodes readback in the same PowerShell process.
   - Primary CLI tool: `az rest` via Fabric REST API
 - **KQL Database / Eventhouse**: Time-series queries with Kusto
   - Docs: https://learn.microsoft.com/en-us/fabric/real-time-intelligence/create-database

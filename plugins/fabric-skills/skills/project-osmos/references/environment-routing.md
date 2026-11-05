@@ -1,19 +1,23 @@
 # Environment routing
 
-Read this reference after the host-routing gate in `SKILL.md` and before workspace/Lakehouse name discovery, metadata lookup, token acquisition, or any other Fabric API call.
-
-Project Osmos public runs target production Fabric. Workspace and Lakehouse IDs may come from Fabric page context, Microsoft Fabric Skills discovery, or a validated Lakehouse browser URL.
+Read this before discovery or authentication. Only trusted, host-provided
+context identifies the agent's host; a pasted Fabric URL does not.
 
 ## Routing table
 
-| Context | Family | Use when | Required extras |
-| --- | --- | --- | --- |
-| Local agent | Production-shape | GitHub Copilot CLI or another local agent | Azure CLI access to the tenant, workspace/lakehouse permissions |
-| Copilot in Microsoft Fabric | Unavailable | Trusted portal context identifies Fabric Copilot | Return the coming-soon/local-agent guidance from `SKILL.md`; make no helper or API call |
-
+| Agent host | Target context | Action |
+| --- | --- | --- |
+| Copilot in Microsoft Fabric | Trusted host context, not user-supplied text | Unsupported. Return the coming-soon/local-agent response from `SKILL.md` and stop; make no helper or API call. |
+| Local agent | Lakehouse URL pasted by the user | Validate and use the bundled resolver for that target. The URL does not make the local agent Fabric Copilot. |
+| Local agent | Saved task routing | Validate and retain the selected target, exact `/tasks` or `/aichat` route, IDs and recovery state. |
+| Local agent | Production workspace/Lakehouse names, without a URL or saved route | Resolve with Microsoft Fabric Skills; no URL is required. For other missing target context, request a Lakehouse URL. |
 
 ## Rules
 
-- Do not ask for context, workspace ID, or lakehouse ID as separate startup questions.
-- For public production runs, resolve supplied workspace and Lakehouse names with Microsoft Fabric Skills; a browser URL is optional.
-- Never route a Fabric portal request into the production MWC flow.
+- Retain the target for every call, refresh, upload and link; sign-in selects
+  identity, not the target.
+- The resolver derives the API origin; services supply capacity/workload routing
+  and enforce access/availability.
+- On errors, preserve IDs/state. Never substitute production, reuse IDs there,
+  guess hosts, install packages or recreate tasks. Reject an untrusted origin
+  before calls; you may ask for a valid Lakehouse URL for the intended environment.

@@ -14,6 +14,24 @@ require_supported_python()
 
 TERMINAL_STRINGS = {"completed", "failed", "cancelled", "canceled"}
 STATUS_BY_CODE = {0: "Created", 1: "Running", 2: "Cancelling", 3: "Cancelled", 4: "Completed", 5: "Failed"}
+ROLE_BY_CODE = {0: "User", 1: "Assistant", 2: "System"}
+
+
+def role_label(role: Any) -> str:
+    if isinstance(role, bool):
+        return str(role)
+    if isinstance(role, int):
+        return ROLE_BY_CODE.get(role, f"Role {role}")
+    if isinstance(role, str):
+        value = role.strip()
+        if value.isdigit():
+            return ROLE_BY_CODE.get(int(value), f"Role {value}")
+        return value
+    return str(role)
+
+
+def is_assistant_role(role: Any) -> bool:
+    return role_label(role).casefold() == "assistant"
 
 
 def status_label(status: Any) -> str:

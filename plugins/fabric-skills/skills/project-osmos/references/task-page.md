@@ -37,10 +37,16 @@ table or sub-path in the pasted URL (e.g. `/tables/Invoice`) is dropped,
 and preserve the original scheme and netloc.
 
 Print `task_page_url` as `Task page` in the run card and surface it in chat.
+Immediately after a successful start or resume response from `POST /{taskId}/run`,
+show that card and the complete control/feedback notice from step 8 of `SKILL.md`
+together in chat, before performing further task operations or acting on user follow-ups. Use a
+user-visible interim/commentary response if work continues; neither helper JSON
+nor a later final answer replaces this handoff. The helper does not render the notice.
 The helper attempts to open it in the default browser unless `--no-open` is
 needed. Browser opening is bounded to three seconds; a failed or timed-out
 launch is non-fatal: print the warning
-and URL and continue bounded task monitoring. The Fabric link is
+and URL with the run card and controls. The remote task is unaffected, and
+status/message checks remain available through the task APIs. The Fabric link is
 the only browser target; no local HTML fallback is created or opened.
 Opening is best-effort: the timeout bounds the helper's wait and stops its
 direct browser controller, not every descendant an OS or custom launcher may
@@ -49,7 +55,8 @@ The browser subprocess environment excludes `MWC_TOKEN`, `PBI_TOKEN`, and
 `BEARER` (case-insensitively), while retaining normal settings such as `BROWSER`
 and `DISPLAY`. The caller's environment is unchanged.
 If URL validation fails (exit 2), report the error and task ID, leave
-`task_page_url` unset, and continue bounded task monitoring anyway. Correct the portal
+`task_page_url` unset, emit the run card with its unavailable-link value and the
+post-start notice anyway; task API checks remain available. Correct the portal
 context and rerun this helper for the same task; never recreate the task or
 substitute a production host for missing private context.
 

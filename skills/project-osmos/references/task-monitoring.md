@@ -1,6 +1,6 @@
 # Task monitoring
 
-Use bounded task and message API reads to report Project Osmos progress. Do not create a local dashboard or background poller.
+Use bounded task and message API reads to report Project Osmos progress, then return control to the user.
 
 ## Progress check
 
@@ -10,11 +10,18 @@ Use bounded task and message API reads to report Project Osmos progress. Do not 
 4. Report current status and `runDetails`.
 5. Return control to the user.
 
-Task status alone is not progress. Accept assistant role values `Assistant`, `1`, and `"1"` on inbound reads.
+Ground progress reports in task messages as well as status. Treat role values `Assistant`, `1`, and `"1"`
+as assistant messages on inbound reads; canonical roles are
+`User`, `Assistant`, and `System`. Deduplicate using original message IDs.
+Use the saved route for read-only inspection, including legacy `/aichat`; trial
+or unknown eligibility must not prevent these reads.
 
 ## Status normalization
 
-Canonical status values are Created, Running, Cancelling, Cancelled, Completed, and Failed. Deployed routes may return `0`–`5` as numbers or strings. Use `scripts/task_status.py`.
+Canonical status values are Created, Running, Cancelling, Cancelled, Completed, and Failed.
+Numeric values `0`–`5` (including stringified numbers) map to those states in that order.
+Python integrations can import the normalization helpers from `scripts/task_status.py`;
+it is a library module, not a standalone command.
 
 Treat `runDetails.completedAt` or `runDetails.errorMessage` as terminal evidence even when the nominal status is Running.
 
@@ -32,9 +39,11 @@ If the same question intent appears three times without intervening non-elicitat
 - report a handoff-contract failure;
 - do not restart, auto-answer, or create another task.
 
-## Retryable Spark transient
+## Spark failure diagnosis
 
-For `Run failed while executing statements on the Spark session. Please retry.`, read messages and status first. If no run is active, refresh authentication and call `/run` once on the same task ID. A repeated identical failure is terminal; do not loop.
+`Run failed while executing statements on the Spark session. Please retry.` is
+lossy and can hide a nontransient eligibility rejection. Read messages/status
+and follow `troubleshooting.md` from the skill reference index; do not automatically resume.
 
 ## Response fields
 

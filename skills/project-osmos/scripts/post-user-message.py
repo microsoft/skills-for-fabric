@@ -5,7 +5,7 @@
 
 Usage (Bash; select PYTHON_RUNNER using references/python-helper-runtime.md):
     "${PYTHON_RUNNER[@]}" skills/project-osmos/scripts/post-user-message.py \\
-        --base-url https://.../aichat --task-id <uuid> \\
+        --base-url https://.../tasks --task-id <uuid> \\
         --token-file <path> --message "also dedupe by invoice_id" --output json
 
 The token is read from --token-file, never argv/env. On non-Windows systems,
@@ -15,6 +15,7 @@ group/other permissions are rejected before reading; use chmod 600.
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import os
 import shutil
@@ -26,12 +27,14 @@ import urllib.parse
 import urllib.request
 import uuid
 from dataclasses import asdict, dataclass
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from python_runtime import require_supported_python
 from task_status import is_task_running, is_task_terminal, status_label
+from task_routes import validate_routing
 
 
 require_supported_python()
@@ -59,6 +62,13 @@ class HttpResult:
         )
 
 
+class TaskRequest(Protocol):
+    def __call__(
+        self, url: str, auth_header: str, timeout: float, *,
+        method: str = "GET", body: bytes | None = None, content_type: str | None = None,
+    ) -> HttpResult: ...
+
+
 @dataclass(frozen=True)
 class ContinuationResult:
     task_id: str
@@ -82,10 +92,11 @@ class ContinuationError(RuntimeError):
 def normalize_base_url(value: str) -> str:
     trimmed = value.strip().rstrip("/")
     parsed = urllib.parse.urlsplit(trimmed)
-    if parsed.scheme.lower() != "https" or not parsed.netloc or parsed.query or parsed.fragment:
+    if (parsed.scheme.lower() != "https" or not parsed.netloc or parsed.query or parsed.fragment
+            or parsed.username or parsed.password):
         raise ValueError("--base-url must be an absolute HTTPS URL without query or fragment")
-    if parsed.path.rstrip("/").casefold().endswith("/aichat") is False:
-        raise ValueError("--base-url path must end with /aichat")
+    if not parsed.path.endswith(("/tasks", "/aichat")):
+        raise ValueError("--base-url path must end with /tasks or saved /aichat")
     return trimmed
 
 
@@ -100,6 +111,7 @@ def validate_base_url_from_routing(base_url: str, token_file: Path) -> str:
     trusted_base = routing.get("tasks_base") if isinstance(routing, dict) else None
     if not isinstance(trusted_base, str):
         raise ValueError(f"trusted routing file {routing_file} does not contain tasks_base")
+    validate_routing(routing)
     normalized_trusted_base = normalize_base_url(trusted_base)
     if base_url != normalized_trusted_base:
         raise ValueError("--base-url must match tasks_base in the trusted routing file")
@@ -113,6 +125,11 @@ def normalize_task_id(value: str) -> str:
         raise ValueError("--task-id must be a UUID") from exc
 
 
+class RejectRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def http_request(
     url: str,
     auth_header: str,
@@ -122,7 +139,7 @@ def http_request(
     body: bytes | None = None,
     content_type: str | None = None,
 ) -> HttpResult:
-    headers = {"Authorization": auth_header}
+    headers = {"Authorization": auth_header, "x-ms-fabric-skill": "project-osmos"}
     if content_type:
         headers["Content-Type"] = content_type
     if method == "POST" and body is None:
@@ -130,17 +147,18 @@ def http_request(
         headers["Content-Length"] = "0"
     request = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return HttpResult(response.status, response.read(), url)
-    except urllib.error.HTTPError as exc:
-        return HttpResult(exc.code, exc.read() if exc.fp else b"", url)
-    except (urllib.error.URLError, OSError) as exc:
+        try:
+            with urllib.request.build_opener(RejectRedirects()).open(request, timeout=timeout) as response:
+                return HttpResult(response.status, response.read(), url)
+        except urllib.error.HTTPError as exc:
+            return HttpResult(exc.code, exc.read() if exc.fp else b"", url)
+    except (urllib.error.URLError, OSError, http.client.HTTPException) as exc:
         return HttpResult(0, f"{type(exc).__name__}: {exc}".encode(), url)
 
 
 def failure_message(action: str, result: HttpResult) -> str:
     if result.status == 0:
-        return f"{action} failed before receiving an HTTP response: {result.text[:500]}"
+        return f"{action} failed without a complete HTTP response: {result.text[:500]}"
     category = "authentication failed" if result.is_auth_failure() else f"HTTP {result.status}"
     detail = result.text.strip()
     return f"{action} failed ({category})" + (f": {detail[:500]}" if detail else "")
@@ -184,30 +202,62 @@ def continue_task(
     author_name: str,
     source: str,
     timeout: float,
+    preflight: Callable[[], None],
+    request: TaskRequest | None = None,
 ) -> ContinuationResult:
-    """Post the message first, then start one run only when none is active."""
+    """Run the caller's preflight, post the message, and start at most one run.
+
+    The caller owns trusted routing, authentication, execution policy and any
+    custom transport. Transport failures retain phase-specific recovery context
+    without retries or fallback. Omitted transports use the command-line HTTP helper.
+    """
     task_id = normalize_task_id(task_id)
     task_url = f"{normalize_base_url(base_url)}/{task_id}"
-    task_before = parse_task(http_request(task_url, auth_header, timeout))
+    preflight()
+    transport = http_request if request is None else request
+
+    def request_task(
+        url: str, *, method: str = "GET", body: bytes | None = None,
+        content_type: str | None = None,
+    ) -> HttpResult:
+        try:
+            return transport(
+                url, auth_header, timeout, method=method, body=body, content_type=content_type,
+            )
+        except (urllib.error.URLError, OSError, http.client.HTTPException) as exc:
+            return HttpResult(0, f"{type(exc).__name__}: {exc}".encode(), url)
+
+    task_before = parse_task(request_task(task_url))
     running_before = is_task_running(task_before)
     terminal_before = is_task_terminal(task_before)
 
     message_id, body = build_message_payload(message, author_name, source)
-    message_result = http_request(
-        f"{task_url}/messages",
-        auth_header,
-        timeout,
-        method="POST",
-        body=body,
-        content_type="application/json",
-    )
+    try:
+        message_result = request_task(
+            f"{task_url}/messages",
+            method="POST",
+            body=body,
+            content_type="application/json",
+        )
+    except ContinuationError as exc:
+        raise ContinuationError(
+            f"user message post outcome is unknown; message ID {message_id}; {exc}. "
+            "Inspect messages before retrying; do not generate a new deduplication ID."
+        ) from exc
     if not message_result.ok:
-        raise ContinuationError(failure_message("user message post", message_result))
+        outcome = "user message post outcome is unknown; " if message_result.status == 0 else ""
+        raise ContinuationError(
+            f"{outcome}{failure_message('user message post', message_result)}; message ID {message_id}. "
+            "Inspect messages before retrying; do not generate a new deduplication ID."
+        )
 
-    task_after = parse_task(
-        http_request(task_url, auth_header, timeout),
-        "post-message status recheck",
-    )
+    try:
+        task_after = parse_task(
+            request_task(task_url),
+            "post-message status recheck",
+        )
+    except ContinuationError as exc:
+        raise ContinuationError(f"user message {message_id} was posted; {exc}; do not repost it") from exc
     running_after = is_task_running(task_after)
     status_after = status_label(task_after.get("status"))
     run_start_attempted = False
@@ -217,16 +267,28 @@ def continue_task(
 
     if not running_after:
         run_start_attempted = True
-        run_result = http_request(f"{task_url}/run", auth_header, timeout, method="POST")
+        try:
+            run_result = request_task(f"{task_url}/run", method="POST")
+        except ContinuationError as exc:
+            raise ContinuationError(
+                f"user message {message_id} was posted; run start outcome is unknown; "
+                f"{exc}; inspect status before retrying; do not repost it"
+            ) from exc
         if run_result.ok:
             run_started = True
             run_active = True
             run_start_outcome = "started"
         elif run_result.status == 409:
-            conflict_task = parse_task(
-                http_request(task_url, auth_header, timeout),
-                "run-conflict status lookup",
-            )
+            try:
+                conflict_task = parse_task(
+                    request_task(task_url),
+                    "run-conflict status lookup",
+                )
+            except ContinuationError as exc:
+                raise ContinuationError(
+                    f"user message {message_id} was posted; {exc}; "
+                    "inspect status before retrying; do not repost it"
+                ) from exc
             if not is_task_running(conflict_task):
                 raise ContinuationError(
                     f"user message {message_id} was posted, but same-task run start returned "
@@ -238,8 +300,11 @@ def continue_task(
             run_active = True
             run_start_outcome = "already_running"
         else:
+            outcome = "run start outcome is unknown; " if run_result.status == 0 else ""
             raise ContinuationError(
-                f"user message {message_id} was posted, but {failure_message('same-task run start', run_result)}"
+                f"user message {message_id} was posted; {outcome}"
+                f"{failure_message('same-task run start', run_result)}; "
+                "inspect status before retrying; do not repost it"
             )
 
     return ContinuationResult(
@@ -281,6 +346,36 @@ def read_private_token_file(path: Path) -> str:
         return token_file.read().strip()
 
 
+def execution_preflight(token_file: Path, *, allow_unknown: bool, timeout: float) -> None:
+    """Validate saved context and recheck the same target before execution."""
+    routing_file = token_file.parent / "routing.json"
+    try:
+        routing = json.loads(routing_file.read_text(encoding="utf-8"))
+        if not isinstance(routing, dict):
+            raise ValueError("Saved routing must be an object")
+        validate_routing(routing)
+    except (OSError, ValueError) as exc:
+        raise ContinuationError(f"Cannot validate saved execution context: {exc}") from exc
+    command = [
+        sys.executable, str(Path(__file__).with_name("resolve-auth-and-routing.py")),
+        "--workspace-id", routing["workspace_id"], "--lakehouse-id", routing["lakehouse_id"],
+        "--existing-routing", str(routing_file),
+        "--expected-capacity-id", routing["capacity_id"], "--check-capacity-only", "--timeout", str(timeout),
+    ]
+    if routing.get("resource_tenant_id"):
+        command.extend(["--resource-tenant-id", routing["resource_tenant_id"]])
+    if allow_unknown:
+        command.append("--allow-unknown-capacity")
+    try:
+        result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=timeout * 105)
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ContinuationError(f"Capacity preflight failed before task mutation: {exc}") from exc
+    if result.stderr:
+        print(result.stderr.rstrip(), file=sys.stderr)
+    if result.returncode:
+        raise ContinuationError("Capacity preflight did not authorize execution; no task mutations sent")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", required=True)
@@ -292,6 +387,8 @@ def main() -> int:
     parser.add_argument("--auth-scheme", default="mwctoken")
     parser.add_argument("--timeout", type=float, default=15.0)
     parser.add_argument("--output", choices=("id", "json"), default="id")
+    parser.add_argument("--allow-unknown-capacity", action="store_true",
+                        help="Only after explicit user acknowledgment of unknown eligibility for this execution.")
     args = parser.parse_args()
 
     try:
@@ -319,6 +416,9 @@ def main() -> int:
             author_name=args.author_name or detect_az_user() or "unknown",
             source=args.source,
             timeout=args.timeout,
+            preflight=lambda: execution_preflight(
+                args.token_file, allow_unknown=args.allow_unknown_capacity, timeout=args.timeout,
+            ),
         )
     except ContinuationError as exc:
         print(f"error: {exc}", file=sys.stderr)

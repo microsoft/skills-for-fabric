@@ -20,10 +20,13 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$LakehouseId,
 
-    [Parameter(Mandatory = $true)]
     [string]$OutputDir,
 
-    [string]$FabricApiHost = "https://api.fabric.microsoft.com",
+    [string]$FabricApiHost,
+
+    [string]$PortalUrl,
+
+    [string]$ExistingRouting,
 
     [string]$WorkloadType = "SparkCore",
 
@@ -31,11 +34,24 @@ param(
 
     [string]$TokenResource = "https://analysis.windows.net/powerbi/api",
 
-    [string]$PythonCommand = ""
+    [string]$PythonCommand = "",
+
+    [string]$ExpectedCapacityId,
+
+    [ValidateSet("execute", "inspect")]
+    [string]$Purpose = "execute",
+
+    [switch]$AllowUnknownCapacity,
+
+    [switch]$CheckCapacityOnly
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+if (-not $CheckCapacityOnly -and [string]::IsNullOrWhiteSpace($OutputDir)) {
+    throw "OutputDir is required unless CheckCapacityOnly is specified."
+}
 
 function Resolve-PythonInvocation {
     param([string]$RequestedCommand)
@@ -112,20 +128,29 @@ $arguments += @(
     $scriptPath,
     "--workspace-id", $WorkspaceId,
     "--lakehouse-id", $LakehouseId,
-    "--output-dir", $OutputDir,
-    "--fabric-api-host", $FabricApiHost,
     "--workload-type", $WorkloadType,
     "--timeout", ([string]$Timeout),
     "--token-resource", $TokenResource
 )
+if ($FabricApiHost) { $arguments += @("--fabric-api-host", $FabricApiHost) }
+if ($PortalUrl) { $arguments += @("--portal-url", $PortalUrl) }
+if ($ExistingRouting) { $arguments += @("--existing-routing", $ExistingRouting) }
+if (-not [string]::IsNullOrWhiteSpace($OutputDir)) {
+    $arguments += @("--output-dir", $OutputDir)
+}
 if (-not [string]::IsNullOrWhiteSpace($ResourceTenantId)) {
     $arguments += @("--resource-tenant-id", $ResourceTenantId)
 }
+$arguments += @("--purpose", $Purpose)
+if ($ExpectedCapacityId) { $arguments += @("--expected-capacity-id", $ExpectedCapacityId) }
+if ($AllowUnknownCapacity) { $arguments += "--allow-unknown-capacity" }
+if ($CheckCapacityOnly) { $arguments += "--check-capacity-only" }
 
 & $python.FileName @arguments
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
+if ($CheckCapacityOnly) { exit 0 }
 
 $envScript = Join-Path $OutputDir "env.ps1"
 Write-Host ""

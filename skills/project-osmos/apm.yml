@@ -3,7 +3,7 @@
 #     apm install microsoft/skills-for-fabric --skill project-osmos
 
 name: project-osmos
-version: 0.1.0
-description: "Orchestrate Project Osmos for long-running Fabric and OneLake data-engineering outcomes, including task status, messages, follow-ups, cancellation, and deletion."
+version: 0.1.20
+description: "Orchestrate Project Osmos Fabric/OneLake outcomes as one task, with medallion builds and task-splitting advice."
 author: Microsoft Fabric
 license: MIT

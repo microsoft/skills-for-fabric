@@ -155,7 +155,10 @@ Notes:
 | `fabric-skills` | Complete Microsoft Fabric skill bundle, including authoring, consumption, operations, migration, and end-to-end architecture skills. |
 | `powerbi-authoring` | Authoring Power BI semantic models, reports, and PBIP workflows, including Power BI report planning, design, authoring, and management. |
 
-The full bundle includes skills for SQL data warehouse, Spark and Lakehouse, Power BI semantic models, Eventhouse and KQL, Eventstreams, Dataflows Gen2, catalog search, migration scenarios, and medallion architecture workflows.
+The full bundle includes skills for SQL data warehouse, Database Hub
+cross-engine estate inventory/health/security posture, Spark and Lakehouse,
+Power BI semantic models, Eventhouse and KQL, Eventstreams, Dataflows Gen2,
+catalog search, migration scenarios, and medallion architecture workflows.
 
 See [CHANGELOG.md](CHANGELOG.md) for public release notes.
 
