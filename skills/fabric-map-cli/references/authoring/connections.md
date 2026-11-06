@@ -32,10 +32,12 @@ invent IDs from display names.
 
 ## Scope and ownership
 
-This adapter references existing Fabric Connections. Creation, credential
-replacement/rotation, and MPC Pro endpoint registration belong to an explicitly
-authorized connection/provider administration workflow, not Map CRUD.
-Never reveal credentials.
+This adapter uses only user-created Fabric Connections and external source
+resources. The user owns connection creation, credential replacement/rotation,
+and provider setup, including endpoint registration and publishing layers or
+collections. Provide guidance using the setup references below, but do not
+perform or delegate these operations, even when requested as a Map prerequisite.
+Never collect or reveal credentials.
 
 Fabric Map definitions store connection IDs and provider resource identifiers,
 not secrets.
@@ -47,12 +49,16 @@ not secrets.
 2. Exact-match the intended connection by display name and compatible
    connection type.
 3. If more than one connection matches, ask the user to choose.
-4. Validate the provider resource/layer and supported projection/image format
+4. If the intended connection or provider resource does not exist, explain what
+   the user must set up and wait. Do not create a substitute or mutate the
+   affected Map. After the user completes setup, repeat read-only resolution
+   and validation; confirmation alone does not establish access or compatibility.
+5. Validate the provider resource/layer and supported projection/image format
    using read-only metadata. For feature services, also validate geometry,
    response format, attribute types, requested output fields, and source filters
    against advertised query capabilities and current protocol requirements.
    Report anything that cannot be verified.
-5. Never print credentials, tokens, keys, or full secret-bearing connection
+6. Never print credentials, tokens, keys, or full secret-bearing connection
    payloads.
 
 Feature services require a publicly reachable HTTPS service root and EPSG:4326

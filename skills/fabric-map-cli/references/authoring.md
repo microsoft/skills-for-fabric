@@ -18,8 +18,11 @@ request or prior user context, ask which source to use and wait before
 creation; do not default to an empty Map.
 
 For source/layer changes, read the relevant adapter and validate only the
-affected sources before assembling the complete definition. Do not provision
-prerequisite data or connections as a hidden side effect.
+affected sources before assembling the complete definition. Connections and
+external source resources must already be created by the user. If either is
+missing, provide setup guidance and wait for the user to complete it before
+the affected Map mutation; do not provision it or delegate its provisioning.
+Map authoring does not authorize creating or modifying prerequisite source data.
 
 For Ontology entities, read [Ontology](authoring/ontology.md). For variable-backed
 sources, read [variable references](authoring/variables.md) and the underlying

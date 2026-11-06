@@ -133,7 +133,10 @@ source fragments and reuse the same core rendering, filter and camera settings.
   using the authoring reference's schema-resolution procedure; never pin a
   default version in this skill. Preserve the declared schema and unrelated
   content on inspection and edits unless a schema migration is requested.
-- Keep source-data and connection administration separate from Map mutations.
+- Use only user-created connections and external source resources. Provide setup
+  guidance when needed, but do not create or administer them or delegate their
+  provisioning. Wait for the user to complete missing prerequisites, then
+  discover and validate them read-only before the affected Map mutation.
 - A local definition is not deployment. Complete the terminal write and its
   readback before claiming persistence; report rendering as unverified unless
   independently observed.
