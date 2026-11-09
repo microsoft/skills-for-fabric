@@ -4,6 +4,16 @@ For authoring, read this after `../authoring.md` when a layer references a Fabri
 Connection. For capability questions, read the summary without listing tenant
 connections or running setup.
 
+## Contents
+
+- [Documented Map adapters](#documented-map-adapters)
+- [Scope and ownership](#scope-and-ownership)
+- [Resolution and validation](#resolution-and-validation)
+- [Definition fragments](#definition-fragments)
+- [Security rules](#security-rules)
+- [Readback](#readback)
+- [References](#references)
+
 ## Documented Map adapters
 
 | Connection type (Fabric UI) | Data and rendering | Limits |
@@ -107,8 +117,8 @@ Use the exact source type and resource identifier supported by the selected
 connection/provider and current schema. Do not infer them from a display name.
 Render imagery sources with `layerSettings[].options.type: "raster"` and the
 matching layer-source ID; do not add vector-only `options.sourceLayer`. Render
-feature-service sources as vector layers through the shared
-[data-layer settings](../authoring.md#shared-data-layer-settings). Store source
+feature-service sources as vector layers through the shared data-layer settings
+in `../styling.md`, indexed in `SKILL.md`. Store source
 queries and output fields in the selected schema's source-query structure,
 separate from Map display filters. Preserve them during visual edits; use the
 documented source workflow for retrieval changes.

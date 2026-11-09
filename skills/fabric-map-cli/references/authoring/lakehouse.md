@@ -4,6 +4,15 @@ For authoring, read this after `../authoring.md` when a layer uses Lakehouse
 files. For capability questions, read the summary only; no source lookup is
 needed. The shared reference owns lifecycle, encoding, update, and readback.
 
+## Contents
+
+- [Capabilities](#capabilities)
+- [Resolve workspace, Lakehouse, and exact file](#resolve-workspace-lakehouse-and-exact-file)
+- [Inspect the selected sources](#inspect-the-selected-sources)
+- [Definition fragments](#definition-fragments)
+- [Readback](#readback)
+- [References](#references)
+
 ## Capabilities
 
 Lakehouse layers are file-backed and best suited to reference, boundary, vector
@@ -57,8 +66,8 @@ Authorization: Bearer <in-memory Storage-audience token>
 x-ms-version: 2023-11-03
 ```
 
-Obtain the token with `az account get-access-token --resource
-https://storage.azure.com/`; never print or save it. Follow the
+Acquire a `https://storage.azure.com/` token through the shared `COMMON-CLI.md`
+authentication guidance indexed in `SKILL.md`; never print or save it. Follow the
 `x-ms-continuation` response header until exhausted. For a supplied subdirectory,
 narrow discovery to that directory. Exact-match the requested `Files/...` path
 or basename among non-directory entries; duplicate basenames require selection,
@@ -244,7 +253,7 @@ datasource alias and keep layer links consistent. Preserve existing aliases.
 is the layer rendering type. Check the selected schema and current product
 support as in the shared reference; its permissive source `type` string alone
 does not prove a discriminator works. Use the common styling/filter/order
-settings from [authoring.md](../authoring.md#shared-data-layer-settings).
+settings from `../styling.md`, indexed in `SKILL.md`.
 Assemble these fragments only from successful preflight results, then follow
 the shared full-schema validation and read-modify-write procedure.
 
