@@ -32,10 +32,11 @@ invent IDs from display names.
 
 ## Scope and ownership
 
-This adapter uses only user-created Fabric Connections and external source
-resources. The user owns connection creation, credential replacement/rotation,
-and provider setup, including endpoint registration and publishing layers or
-collections. Provide guidance using the setup references below, but do not
+This adapter uses only existing Fabric Connections and external source resources
+that the user is authorized to access. The user owns connection creation,
+credential replacement/rotation, and provider setup, including endpoint
+registration and publishing layers or collections. Provide guidance using the
+setup references below, but do not
 perform or delegate these operations, even when requested as a Map prerequisite.
 Never collect or reveal credentials.
 
