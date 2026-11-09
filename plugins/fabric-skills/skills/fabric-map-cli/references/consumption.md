@@ -6,16 +6,26 @@
 
 # fabric-map-cli consumption mode
 
+## Contents
+
+- [Capability questions](#capability-questions)
+- [Resolve the workspace](#resolve-the-workspace)
+- [List and resolve Maps](#list-and-resolve-maps)
+- [Read and decode a definition](#read-and-decode-a-definition)
+- [Summary shape](#summary-shape)
+- [Read-only integrity checks](#read-only-integrity-checks)
+- [Rules](#rules)
+- [Authoritative references](#authoritative-references)
+
 ## Capability questions
 
 General capability questions need no workspace, Map lookup, authentication, or
 source setup. Apply the shared capability-discovery rule internally. Ask for
 clarification only when unresolved details materially affect the answer.
 For source-specific capabilities, read the
-relevant adapter's summary: [Lakehouse](authoring/lakehouse.md),
-[Eventhouse](authoring/eventhouse.md),
-[connections](authoring/connections.md), [Ontology](authoring/ontology.md), or
-[variable references](authoring/variables.md). These documentation reads remain in
+relevant adapter's summary: `authoring/lakehouse.md`, `authoring/eventhouse.md`,
+`authoring/connections.md`, `authoring/ontology.md`, or
+`authoring/variables.md`, indexed in `SKILL.md`. These documentation reads remain in
 consumption mode; do not run the adapters' authoring or source-validation steps.
 Distinguish documented Map adapters from the broader Fabric connector catalog.
 

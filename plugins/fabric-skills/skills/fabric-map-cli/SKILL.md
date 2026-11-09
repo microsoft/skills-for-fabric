@@ -1,16 +1,29 @@
 ---
 name: fabric-map-cli
-description: "Creates, configures, deletes, lists, filters, styles, and explains Microsoft Fabric Map items with Lakehouse GeoJSON, PMTiles, and COG files, Eventhouse (KQL Database) tables, functions, and materialized views including automatic refresh, and supported external imagery and feature services. Suggests maps for spatial coverage, distribution, proximity, and regional comparisons without creating one until requested. Clarifies ambiguous map experiences. Not Azure Maps applications/APIs or Power BI map visuals."
+description: "Manages Microsoft Fabric Map items through CLI: creates, edits, styles, lists, and explains Lakehouse GeoJSON, PMTiles and COG layers, Eventhouse/KQL layers with refresh, and supported external imagery and features. Use for Fabric Map items or spatial-analysis map suggestions; waits for explicit creation intent. Power BI map visuals belong to powerbi-report-cli; Azure Maps applications/APIs are out of scope."
 ---
 
-> **Telemetry -- MANDATORY.** Every `api.fabric.microsoft.com` request,
-> including pagination, LRO polls, results, and retries, must carry
-> `x-ms-fabric-skill: fabric-map-cli`.
+> **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
+> `x-ms-fabric-skill: fabric-map-cli` (`az rest`: `--headers "x-ms-fabric-skill=fabric-map-cli"`),
+> including every LRO poll, `fabric_lro` and retry. Snippets omit it — add it anyway.
 
 # Fabric Map -- CLI Skill
 
 This is a mode dispatcher. Procedures belong in the mode references; source
 configuration belongs in the source adapters.
+
+## Prerequisite knowledge
+
+| Reference | When to read |
+|---|---|
+| [COMMON-CORE authentication](../../common/COMMON-CORE.md#authentication--token-acquisition) | Before authenticating; token audiences and shared authorization rules |
+| [COMMON-CLI authentication](../../common/COMMON-CLI.md#authentication-recipes) | Before acquiring Fabric or Storage tokens |
+| [COMMON-CLI workspace/item discovery](../../common/COMMON-CLI.md#finding-workspaces-and-items-in-fabric) | Before resolving workspace or item names |
+| [Eventhouse skill](../eventhouse-cli/SKILL.md) | Load its consumption mode for read-only KQL source discovery and validation |
+
+> **CRITICAL NOTES**
+> Resolve workspace and Map names from complete paginated inventories using
+> exact-match JMESPath filtering. Verify supplied IDs and ask on ambiguity.
 
 ## Recognize a map opportunity without creating one
 
@@ -62,6 +75,10 @@ Announcing a handoff without changing workflows is not a handoff.
 |---|---|---|
 | `authoring` | Create, configure, restyle, rename, change description, update definition, or delete | [references/authoring.md](references/authoring.md) |
 | `consumption` | List, inspect, explain, compare, or discuss capabilities without changes | [references/consumption.md](references/consumption.md) |
+
+For basemap, camera, layer styling, filtering, or draw-order changes, also read
+[references/styling.md](references/styling.md) end to end. Data-backed authoring
+requires it for geometry-compatible defaults and initial-view selection.
 
 Read the selected reference end to end before acting. Resolve links relative
 to the file containing them, not the working directory. If a reference is
@@ -120,7 +137,7 @@ consumption owns read-only entity discovery/querying. Map authoring never
 authorizes source mutations. Mixed Lakehouse/Eventhouse layers keep independent
 source fragments and reuse the same core rendering, filter and camera settings.
 
-## Shared rules
+## Must
 
 - Ask for missing workspace, Map identity/name, or requested values; never
   fabricate them. Resolve names with paginated exact-match lookups; verify IDs.
@@ -145,3 +162,21 @@ source fragments and reuse the same core rendering, filter and camera settings.
 - Treat API errors, failed operations, and readback mismatches as failures,
   not successful completion. Report the affected resource and returned
   code/message; do not invent recovery steps or silently change the request.
+
+## Prefer
+
+- Discover metadata in the identified source scope before asking for values.
+- Reuse existing spatial data and preserve saved state on unrelated edits.
+
+## Avoid
+
+- Treating a map suggestion or capability question as permission to mutate.
+- Provisioning connections, external sources, or source-data repairs.
+
+## Examples
+
+| Request | Response/workflow |
+|---|---|
+| "Create a blank Fabric Map called Coverage in workspace Analytics." | Authoring; resolve the latest published schema, create and read back the empty Map, then give the required add-later source summary. |
+| "Explain the layers in Fabric Map Coverage; do not change it." | Consumption; inspect saved configuration without executing source queries or applying fixes. |
+| "Add external imagery, but the connection does not exist yet." | Guide the user's setup and wait; resolve and validate the user-created connection before any affected Map write. |

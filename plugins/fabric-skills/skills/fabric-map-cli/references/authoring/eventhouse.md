@@ -2,7 +2,18 @@
 
 For authoring, read this after `../authoring.md` when a layer uses KQL results.
 For capability questions, read the summary only; no source lookup is needed.
-The shared reference owns lifecycle, encoding, styling, updates, and readback.
+The shared references own lifecycle, encoding, styling, updates, and readback.
+
+## Contents
+
+- [Capabilities](#capabilities)
+- [Resolve the KQL Database and entity](#resolve-the-kql-database-and-entity)
+- [Inspect the selected sources](#inspect-the-selected-sources)
+- [Definition parts](#definition-parts)
+- [Layer settings and mixed sources](#layer-settings-and-mixed-sources)
+- [Refresh](#refresh)
+- [Readback](#readback)
+- [References](#references)
 
 ## Capabilities
 
@@ -37,7 +48,7 @@ to a separately requested Eventhouse authoring workflow.
 
 ## Resolve the KQL Database and entity
 
-Load [eventhouse-cli](../../../eventhouse-cli/SKILL.md) and follow its
+Load `eventhouse-cli` through the index in `SKILL.md` and follow its
 **consumption** mode for workspace and item resolution, authentication,
 endpoint and database-name discovery, `.show` inventories, and read-only KQL
 execution. All source operations in this adapter are read-only; Map authoring
@@ -229,8 +240,7 @@ Base64-encode the KQL file like every other definition part.
 
 Assemble the Kusto source and encoded query part from the **executed final
 query** and its complete, valid inspection evidence. Reuse the geometry-family
-styling, text/numeric filters and camera procedure in
-[the shared authoring reference](../authoring.md#shared-data-layer-settings),
+styling, text/numeric filters and camera procedure in `../styling.md`,
 as for Lakehouse layers. Validate the complete document against the operation's
 selected schema; source fragments alone do not establish validity.
 

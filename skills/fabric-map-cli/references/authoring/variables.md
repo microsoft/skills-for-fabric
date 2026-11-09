@@ -4,6 +4,15 @@ For authoring, read this after `../authoring.md` and alongside the adapter for
 the resolved source. For capability questions, read the summary without
 listing libraries or resolving variable values.
 
+## Contents
+
+- [Capabilities and follow-up inputs](#capabilities-and-follow-up-inputs)
+- [Resolve and validate](#resolve-and-validate)
+- [Definition fragments](#definition-fragments)
+- [Validation boundary](#validation-boundary)
+- [Readback and consumption](#readback-and-consumption)
+- [References](#references)
+
 ## Capabilities and follow-up inputs
 
 Some published Map schemas support variable references in `dataSources[].item`
