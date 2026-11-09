@@ -133,9 +133,11 @@ geometry provider. For variable-backed layers, read the variable reference
 guide and the adapter for the resolved item or connection.
 
 For Eventhouse-backed Maps, this skill owns the Map and `eventhouse-cli`
-consumption owns read-only entity discovery/querying. Map authoring never
-authorizes source mutations. Mixed Lakehouse/Eventhouse layers keep independent
-source fragments and reuse the same core rendering, filter and camera settings.
+consumption owns read-only entity discovery/querying. Name that consumption
+workflow in plans; planning alone does not authorize source queries. Map
+authoring never authorizes source mutations. Mixed Lakehouse/Eventhouse layers
+keep independent source fragments and reuse the same core rendering, filter
+and camera settings.
 
 ## Must
 
