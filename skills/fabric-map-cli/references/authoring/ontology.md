@@ -4,6 +4,14 @@ For authoring, read this after `../authoring.md` when a layer uses Ontology
 entities. For capability questions, read the summary only; no source lookup is
 needed. The shared reference owns Map lifecycle, encoding, and readback.
 
+## Contents
+
+- [Capabilities and follow-up inputs](#capabilities-and-follow-up-inputs)
+- [Scope and source validation](#scope-and-source-validation)
+- [Definition fragments and compatibility](#definition-fragments-and-compatibility)
+- [Readback](#readback)
+- [References](#references)
+
 ## Capabilities and follow-up inputs
 
 Ontology-backed Map layers are in preview. They render entity instances using
@@ -103,7 +111,7 @@ construct only the fields required by that branch, including
 `itemType: "Ontology"` when specified, and use its corresponding layer link.
 Do not combine legacy fields with the newer data-source object, infer a legacy
 shape from this example, or silently migrate an existing definition.
-For a variable-backed item, also follow [variable references](variables.md).
+For a variable-backed item, also follow `variables.md`, indexed in `SKILL.md`.
 
 Set `layerSettings[].sourceId` to the layer source ID and use
 `options.type: "vector"`. Set the verified `latitudeColumnName` and
