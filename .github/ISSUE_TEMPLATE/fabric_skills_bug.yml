@@ -39,6 +39,7 @@ body:
         - Fabric CI/CD
         - Azure Monitor into Fabric
         - Fabric cost estimation
+        - Fabric Governance
         - Infrastructure / repo / CI / general (or not sure)
     validations:
       required: true

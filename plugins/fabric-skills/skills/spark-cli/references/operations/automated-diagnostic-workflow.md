@@ -98,9 +98,17 @@ To diagnose this session, I need the **notebook name or ID** it belongs to.
 ```
 
 **2. Search pipeline runs** (if user confirms pipeline origin or workspace has pipelines):
-Iterate pipelines → `GET /items/$pipelineId/jobs/instances?limit=5` → for Failed runs, `queryActivityRuns` to find sessionId match. Returns `output.result.error.{ename, evalue, traceback[]}` — richest error data available.
+Iterate pipelines → `GET /items/$pipelineId/jobs/instances` → follow all
+`continuationToken` pages (or the service's continuation URI), carrying the skill
+telemetry header on every request. Combine `value` arrays, sort by `startTimeUtc`
+descending, and select recent Failed runs client-side before using
+`queryActivityRuns` to find a sessionId match. Returns
+`output.result.error.{ename, evalue, traceback[]}` — richest error data available.
 
-**3. Check Job Instance API** — `GET /items/$notebookId/jobs/instances?limit=5` for high-level `failureReason` (longer retention than Spark Monitoring APIs).
+**3. Check Job Instance API** — `GET /items/$notebookId/jobs/instances` for high-level
+`failureReason` (longer retention than Spark Monitoring APIs). Collect continuation
+pages before sorting/filtering or selecting the latest five client-side. The API
+does not document `limit`; a partial/latest-N view cannot prove no history exists.
 
 **4. Construct Notebook Snapshot URL** for manual cell-level inspection:
 ```text

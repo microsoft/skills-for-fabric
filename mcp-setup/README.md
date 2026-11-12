@@ -140,5 +140,73 @@ The separate `powerbi-authoring` stdio plugin is unchanged. In the legacy
 `register-fabric-mcp` scripts, the `claude` target means Claude Desktop,
 not Claude Code; do not use it to repair these connections.
 
+## Legacy registration scripts (Claude Desktop)
+
+`register-fabric-mcp.ps1` requires PowerShell 7; `register-fabric-mcp.sh`
+requires Bash and `jq`. Both default to `all` (Copilot CLI, Claude Desktop,
+and existing VS Code settings). Use `-Tool` / `--tool` to select one target.
+
+The scripts validate the server URL before creating directories or changing
+configuration:
+
+- Supply an absolute HTTP or HTTPS URL with a hostname. Embedded credentials,
+  whitespace, control characters, and other URL schemes are rejected.
+- HTTPS supports custom hosts, including private-network hosts. You are still
+  responsible for trusting the endpoint; URL validation does not establish trust.
+- HTTP loopback endpoints (`localhost`, IPv4 `127.0.0.0/8`, and IPv6 `::1`) need
+  no override.
+- Other HTTP endpoints require `-AllowInsecureHttp` /
+  `--allow-insecure-http`. Use this only on a trusted network: traffic,
+  including authentication headers, is unencrypted. Existing LAN HTTP commands
+  must add this flag or switch to HTTPS.
+
+```powershell
+# Loopback HTTP does not require -AllowInsecureHttp.
+.\mcp-setup\register-fabric-mcp.ps1 `
+  -ServerUrl "http://localhost:3000/mcp" -ServerName "local-fabric" -Tool claude
+
+# Explicitly accept unencrypted traffic on a trusted private network.
+.\mcp-setup\register-fabric-mcp.ps1 `
+  -ServerUrl "http://192.168.1.15:8080/mcp" -Tool claude -AllowInsecureHttp
+```
+
+```bash
+# Loopback HTTP does not require --allow-insecure-http.
+./mcp-setup/register-fabric-mcp.sh \
+  --server-url "http://localhost:3000/mcp" --server-name local-fabric --tool claude
+
+# Explicitly accept unencrypted traffic on a trusted private network.
+./mcp-setup/register-fabric-mcp.sh \
+  --server-url "http://192.168.1.15:8080/mcp" --tool claude --allow-insecure-http
+```
+
+### Desktop bridge dependency
+
+Claude Desktop's stdio registration uses the third-party
+[`mcp-remote`](https://github.com/punkpeye/mcp-remote) bridge, pinned to
+[`0.8.3`](https://github.com/punkpeye/mcp-remote/releases/tag/v0.8.3)
+([npm package](https://www.npmjs.com/package/mcp-remote/v/0.8.3)).
+It is not an Anthropic package. Node.js and `npx` must be available to Desktop.
+Registration only writes configuration; Desktop subsequently launches
+`npx -y mcp-remote@0.8.3`. Allowed HTTP endpoints also get `--allow-http`.
+Custom headers and concrete bearer tokens retain their existing handling.
+
+An exact version pin prevents an automatic top-level upgrade, but does not
+approve a publisher, pin all transitive dependencies, or verify an endpoint.
+Before changing the pin, review the npm publisher/distribution, upstream release,
+and applicable security advisories; do not substitute a similarly named package.
+
+### Replace an existing legacy proxy entry
+
+Updating these scripts does not repair previously saved configurations.
+Before restarting Desktop, inspect its `claude_desktop_config.json` locally
+and back it up securely; it can contain credentials. If the affected server's
+`npx` arguments still reference `@anthropic/mcp-proxy@0.1.0`, rerun the updated
+script with **the same server name**, a trusted URL, and `-Tool claude` /
+`--tool claude`. This replaces that entry while preserving unrelated servers
+and settings. Re-supply any required headers/authentication intentionally.
+For a custom entry, review it first rather than removing or overwriting it
+automatically. Restart Desktop after the replacement.
+
 References: [Claude dynamic headers](https://code.claude.com/docs/en/mcp#use-dynamic-headers-for-custom-authentication)
 and [Codex MCP configuration](https://developers.openai.com/codex/mcp).

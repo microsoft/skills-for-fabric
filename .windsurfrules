@@ -53,6 +53,7 @@ rules:
   - name: spark
     description: Use spark-cli for notebook authoring and runs, Livy analysis, Spark diagnostics, and the full Materialized Lake View lifecycle
     reference: skills/spark-cli/SKILL.md
+    diagnostic_alm_contract: "Paginate retained Spark history before client-side selection; no server-side limit. Warehouse promotion: scope supported-list and feature-preview claims separately; the definition API exists (sqlproj/dacpac), not a binary schema-diff guarantee."
 
   - name: project_osmos
     description: Use project-osmos for complex long-running Lakehouse, OneLake, notebook, or Spark outcomes from local agents; in Fabric portal Copilot return availability guidance without API calls
@@ -100,6 +101,10 @@ rules:
   - name: synapse_migration
     description: Migrate Synapse Spark, Lake Database/HMS, Dedicated SQL Pool schema and procedures, and explicitly approved dependent procedure callers to Fabric
     reference: skills/synapse-migration/SKILL.md
+
+  - name: fabric_policies_skills
+    description: Clarify underspecified Fabric policy requests before mapping scenarios to current policies, discovering objects/roles, proposing one plan, then executing APIs after approval. Respect offline requests; review weekly knowledge updates. Load verified condition paths even for advice-only designs; editing controls do not set encryption values. For offline inventories, quote the skill's stored baseline dates; never infer freshness from the refresh schedule.
+    reference: skills/fabric-policies-cli/SKILL.md
 
   - name: fabriciq_skills
     description: >

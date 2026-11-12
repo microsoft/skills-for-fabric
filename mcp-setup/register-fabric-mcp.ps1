@@ -24,6 +24,10 @@
 .PARAMETER Headers
     Hashtable of custom HTTP headers to include in the MCP server config (e.g., @{"X-VARIANTS"="Fabric.Routing.FabricIQ.V1"}).
 
+.PARAMETER AllowInsecureHttp
+    Allow unencrypted HTTP to a non-loopback server on a trusted network.
+    Loopback HTTP does not require this switch.
+
 .EXAMPLE
     .\register-fabric-mcp.ps1 -ServerUrl "https://fabric-mcp.example.com" -ServerName "fabric"
 
@@ -52,10 +56,40 @@ param(
     [hashtable]$Headers = @{},
     
     [ValidateSet("copilot", "claude", "vscode", "all")]
-    [string]$Tool = "all"
+    [string]$Tool = "all",
+
+    [switch]$AllowInsecureHttp
 )
 
 $ErrorActionPreference = "Stop"
+
+$serverUri = $null
+if ($ServerUrl -match '[\s\x00-\x1f\x7f\\]' -or
+    -not [Uri]::TryCreate($ServerUrl, [UriKind]::Absolute, [ref]$serverUri) -or
+    -not $serverUri.IsWellFormedOriginalString() -or
+    $serverUri.Scheme -notin @("http", "https") -or
+    [string]::IsNullOrEmpty($serverUri.Host) -or
+    $ServerUrl -match '^https?://[^/?#]*@') {
+    throw "ServerUrl must be an absolute HTTP or HTTPS URL with a hostname and no credentials, whitespace, or control characters."
+}
+
+# Uri normalizes the ordinary hostname "loopback" to "localhost"; inspect the input host.
+$originalHost = [regex]::Match($ServerUrl, '(?i)\Ahttps?://(\[[^\]]+\]|[^:/?#]+)').Groups[1].Value
+$loopbackAddress = $null
+$isLoopback = $originalHost -ieq "localhost"
+if (-not $isLoopback -and
+    [System.Net.IPAddress]::TryParse($originalHost.Trim([char[]]"[]"), [ref]$loopbackAddress)) {
+    if ($loopbackAddress.IsIPv4MappedToIPv6) {
+        $loopbackAddress = $loopbackAddress.MapToIPv4()
+    }
+    $isLoopback = [System.Net.IPAddress]::IsLoopback($loopbackAddress)
+}
+if ($serverUri.Scheme -eq "http" -and -not $isLoopback -and -not $AllowInsecureHttp) {
+    throw "Non-loopback HTTP requires -AllowInsecureHttp. Prefer HTTPS; opt in only on a trusted network."
+}
+if ($serverUri.Scheme -eq "http" -and -not $isLoopback) {
+    Write-Warning "HTTP is unencrypted; server traffic and credentials can be intercepted."
+}
 
 function Write-Status($message) {
     Write-Host "[*] $message" -ForegroundColor Cyan
@@ -134,6 +168,9 @@ if ($Tool -eq "claude" -or $Tool -eq "all") {
     # generated config is reproducible and not silently upgraded by npx.
     $mcpRemoteVersion = "0.8.3"  # Update this when upgrading
     $claudeArgs = @("-y", "mcp-remote@$mcpRemoteVersion", $ServerUrl)
+    if ($serverUri.Scheme -eq "http") {
+        $claudeArgs += "--allow-http"
+    }
     $claudeEnv = @{}
 
     foreach ($key in $Headers.Keys) {
@@ -201,4 +238,3 @@ Write-Success "Fabric MCP server '$ServerName' registered successfully!"
 Write-Host ""
 Write-Host "To verify, run in Copilot CLI:" -ForegroundColor White
 Write-Host "  /mcp list" -ForegroundColor Gray
-

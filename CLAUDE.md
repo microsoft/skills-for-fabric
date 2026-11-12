@@ -65,6 +65,7 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - **Spark Jobs**: Production Spark workloads
   - Docs: https://learn.microsoft.com/en-us/fabric/data-engineering/spark-job-definition
   - Spark diagnostics: `skills/spark-cli/SKILL.md` — read-only triage for failed jobs, stuck sessions, and performance bottlenecks
+  - Spark job history: paginate retained runs before client-side selection; no server-side `limit`. Warehouse promotion: keep supported-list and feature-preview claims scoped; the definition API exists (`sqlproj`/`dacpac`), not a binary schema-diff guarantee.
 
 ### Data Warehouse
 - **Warehouse**: T-SQL data warehouse
@@ -152,6 +153,14 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
   - Docs: https://learn.microsoft.com/en-us/rest/api/fabric/core/items/update-item
   - Skill: `skills/onelake-catalog-cli/SKILL.md` (curate mode) — suggest, confirm, apply, and verify metadata so catalog search can find the item
   - Primary CLI tool: `az rest` against Fabric Core REST APIs (Update Item, List Tags, Apply Tags); `curl` against the OneLake table API for table and column descriptions
+
+### Governance & Policies
+- **Fabric Policies**: Discover current policy types and updates from official docs; verify contracts before executable output
+  - Skill: `skills/fabric-policies-cli/SKILL.md` — discover scenario objects/roles, propose one policy plan, then execute APIs after explicit approval; respect offline requests. Weekly knowledge updates require review.
+  - Route underspecified Fabric policy requests here before clarifying the action, identities or scope.
+  - Load its exact verified condition paths even for advice-only designs; editing controls do not set encryption values.
+  - For offline inventories, quote the skill's stored baseline dates; never infer freshness from the refresh schedule.
+  - Docs: https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-overview
 
 ### Business Intelligence
 - **Semantic Models**: DAX, XMLA, Power BI integration, TMDL

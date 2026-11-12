@@ -457,13 +457,17 @@ Fabric throttles workloads when capacity utilization exceeds limits. Symptoms:
 - API calls return 429 (Too Many Requests)
 
 ```bash
-# Check if any recent API calls were throttled (429 responses)
-# This is visible in job instance details
+# Retrieve the first history page, retaining pagination metadata.
 az rest --method get --resource "$FABRIC_RESOURCE_SCOPE" \
-  --url "$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances?limit=5" \
-  --query "value[].{status:status, start:startTimeUtc, failureReason:failureReason}" \
-  --output table
+  --url "$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances" \
+  --output json
 ```
+
+Follow `continuationToken` pages (or the service's continuation URI), with
+`x-ms-fabric-skill: spark-cli` on every request. Only after combining the `value`
+arrays, sort by `startTimeUtc` descending and select the latest five client-side
+to inspect status and failure details. `limit` is not a documented query parameter.
+An incomplete/filtered view cannot establish an empty retained history.
 
 ### Capacity Sizing Guide
 

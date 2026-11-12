@@ -345,32 +345,64 @@ The `output` object contains:
 
 Use job instance APIs to compare runs over time and detect regressions.
 
+The [List Item Job Instances API](https://learn.microsoft.com/en-us/rest/api/fabric/core/job-scheduler/list-item-job-instances)
+documents only `continuationToken` as a query parameter, not `limit` or OData
+sorting/filtering. Start with the queryless endpoint, preserve the full response,
+and collect every `value` page before selecting recent runs client-side.
+The service retains a limited history (for most items, the 100 most recently
+completed instances); even complete pagination is not an unlimited historical audit.
+Prefer the service's continuation URI after validating the exact original
+endpoint and query prefix, preserving its encoding. Only URL-encode a raw
+continuation token when no URI is supplied.
+
 ```bash
-# Get last 10 job instances for a notebook
-az rest --method get --resource "$FABRIC_RESOURCE_SCOPE" \
-  --url "$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances?limit=10" \
-  --query "value[].{id:id, status:status, start:startTimeUtc, end:endTimeUtc, failureReason:failureReason}" \
-  --output table
+# Collect the retained history, including all continuation pages.
+base="$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances"
+next="$base"
+jobInstances='[]'
+while [ -n "$next" ]; do
+  page=$(az rest --method get --resource "$FABRIC_RESOURCE_SCOPE" \
+    --headers "x-ms-fabric-skill=spark-cli" --url "$next" --output json) || exit 1
+  jobInstances=$(jq -cn --argjson runs "$jobInstances" --argjson page "$page" \
+    '$runs + ($page.value | if type == "array" then . else error("Missing value array") end)') || exit 1
+  token=$(printf '%s' "$page" | jq -r '.continuationToken // empty') || exit 1
+  uri=$(printf '%s' "$page" | jq -r '.continuationUri // empty') || exit 1
+  next=''
+  if [ -n "$uri" ]; then
+    case "$uri" in
+      "$base?continuationToken="?*) next="$uri" ;;
+      *) printf '%s\n' 'Unexpected continuation URI; history is incomplete.' >&2; exit 1 ;;
+    esac
+  elif [ -n "$token" ]; then
+    encoded=$(jq -rn --arg token "$token" '$token | @uri') || exit 1
+    next="$base?continuationToken=$encoded"
+  fi
+done
+# Select latest 10 only after pagination, not by an unsupported server-side limit.
+printf '%s' "$jobInstances" | jq 'sort_by(.startTimeUtc) | reverse | .[:10] |
+  map({id, status, start: .startTimeUtc, end: .endTimeUtc, failureReason})'
 ```
+
+For an empty-history claim, retain the unfiltered responses and establish that no
+continuation page remains. A filtered/latest-N view, an incomplete page sequence,
+or a failed request cannot prove the item has no retained job history.
 
 ### Compare Job Durations
 
+Using the fully collected `jobInstances` array above, filter and sort client-side:
+
 ```bash
-# Extract durations for trend analysis
-az rest --method get --resource "$FABRIC_RESOURCE_SCOPE" \
-  --url "$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances?limit=20" \
-  --query "value[?status=='Completed'].{start:startTimeUtc, end:endTimeUtc}" \
-  --output json
+# Select the latest 20 completed instances for trend analysis.
+printf '%s' "$jobInstances" | jq '[.[] | select(.status=="Completed")] |
+  sort_by(.startTimeUtc) | reverse | .[:20] | map({start: .startTimeUtc, end: .endTimeUtc})'
 ```
 
-To compute duration differences, pipe through `jq` or process in a Livy session:
+For duration calculations, keep the same client-side ordering and selection:
 
 ```bash
-# Using jq to compute durations (if available)
-az rest --method get --resource "$FABRIC_RESOURCE_SCOPE" \
-  --url "$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances?limit=20" \
-  --output json | jq '.value[] | select(.status=="Completed") |
-    {start: .startTimeUtc, end: .endTimeUtc, status: .status}'
+printf '%s' "$jobInstances" | jq '[.[] | select(.status=="Completed")] |
+  sort_by(.startTimeUtc) | reverse | .[:20][] |
+  {start: .startTimeUtc, end: .endTimeUtc, status: .status}'
 ```
 
 ### Detect Regressions

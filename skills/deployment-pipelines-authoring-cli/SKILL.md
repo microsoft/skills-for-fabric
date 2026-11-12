@@ -189,10 +189,18 @@ items` gives identity + pairing only (no timestamps, no change status), so chang
      items. Note the `getDefinition` contract differs by type:
      `Notebook`/`SemanticModel`/`Report` are **LRO** (`202` → poll → `GET .../result`);
      `DataPipeline` returns **`200` synchronously**.
-   - Types **without a usable `getDefinition` diff**: `Warehouse` has **no** item-definition API, and
-     `Lakehouse` / `Environment` *do* expose `getDefinition` but their definitions capture structure/metadata
-     only (not table data or most content edits) — so for all three, diff by **presence** and treat as changed
-     only when new or when the user indicates content changed.
+   - **Warehouse** does have a definition API:
+     [Get Warehouse Definition](https://learn.microsoft.com/en-us/rest/api/fabric/warehouse/items/get-warehouse-definition)
+     is `POST .../workspaces/{workspaceId}/warehouses/{warehouseId}/getDefinition`, with `format=sqlproj`
+     (default) or `format=dacpac`. Accept `200`; for `202`, follow the documented LRO to its result,
+     carrying the skill telemetry header on every request. The API requires Warehouse read/write
+     permissions even though it retrieves a definition. Compare SQL-project/schema content with
+     appropriate tooling; the generic JSON diff helper is **not** a schema-aware binary DACPAC comparer.
+     Definitions do not include table data. If schema equality is unproven, report that limitation
+     rather than claiming the API does not exist or declaring the item unchanged.
+   - `Lakehouse` / `Environment` expose `getDefinition` but capture structure/metadata only
+     (not table data or most content edits); diff by **presence**, flag user-reported content changes,
+     and state the limits of any equality claim.
    - When you cannot prove equality, treat the item as **changed** (safe default).
 5. Do the comparison **in a script** (parallelize the independent `getDefinition` calls; they dominate
    latency) and surface only the computed change list. To let the model reason about *what* changed in an

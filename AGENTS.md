@@ -81,6 +81,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - Semantic model development (see `semantic-model-authoring`)
 - Power BI report skill: `skills/powerbi-report-cli/SKILL.md` — one skill for reports; `planning` (requirements, page plan, approval gate), `design` (archetype routing, layout, theme, accessibility), `authoring` (PBIR/PBIP file mechanics, Desktop reload/screenshot) and `management` (Fabric report item CRUD via `az rest`) are modes
 - Spark skill: `skills/spark-cli/SKILL.md` — notebook authoring and runs, Livy analysis, read-only diagnostics, and MLV lifecycle operations
+- Spark job history: paginate retained runs before client-side selection; no server-side `limit`. Warehouse promotion: keep supported-list and feature-preview claims scoped; the definition API exists (`sqlproj`/`dacpac`), not a binary schema-diff guarantee.
 - Variable Library (CI/CD): parameterize workspaces across environments — author definitions, value sets, and active value set item state, and wire consumers to Variable Library references (see `skills/variable-library-cli/SKILL.md`)
 
 ### Operations
@@ -103,6 +104,12 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 ### Cost Estimation & Migration Planning
 - E2E skill: `skills/e2e-fabric-cost-estimation/SKILL.md` — estimate Fabric capacity costs, SKU sizing, billing strategy, workload CU equivalence mapping
 - Synapse migration skill: `skills/synapse-migration/SKILL.md` — migrate Synapse Spark, Lake Database/HMS, Dedicated SQL Pool schema and procedures, and explicitly approved dependent procedure callers to Fabric
+
+### Governance & Policies
+- Skill: `skills/fabric-policies-cli/SKILL.md` — turn scenarios into verified policies: discover current docs, objects and roles, propose one plan, then execute APIs after explicit approval. Respect offline requests; weekly knowledge updates require review.
+- Route underspecified Fabric policy requests here before clarifying the action, identities or scope.
+- Load its exact verified condition paths even for advice-only designs; editing controls do not set encryption values.
+- For offline inventories, quote the skill's stored baseline dates; never infer freshness from the refresh schedule.
 
 ### Power BI / FabricIQ
 - Consumption skill: `skills/fabriciq/SKILL.md` — raw DAX queries against semantic models via MCP ExecuteQuery tool

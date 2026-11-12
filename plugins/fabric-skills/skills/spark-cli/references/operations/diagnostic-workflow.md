@@ -16,18 +16,24 @@ notebookId=$(az rest --method get --resource "$FABRIC_RESOURCE_SCOPE" \
   --url "$FABRIC_API_URL/workspaces/$workspaceId/items?type=Notebook" \
   --query "value[?displayName=='MyNotebook'].id" --output tsv)
 
-# 2. Get recent job instances
+# 2. Retrieve the first page without discarding continuation metadata
 az rest --method get --resource "$FABRIC_RESOURCE_SCOPE" \
-  --url "$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances?limit=5" \
-  --query "value[].{id:id, status:status, start:startTimeUtc, end:endTimeUtc, failureReason:failureReason}" \
-  --output table
+  --url "$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances" \
+  --output json
 
-# 3. Get details of the failed instance
+# 3. After collecting all pages and selecting the failed instance, get its details
 jobInstanceId="<from-above>"
 az rest --method get --resource "$FABRIC_RESOURCE_SCOPE" \
   --url "$FABRIC_API_URL/workspaces/$workspaceId/items/$notebookId/jobs/instances/$jobInstanceId" \
   --output json
 ```
+
+For step 2, the documented list API supports `continuationToken`, not `limit`.
+Follow each continuation token (URL-encoded) or the service-provided continuation
+URI, carrying `x-ms-fabric-skill: spark-cli` on every request. Combine all `value`
+arrays, sort by `startTimeUtc` descending, then select the latest five or filter
+failures client-side. Preserve complete page receipts: a truncated or filtered
+view is not proof of empty history, and retained history is not unlimited.
 
 ### Check Livy Session Health
 
