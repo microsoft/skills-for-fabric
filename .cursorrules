@@ -81,6 +81,7 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 
 ### Spark Operations
 - Spark skill: `skills/spark-cli/SKILL.md` — read-only triage for failed jobs, stuck sessions, and performance bottlenecks
+- Spark job history: paginate retained runs before client-side selection; no server-side `limit`. Warehouse promotion: keep supported-list and feature-preview claims scoped; the definition API exists (`sqlproj`/`dacpac`), not a binary schema-diff guarantee.
 
 ### Azure Monitor Observability (Real-Time Intelligence)
 - Operations skill: `skills/azmon-mirroredcatalogs-operations-cli/SKILL.md` — onboard Azure Monitor / App Insights / Log Analytics observability data into Fabric and correlate telemetry with business data for business-impact insights, an optional Real-Time (KQL) dashboard, and opt-in Operations Agent instructions
@@ -119,6 +120,13 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 - Deploy is a long-running operation (202 → poll `/v1/operations/{id}`); deployment/parameter rules are UI-only
 - Authoring skill: `skills/deployment-pipelines-authoring-cli/SKILL.md`
 - Primary CLI tool: `az rest` via `/v1/deploymentPipelines`
+
+### Governance & Policies
+- Use `skills/fabric-policies-cli/SKILL.md` to discover current Fabric policies from official docs and manage PolicySet items and verified rules; respect offline requests.
+- Route underspecified Fabric policy requests here before clarifying the action, identities or scope.
+- Discover scenario objects/roles, propose one plan, then execute APIs after explicit approval; weekly knowledge updates require review.
+- Load its exact verified condition paths even for advice-only designs; editing controls do not set encryption values.
+- For offline inventories, quote the skill's stored baseline dates; never infer freshness from the refresh schedule.
 
 ### Power BI / FabricIQ
 - Consumption skill: `skills/fabriciq/SKILL.md` — multi-step Power BI analysis (discover, inspect, resolve, generate, execute)

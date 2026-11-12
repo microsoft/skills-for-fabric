@@ -4,6 +4,25 @@ User-facing changes for the public Microsoft Fabric Skills release.
 
 ## [Unreleased]
 
+## [0.3.22] - 2026-11-12
+
+### Added
+- **`fabric-policies-cli`** -- discover current Fabric governance policies and
+  updates from official documentation, then translate intent into PolicySet
+  configurations using verified contracts. Resolve scenario objects and required
+  roles through read-only discovery, present one reviewable plan, and execute its
+  API lifecycle only after explicit approval. Respect offline requests, keep
+  unverified APIs design-only, and propose weekly knowledge updates for review.
+
+### Fixed
+- Correct `spark-cli` job-history requests to paginate retained runs before
+  client-side sorting and recent-run selection, rather than using an
+  undocumented server-side limit.
+- Correct `deployment-pipelines-authoring-cli` Warehouse definition retrieval
+  guidance and distinguish deployment support from feature-specific preview
+  qualifications without inferring production readiness.
+- MCP registration scripts now require `-AllowInsecureHttp` / `--allow-insecure-http` for non-loopback HTTP endpoints; use HTTPS, or explicitly opt in only on a trusted network.
+
 ## [0.3.21] - 2026-11-05
 
 ### Added

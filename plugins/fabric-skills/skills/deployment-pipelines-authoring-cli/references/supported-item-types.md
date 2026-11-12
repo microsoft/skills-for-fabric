@@ -9,9 +9,16 @@ graduate items out of preview — treat it as a living document.
 - **How to keep this current:** re-fetch the docs page above and reconcile this table
   (add/remove rows, update the `Status` / preview flags). An item is **supported** when
   the docs list it under *Supported items*. Do not hand-edit from memory.
-- **Status** below reflects the docs: **GA** for generally-available items; **preview**
-  for items the docs mark as in preview.
+- **Status scope:** support in the canonical list, a feature-specific preview, GA,
+  and production readiness are different claims. An absent preview marker in the
+  list is not proof of GA or release readiness. Attribute a preview qualification
+  to the specific document and feature that states it.
 - **Last reconciled:** 2026-07-20 (against the public docs page, `updated_at` 2026-07-17).
+- **Warehouse-only correction:** checked 2026-11-09 against the canonical list
+  (`updated_at` 2026-11-06), which lists Warehouse **without** a preview marker.
+  The separate [Warehouse development and deployment overview](https://learn.microsoft.com/en-us/fabric/data-warehouse/development-deployment)
+  (`updated_at` 2026-09-22) explicitly labels its feature preview. Do not attribute
+  that marker to the supported-items list. Other rows retain the earlier snapshot.
 
 > **Retirement note:** Beginning **February 12, 2026**, deployment pipelines retire
 > support for semantic models that have **not** been upgraded to Enhanced Metadata.
@@ -60,7 +67,7 @@ graduate items out of preview — treat it as a living document.
 | Real-Time Intelligence | Maps | GA |
 | Real-Time Intelligence | Event Schema Set | preview |
 | Real-Time Intelligence | Anomaly Detection | preview |
-| Data Warehouse | Warehouse | preview |
+| Data Warehouse | Warehouse | Listed; no preview marker in supported-items list |
 | Data Warehouse | Mirrored Azure Databricks Catalog | GA |
 | Power BI | Dashboard | preview |
 | Power BI | Dataflow (Power BI) | preview |

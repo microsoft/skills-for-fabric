@@ -3,7 +3,7 @@
 #     apm install microsoft/skills-for-fabric --skill deployment-pipelines-authoring-cli
 
 name: deployment-pipelines-authoring-cli
-version: 0.1.0
+version: 0.1.1
 description: "Manages Fabric deployment pipelines for ALM promotion across dev, test, and prod stages, including stage creation, workspace assignment, selective forward or backward deploys, operation polling, stage role assignments..."
 author: Microsoft Fabric
 license: MIT

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "status": "Documentation inventory only; enum matches are not service or condition validation.",
+  "policies": [
+    {
+      "name": "Allow workspace settings editing",
+      "scope": "Tenant",
+      "effect": "Allow",
+      "overviewDefault": "Allow editing of all workspace settings",
+      "scenarioUrl": "https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-edit-workspace-settings",
+      "scenarioPolicyIdentifiers": [],
+      "restEnumMatches": [
+        "WorkspaceSettingsEditing"
+      ]
+    },
+    {
+      "name": "Allow external data sharing",
+      "scope": "Tenant",
+      "effect": "Allow",
+      "overviewDefault": "Block all",
+      "scenarioUrl": "https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-external-data-sharing",
+      "scenarioPolicyIdentifiers": [
+        "ExternalDataSharing"
+      ],
+      "restEnumMatches": []
+    },
+    {
+      "name": "Allow item creation",
+      "scope": "Capacity",
+      "effect": "Allow",
+      "overviewDefault": "Allow all item types",
+      "scenarioUrl": "https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-item-creation",
+      "scenarioPolicyIdentifiers": [
+        "ItemCreation"
+      ],
+      "restEnumMatches": [
+        "ItemCreation"
+      ]
+    }
+  ],
+  "restPolicyTypes": [
+    "ItemCreation",
+    "WorkspaceSettingsEditing"
+  ],
+  "sources": [
+    {
+      "url": "https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-edit-workspace-settings",
+      "sha256": "0a5087813d09de23510980079c7b525dd1afb1d4985d8471d6b2acee84f7bd53"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-external-data-sharing",
+      "sha256": "39444b239c6c74d1951a30c26f62d890ca4cf892cee4c24075c9b240b153f3b2"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-item-creation",
+      "sha256": "5c4930b70c1dc142003ebd9633831edc9489eb12e85b6720040d756c2d410416"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-overview",
+      "sha256": "1c359bb71f2eba7905fb82b523507b886fbe49dabd40d23e0e8def014f83b287"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/fabric/governance/fabric-policies-rest-api",
+      "sha256": "bee76ab2379219ebe9491c272601025bcc15de9de4bd746595829708241e91eb"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/rest/api/fabric/policyset/policy-rules/create-policy-rule(beta)",
+      "sha256": "5014799f0cf62b02148dc1867e3f616807a6beceb074d1348c1676ec676bb41d"
+    }
+  ],
+  "retrievedOn": "2026-10-28"
+}
