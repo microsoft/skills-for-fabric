@@ -1,0 +1,185 @@
+---
+name: fabric-map-cli
+description: "Manages Microsoft Fabric Map items through CLI: creates, edits, styles, lists, and explains Lakehouse GeoJSON, PMTiles and COG layers, Eventhouse/KQL layers with refresh, and supported external imagery and features. Use for Fabric Map items or spatial-analysis map suggestions; waits for explicit creation intent. Power BI map visuals belong to powerbi-report-cli; Azure Maps applications/APIs are out of scope."
+---
+
+> **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
+> `x-ms-fabric-skill: fabric-map-cli` (`az rest`: `--headers "x-ms-fabric-skill=fabric-map-cli"`),
+> including every LRO poll, `fabric_lro` and retry. Snippets omit it — add it anyway.
+
+# Fabric Map -- CLI Skill
+
+This is a mode dispatcher. Procedures belong in the mode references; source
+configuration belongs in the source adapters.
+
+## Prerequisite knowledge
+
+| Reference | When to read |
+|---|---|
+| [COMMON-CORE authentication](../../common/COMMON-CORE.md#authentication--token-acquisition) | Before authenticating; token audiences and shared authorization rules |
+| [COMMON-CLI authentication](../../common/COMMON-CLI.md#authentication-recipes) | Before acquiring Fabric or Storage tokens |
+| [COMMON-CLI workspace/item discovery](../../common/COMMON-CLI.md#finding-workspaces-and-items-in-fabric) | Before resolving workspace or item names |
+| [Eventhouse skill](../eventhouse-cli/SKILL.md) | Load its consumption mode for read-only KQL source discovery and validation |
+
+> **CRITICAL NOTES**
+> Resolve workspace and Map names from complete paginated inventories using
+> exact-match JMESPath filtering. Verify supplied IDs and ask on ambiguity.
+
+## Recognize a map opportunity without creating one
+
+When already working with spatial data, recognize questions about coverage,
+distribution, gaps, proximity, regional comparison, or overlapping areas.
+Use the existing locations rather than proposing unnecessary geocoding or new
+data. Explain how a map complements the requested analysis without treating
+spatial density alone as proof of adequate access or service coverage.
+
+A spatial analysis request is **not** permission to create a Map. Suggest
+Fabric Map as an optional analysis view, continue the requested read-only
+analysis, and wait for explicit creation/editing intent. Do not create a blank
+item, prepare a deployment, or modify the source as a side effect of suggesting
+a map. If the user then requests an unspecified map experience, apply the
+product boundary below.
+
+## Product boundary
+
+Fabric Map is a workspace item of type `Map`. Azure Maps is an application/API
+service; a Power BI map visual belongs to a report, not a Fabric Map item.
+
+If neither the request nor prior user context identifies the experience, use
+the host's question tool to offer **Fabric Map, Power BI map visual, Azure Maps
+application/API, or another map experience**, without a default. Wait for the
+answer before loading mode references, selecting sources, discovering
+resources, generating definitions, or constructing anything. An unanswered
+question is not permission to assume Fabric. Do not re-ask when the user has
+already identified Fabric Map.
+Ask only about the experience at this gate; workspace, naming, and data-source
+questions belong after that choice.
+
+| Selected experience | Next action |
+|---|---|
+| Fabric Map | Continue to mode selection below. |
+| Power BI map visual | Hand off to the Power BI report workflow and exit this skill. |
+| Azure Maps application/API | Hand off to the Azure Maps application/API workflow and exit this skill. |
+| Another experience | Ask which experience, then route to its owning workflow and exit this skill. |
+
+**Only a confirmed Fabric Map may proceed below.** A non-Fabric selection ends
+this skill: do not load its mode/source references, issue Map commands, or
+generate a definition. Load the available owning workflow before doing that
+product's work. If none is available, explain the scope limitation and stop;
+do not implement the other product or collect its configuration in this skill.
+Announcing a handoff without changing workflows is not a handoff.
+
+## Mode selection
+
+| Mode | Intent | Read first |
+|---|---|---|
+| `authoring` | Create, configure, restyle, rename, change description, update definition, or delete | [references/authoring.md](references/authoring.md) |
+| `consumption` | List, inspect, explain, compare, or discuss capabilities without changes | [references/consumption.md](references/consumption.md) |
+
+For basemap, camera, layer styling, filtering, or draw-order changes, also read
+[references/styling.md](references/styling.md) end to end. Data-backed authoring
+requires it for geometry-compatible defaults and initial-view selection.
+
+Read the selected reference end to end before acting. Resolve links relative
+to the file containing them, not the working directory. If a reference is
+missing, report its resolved path and stop that workflow.
+
+Consumption permits discovery and get-definition, never mutation. An explicit
+no-change instruction takes precedence over authoring verbs. A read-modify-write
+request is authoring, including its prerequisite reads. Announce a mode switch
+and load the new reference when the user's intent changes.
+
+## Capability discovery
+
+Capability families include Map lifecycle and editing, basemap and camera,
+vector points/lines/polygons, heatmaps, raster imagery, layer order and visibility,
+labels and tooltips, filtering, clustering, and fixed or data-driven styling.
+Source adapters cover Lakehouse spatial files, Eventhouse/KQL spatial results
+and refresh, and supported external spatial connections.
+
+These families are not an exhaustive feature list. Resolve unlisted features
+and exact support, properties, restrictions, and new functionality through the
+latest [Fabric Maps documentation](https://learn.microsoft.com/fabric/real-time-intelligence/map/about-fabric-maps)
+and latest published Map schema using the shared schema-resolution procedure.
+For product capabilities and limits, current official references take precedence
+over copied summaries in this skill, including its source adapters.
+Neither a user's request nor omission from this skill establishes support.
+Apply supported capabilities using the documented structure and source
+constraints. On edits, preserve the item's declared schema and unrelated
+state; newer capabilities do not authorize an implicit schema migration.
+
+## Source adapters
+
+Load only adapters relevant to the requested sources or capability question.
+Blank creation, metadata, basemap edits, and deletion require no source setup.
+Capability summaries are documentation reads, not permission to discover or
+configure a source.
+
+For blank creation, all capability summaries below are required reading
+before the final response. Follow the authoring reference's **Required blank-Map
+completion response**; metadata and "data can be added later" alone are
+incomplete.
+
+| Source | Reference |
+|---|---|
+| Lakehouse / OneLake | [references/authoring/lakehouse.md](references/authoring/lakehouse.md) |
+| Eventhouse / KQL Database | [references/authoring/eventhouse.md](references/authoring/eventhouse.md) |
+| External Fabric Connections | [references/authoring/connections.md](references/authoring/connections.md) |
+| Ontology (preview) | [references/authoring/ontology.md](references/authoring/ontology.md) |
+| Variable-backed item/connection references | [references/authoring/variables.md](references/authoring/variables.md) |
+
+Variable references parameterize a supported source; they are not a separate
+geometry provider. For variable-backed layers, read the variable reference
+guide and the adapter for the resolved item or connection.
+
+For Eventhouse-backed Maps, this skill owns the Map and `eventhouse-cli`
+consumption owns read-only entity discovery/querying. Name that consumption
+workflow in plans; planning alone does not authorize source queries. Map
+authoring never authorizes source mutations. Mixed Lakehouse/Eventhouse layers
+keep independent source fragments and reuse the same core rendering, filter
+and camera settings.
+
+## Must
+
+- Ask for missing workspace, Map identity/name, or requested values; never
+  fabricate them. Resolve names with paginated exact-match lookups; verify IDs.
+- Treat adapter validation requirements as agent checks, not an intake form.
+  Discover metadata within the identified source scope; ask only for unresolved
+  required choices, not discoverable values or optional preferences.
+- Use public type-specific Map REST endpoints. For new definitions, discover
+  the latest published schema from the
+  [Map schema directory](https://github.com/microsoft/json-schemas/tree/main/fabric/item/map/definition)
+  using the authoring reference's schema-resolution procedure; never pin a
+  default version in this skill. Preserve the declared schema and unrelated
+  content on inspection and edits unless a schema migration is requested.
+- Use only existing connections and external source resources that the user is
+  authorized to access. Provide setup guidance when needed, but do not create
+  or administer them or delegate their provisioning. Wait for the user to
+  complete missing prerequisites, then discover and validate them read-only
+  before the affected Map mutation.
+- A local definition is not deployment. Complete the terminal write and its
+  readback before claiming persistence; report rendering as unverified unless
+  independently observed.
+- Preserve unknown fields, IDs, and definition parts. Do not replace a Map
+  from a partial model or silently discard unsupported content.
+- Treat API errors, failed operations, and readback mismatches as failures,
+  not successful completion. Report the affected resource and returned
+  code/message; do not invent recovery steps or silently change the request.
+
+## Prefer
+
+- Discover metadata in the identified source scope before asking for values.
+- Reuse existing spatial data and preserve saved state on unrelated edits.
+
+## Avoid
+
+- Treating a map suggestion or capability question as permission to mutate.
+- Provisioning connections, external sources, or source-data repairs.
+
+## Examples
+
+| Request | Response/workflow |
+|---|---|
+| "Create a blank Fabric Map called Coverage in workspace Analytics." | Authoring; resolve the latest published schema, create and read back the empty Map, then give the required add-later source summary. |
+| "Explain the layers in Fabric Map Coverage; do not change it." | Consumption; inspect saved configuration without executing source queries or applying fixes. |
+| "Add external imagery, but the connection does not exist yet." | Guide the user's setup and wait; resolve and validate the user-created connection before any affected Map write. |
