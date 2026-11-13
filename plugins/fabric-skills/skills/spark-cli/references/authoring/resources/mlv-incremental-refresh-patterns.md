@@ -6,6 +6,8 @@ and an agent routing section at the end of the file.
 
 Use this resource when the task is about:
 
+- creating a Spark SQL MLV intended for incremental refresh
+- selecting or reviewing output keys for a `REFRESH_HINT`
 - why an MLV may be doing a full refresh
 - how to rewrite an MLV without changing business logic
 - source-table readiness for incremental refresh
@@ -14,6 +16,32 @@ Use this resource when the task is about:
 > **Note:** PySpark-authored MLVs always default to **full refresh** — incremental refresh
 > applies only to Spark SQL MLV definitions. If the user's MLV is PySpark-based, the
 > incremental readiness review does not apply.
+
+## Refresh lifecycle and change patterns
+
+Executing `CREATE MATERIALIZED LAKE VIEW` or `CREATE OR REPLACE MATERIALIZED LAKE VIEW`
+performs a **Full refresh**, with or without `REFRESH_HINT`. This is the initial
+materialization, not a failed attempt at incremental refresh. Only subsequent
+refreshes of the existing MLV, including lineage refreshes, can be incremental.
+Do not rerun creation/replacement on every refresh cycle.
+
+With Optimal refresh enabled, use this decision table for subsequent refreshes:
+
+| Condition | Expected behavior |
+|---|---|
+| Spark SQL definition, Delta sources, no new source delta commits | No refresh |
+| Supported query, CDF on every source, append-only changes | Incremental eligible; a hint is not required for inserts alone |
+| Supported query, CDF on every source, updates/deletes, compatible output key declared in `REFRESH_HINT` | Incremental eligible, including non-append changes |
+| Updates/deletes without a compatible refresh hint | Full refresh, even with CDF and supported SQL |
+| Source schema changes between cycles (added, removed, or renamed columns) | Full refresh **even with a refresh hint** |
+| Missing CDF on any source Delta table | No refresh or Full, not Incremental |
+| PySpark-decorated definition or any non-Delta source | Full refresh; Optimal refresh does not apply |
+| Unsupported SQL, Optimal refresh disabled, or explicitly requested Full mode | Full refresh |
+
+Eligibility is not a guarantee: the engine can choose Full when incremental
+processing would cost more. Do not promise an incremental run based on the hint
+or a successful job alone. SQL `REFRESH MATERIALIZED LAKE VIEW ... FULL` forces
+Full; do not invent `REFRESH ... INCREMENTAL`.
 
 ---
 
@@ -32,8 +60,8 @@ These SQL patterns are compatible with incremental refresh per the
 | Pattern | Example | Notes |
 |---|---|---|
 | Simple SELECT with filters | `SELECT col1, col2 FROM src WHERE col1 IS NOT NULL` | Best case — flat projection + deterministic filter |
-| `COUNT(*)`, `SUM(col)` | `SELECT region, COUNT(*) AS cnt, SUM(amount) AS total FROM src GROUP BY region` | Preferred aggregates for IR |
-| `GROUP BY` with simple columns | `SELECT region, status, COUNT(*) FROM src GROUP BY region, status` | Keep grouping keys simple |
+| `COUNT(*)`, `SUM(col)`, `MIN(col)`, `MAX(col)` | `SELECT region, COUNT(*) AS cnt, MIN(amount) AS smallest FROM src GROUP BY region` | These aggregates, without `DISTINCT`, do not require source partitioning |
+| `GROUP BY` with simple columns | `SELECT region, status, COUNT(*) FROM src GROUP BY region, status` | Project every grouping column in the SELECT list |
 | `INNER JOIN` | `SELECT a.id, b.name FROM src_a a INNER JOIN src_b b ON a.id = b.id` | Safest join type for IR |
 | `LEFT OUTER JOIN` | `SELECT a.*, b.name FROM src_a a LEFT JOIN src_b b ON a.id = b.id` | Supported — IR works only if the right-side table remains unchanged during the refresh cycle ([MS Learn](https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/refresh-materialized-lake-view#sql-constructs-supported-by-incremental-refresh)) |
 | `LEFT SEMI JOIN` | `SELECT a.* FROM src_a a LEFT SEMI JOIN src_b b ON a.id = b.id` | Same right-side-unchanged constraint as LEFT OUTER JOIN; returns only left-side columns (right-side columns are not projected) |
@@ -46,8 +74,7 @@ These SQL patterns are compatible with incremental refresh per the
 
 ### Caution patterns (test before relying on IR)
 
-These are not explicitly listed as supported in the official docs. They may work in
-some cases but deserve extra validation:
+Separate undocumented query shapes from documented conditional support:
 
 | Pattern | Guidance |
 |---|---|
@@ -55,7 +82,13 @@ some cases but deserve extra validation:
 | `GROUP BY` with `CASE WHEN` expressions | Adds complexity; test carefully |
 | `Multi-level INNER JOIN chains (3+)` | May work but adds risk; consider staged Silver MLVs |
 | `Subqueries in SELECT or WHERE (scalar subqueries, EXISTS)` | Per docs, triggers full refresh if any referenced table has changes |
-| `AVG()`, `MIN()`, `MAX()`, `STDDEV()` (and similar aggregates other than `SUM` / `COUNT`) | IR-eligible **only when every source table is partitioned AND the partition column is included in the MLV `GROUP BY`**. Without that, falls back to full refresh. `SUM()` and `COUNT()` (without `DISTINCT`) are the special case that don't need partitioning. |
+| `AVG()`, `STDDEV()`, and aggregates other than non-distinct `SUM` / `COUNT` / `MIN` / `MAX` | Documented conditional support: every source table must be partitioned and its partition column included in the MLV `GROUP BY`. Project all grouping columns. Without these conditions, Full refresh. |
+| Mixing `SUM` / `COUNT` / `MIN` / `MAX` with another aggregate, such as `AVG` | The partitioning condition applies to the **whole query**. A refresh hint or output partitioning alone does not remove source-partition requirements. |
+
+Keep the documented right-side-unchanged restriction for LEFT OUTER/SEMI JOIN
+visible, including when proposing a refresh hint. Exact behavior for hinted joins
+with right-side mutations remains a product-confirmation item; do not claim that
+the hint overrides the restriction or reject all hinted supported queries.
 
 ### Patterns that force full refresh (rewrite these)
 
@@ -83,17 +116,139 @@ Before any syntax review, confirm the source tables are IR-ready:
 |---|---|---|
 | Delta format | Yes | Non-Delta sources (CSV, Parquet, JSON) force full refresh |
 | Change Data Feed (CDF) enabled | Required for IR | `ALTER TABLE src SET TBLPROPERTIES (delta.enableChangeDataFeed = true)` |
-| Append-only pattern | Required (per cycle) | Updates/deletes on sources fall back to full refresh for that cycle, even with CDF enabled |
+| Change pattern and row identity | Conditional | Inserts alone do not require a hint. Updates/deletes need a compatible `REFRESH_HINT` on the MLV output |
+| Optimal refresh | Required for automatic IR selection | Verify the lineage toggle or execution definition uses Optimal rather than Full |
+
+---
+
+## Refresh hints and output-key selection (preview)
+
+Use the [deletes/updates reference](https://learn.microsoft.com/en-us/fabric/data-engineering/materialized-lake-views/optimal-refresh-handling-deletes-updates)
+for the hint syntax. A hint declares identity in the **final output schema**,
+not a source-table primary key, an enforced constraint, or a request to force IR.
+Fabric does not check uniqueness at runtime; duplicate declared keys can produce
+inconsistent results without warnings.
+
+### Identify, optionally validate, then ask for review
+
+1. Establish the result grain and source change pattern. Identify candidate
+   columns from the user's knowledge, an established output-key contract, or
+   optional data validation. Validation is **one way** to identify keys, not a
+   mandatory prerequisite. Do not assume a column named `id` is unique.
+2. Explain the candidate single/composite key and why it identifies output rows.
+   Offer **Validate candidate key** or **Skip validation and supply/confirm keys**.
+   Do not run potentially expensive scans without the user's choice.
+3. If validating, check the complete proposed query result, not just an input
+   table or the old MLV when the proposed definition changes its grain. Account
+   for joins, UNION ALL branches, projections, casts, and constraints. Report
+   scope, duplicate groups, NULL-key count, and limitations. A sample, empty
+   result, or current snapshot does not prove future uniqueness.
+4. **Even after validation succeeds**, show the selected output columns and
+   results and ask the user to review and approve the key before adding or
+   deploying the hint. Passing validation is not deployment approval.
+5. If validation is skipped, ask the user to supply/confirm the unique output
+   column(s), show the risk, and obtain approval. Record **user-confirmed;
+   uniqueness unverified**. Never invent a key to bypass this gate.
+6. If validation is unavailable or errors, say **"I could not verify uniqueness"**
+   and ask the user to provide the unique output column(s) to proceed. Do not
+   silently switch to an inferred key. If validation finds duplicates or NULLs,
+   report them and request corrected columns or an approved design change; do
+   not deploy a known-invalid candidate.
+
+Use `ask_user` when available. A generic "proceed" before the candidate key was
+presented is not approval of that key. For offline code-only requests without
+an approved key, provide a clearly labeled template or an append-only definition
+without a hint and state the limitation; do not present a guessed key as ready
+to deploy. Hint validation/selection is unnecessary for append-only IR without
+a hint.
+
+### Optional data checks
+
+For a proposed composite key `(order_id, item_id)`, run these checks against the
+**exact output**. For a new/changed definition, substitute its SELECT as the
+`candidate_output` CTE instead of checking an outdated persisted definition:
+
+```sql
+WITH candidate_output AS (
+    SELECT order_id, item_id FROM gold.order_items
+)
+SELECT order_id, item_id, COUNT(*) AS row_count
+FROM candidate_output
+GROUP BY order_id, item_id
+HAVING COUNT(*) > 1;
+```
+
+```sql
+WITH candidate_output AS (
+    SELECT order_id, item_id FROM gold.order_items
+)
+SELECT COUNT(*) AS null_keys
+FROM candidate_output
+WHERE order_id IS NULL OR item_id IS NULL;
+```
+
+The duplicate query must return no groups. The NULL query always returns one
+row: inspect the **numeric `null_keys` value**, which must be zero for this
+candidate check. Check **every** component; do not concatenate columns to test
+uniqueness. Reassess after definition/source changes and establish how the
+output-key contract will remain valid as data changes.
+
+### Authoring with an approved key
+
+This example assumes the user reviewed and approved `(order_id, item_id)`:
+
+```sql
+ALTER TABLE silver.order_line_items
+SET TBLPROPERTIES (delta.enableChangeDataFeed = true);
+
+CREATE OR REPLACE MATERIALIZED LAKE VIEW gold.order_items
+(
+    REFRESH_HINT order_item_key UNIQUE (order_id, item_id)
+)
+PARTITIONED BY (order_date)
+AS
+SELECT order_id, item_id, order_date, quantity, unit_price,
+       quantity * unit_price AS line_total
+FROM silver.order_line_items;
+```
+
+The hint follows any constraint block and precedes `PARTITIONED BY`,
+`TBLPROPERTIES`, and `AS`. Use output column aliases, not qualified source names.
+Partitioning can improve efficiency but is not a substitute for row identity.
+The CREATE OR REPLACE above is Full; subsequent eligible refreshes can be IR.
+When replacing an existing MLV, preserve its business query, constraints,
+partitioning, and table properties unless the user approves changing them.
+
+### Key-design and mutation edge cases
+
+- **Joins:** source uniqueness may be lost through fan-out. Select the key at
+  the final grain; never add DISTINCT or change a join merely to pass validation.
+- **UNION ALL:** validate across all branches, not each branch separately.
+  Add a source discriminator only if it preserves the approved business model.
+- **Aggregates:** evaluate the complete grouping tuple as output identity.
+  Nullable groups, rollups, and global/empty aggregates need explicit review;
+  do not fabricate keys or add GROUP BY columns that change the result grain.
+- **Casts/projections:** lossy conversions or removed columns can collapse
+  identity. Use final output values in the checks.
+- **Mutation tests:** when the user requests live testing, cover inserts,
+  updates, deletes, key changes, partition moves, filter/constraint transitions,
+  deleting the last row in a group, and changes to multiple joined sources.
+  Compare persisted output with a fresh evaluation of the intended query.
+  These are test cases, not promises of undocumented engine behavior.
+- **MLV chains:** each downstream definition needs its own key assessment and
+  CDF on every direct dependency, including intermediate MLVs. An upstream hint
+  does not declare a downstream key.
 
 ---
 
 ## Readiness workflow
 
-When reviewing an MLV for incremental refresh readiness:
+When creating or reviewing an MLV for incremental refresh readiness:
 
 ### Step 1: Check source tables
 
-Confirm each source meets the prerequisites above (Delta format, CDF, append-only).
+Confirm each source's format, CDF status, change pattern, and schema stability.
+Distinguish CREATE/replacement materialization from subsequent refreshes.
 
 ### Step 2: Compare the query against the IR-friendly patterns
 
@@ -104,6 +259,8 @@ Identify which patterns are IR-friendly, which need caution, and which force ful
 
 Only suggest changes that preserve the business meaning of the query.
 Use the "IR-friendly alternative" column from the "force full refresh" table.
+For updates/deletes, follow the output-key selection, optional validation, and
+mandatory review workflow above before adding a refresh hint.
 
 ### Step 4: Produce the report
 
@@ -112,8 +269,12 @@ Use this structure:
 ```markdown
 ## IR Readiness Report
 
-**Overall Assessment:** [IR-Ready | Partially Ready | Not IR-Eligible]
+**Overall Assessment:** [IR-Eligible | Conditionally Eligible | Not IR-Eligible]
 
+### Lifecycle: Initial Full or Subsequent Refresh
+### Change Pattern and Refresh Hint
+### Key Evidence: Validated | User-Confirmed/Unverified | Unknown | Invalid
+### User Key Review: Approved | Pending | Declined
 ### Blockers
 ### Warnings
 ### Good Practices Detected
@@ -181,7 +342,10 @@ FROM silver.orders
 GROUP BY order_date, region;
 ```
 
-If users request averages, explain the tradeoff and prefer storing totals and counts when that still meets the business need.
+If users request averages, check the source-partitioning and grouping conditions
+first. If proposing a totals/counts rewrite, preserve NULL handling and the
+business denominator; `COUNT(*)` is not equivalent to `COUNT(amount)` when
+`amount` can be NULL. Do not redesign a valid query solely to favor IR.
 
 ### Pattern 4: Keep presentation logic downstream
 
@@ -198,49 +362,41 @@ ALTER TABLE bronze.orders SET TBLPROPERTIES (delta.enableChangeDataFeed = true);
 ALTER TABLE bronze.customers SET TBLPROPERTIES (delta.enableChangeDataFeed = true);
 ```
 
-- Prefer append-only ingestion for fact tables
-- **Deletes or updates** on source data cause fallback to full refresh for that cycle
+- Append-only changes can qualify without a hint; **updates/deletes** can qualify
+  with a compatible user-approved output key declared in `REFRESH_HINT`
 - Verify the **Optimal refresh** toggle is enabled (default: On) in schedule settings
 - For MLV chains, enable CDF on intermediate MLVs too
+- CDF on an MLV enables its downstream consumers; it does not replace CDF on
+  the sources used to refresh that MLV
 
-### Sweeping refresh cadence: incremental daily + full weekly
+### Routine refresh and recovery
 
-The most cost-effective production pattern for MLVs with CDF-enabled sources:
-
-| Cadence | Method | Purpose |
-|---------|--------|---------|
-| Daily (scheduled) | Automatic (optimal refresh) | Incremental refresh via CDF — fast, low-cost, processes only new/changed rows |
-| Weekly (manual or scheduled) | `REFRESH MATERIALIZED LAKE VIEW schema.view_name FULL` | Full rebuild — catches edge cases IR misses (schema drift, orphaned deletes, compaction) |
-
-**When to use this pattern:**
-- Source tables are append-heavy with occasional updates/deletes
-- MLVs serve dashboards that need daily freshness
-- You want cost control (IR = ~5% of full refresh cost) with weekly safety net
-
-**Setup:**
-1. Enable CDF on all source tables: `ALTER TABLE src SET TBLPROPERTIES (delta.enableChangeDataFeed = true)`
-2. Create a Daily schedule via REST API or Lakehouse UI (Optimal Refresh = On)
-3. Run `REFRESH MATERIALIZED LAKE VIEW ... FULL` weekly via notebook pipeline or manual trigger
-
-**Why the weekly FULL matters:**
-- Incremental refresh cannot detect: schema changes in sources, vacuum/compaction side effects, or changes that bypass CDF (e.g., direct file manipulation)
-- FULL rebuild guarantees consistency — catches anything IR missed during the week
-- Cost: one FULL per week ≈ same as 7 incremental refreshes (~14% overhead for 100% correctness guarantee)
-
-> **Tip**: Schedule the weekly FULL on a low-traffic window (e.g., Sunday 3 AM) to avoid capacity contention with dashboards.
+Use Lakehouse lineage schedules with Optimal refresh for routine operation.
+Automatic Full fallback is expected when needed, including source schema changes
+with a hint. Do not mandate weekly Full refreshes, invent fixed IR cost savings,
+or promise that periodic Full refresh corrects an invalid output-key contract.
+Use one-time `REFRESH MATERIALIZED LAKE VIEW ... FULL` for approved troubleshooting
+or reprocessing. After an outage or CDF-history gap, investigate the baseline
+and available change history rather than repeatedly recreating the MLV.
 
 ---
 
 ## Example assessment language
 
-- **IR-Ready ✅** — no hard blockers, source prerequisites satisfied, deterministic query shape
-- **Partially Ready ⚠️** — no obvious blockers but source readiness unknown or caution areas remain
+- **IR-Eligible ✅** — known prerequisites met for subsequent refreshes; not a guarantee of the chosen strategy
+- **Conditionally Eligible ⚠️** — source readiness, key evidence, user review, or a query-specific condition remains unresolved
 - **Not IR-Eligible ❌** — one or more hard blockers present in the current definition
+
+Report skipped validation as user-confirmed/unverified, never as validated.
+If per-view refresh strategy is unavailable, report it as unobserved rather
+than inferring IR from a completed lineage job.
 
 ---
 
 ## Routing guidance for the agent
 
-Use this resource when the user asks about incremental refresh readiness, full-refresh debugging,
-or refresh-friendly SQL rewrites. Pair with `materialized-lake-view-patterns.md` for broader
-MLV design guidance. See that file's reference table for full documentation links.
+Use this resource for IR-targeted creation, refresh hints, incremental refresh
+readiness, full-refresh debugging, or refresh-friendly SQL rewrites. Pair with
+`materialized-lake-view-patterns.md` for broader MLV design and `../../mlv.md`
+for scheduling/monitoring. See the general patterns file's reference table for
+the refresh and deletes/updates documentation.

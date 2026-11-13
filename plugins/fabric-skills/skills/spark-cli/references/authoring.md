@@ -80,7 +80,7 @@ Apply these before following any deeper link; the shared `common/` modules might
 | Debugging Patterns | [development-workflow.md § Debugging Patterns](authoring/resources/development-workflow.md#debugging-patterns) ||
 | Recommended Patterns (Infrastructure) | [infrastructure-orchestration.md § Recommended patterns](authoring/resources/infrastructure-orchestration.md#recommended-patterns) ||
 | Materialized Lake View patterns | [materialized-lake-view-patterns.md § Recommended patterns](authoring/resources/materialized-lake-view-patterns.md#recommended-patterns) | Spark Lakehouse authoring guidance for MLV design (when to use MLVs, layering patterns) |
-| MLV incremental refresh patterns | [mlv-incremental-refresh-patterns.md § IR-friendly syntax guide](authoring/resources/mlv-incremental-refresh-patterns.md#ir-friendly-syntax-guide) | Use for refresh-readiness review and safe non-breaking rewrites |
+| MLV incremental refresh patterns | [mlv-incremental-refresh-patterns.md](authoring/resources/mlv-incremental-refresh-patterns.md) | Read for IR-targeted creation, REFRESH_HINT output-key selection/review, refresh-readiness analysis, and safe rewrites |
 | MLV schedule & job management | [the `mlv` mode](mlv.md) | Route here when user asks to schedule, trigger, monitor, or cancel MLV refreshes (not authoring) |
 | Workspace Provisioning Principles | [infrastructure-orchestration.md § Workspace Provisioning Principles](authoring/resources/infrastructure-orchestration.md#workspace-provisioning-principles) ||
 | Lakehouse Configuration Guidance | [infrastructure-orchestration.md § Lakehouse Configuration Guidance](authoring/resources/infrastructure-orchestration.md#lakehouse-configuration-guidance) ||
@@ -135,6 +135,17 @@ Apply these before following any deeper link; the shared `common/` modules might
 - **Own "run/execute the notebook named X" here** — running a Fabric notebook by name is notebook execution via `POST .../items/{notebookId}/jobs/instances?jobType=RunNotebook`; never invent a `/jobs/RunNotebook/instances` path. This belongs to authoring mode; do not defer to `consumption`, which is only for ad-hoc Livy session code execution.
 - **Do NOT use Lakehouse Livy sessions to run a Fabric notebook** — Lakehouse Livy sessions (the public Livy API) are for ad-hoc interactive Spark code execution. To run a notebook as a job, use the Jobs API (`RunNotebook`) which creates a Notebook Spark session internally. See SPARK-AUTHORING-CORE.md § Notebook Execution & Job Management
 - **Do NOT schedule MLV refreshes from notebooks** — If the user asks to "schedule MLV refresh", route to [the `mlv` mode](mlv.md) which uses the REST API. Notebook-based `REFRESH MATERIALIZED LAKE VIEW ... FULL` is for one-time manual refresh only, not recurring schedules.
+- **Preserve the IR authoring contract** — for IR-targeted MLV creation or edits,
+  read both MLV resources linked below. Use the user's output-key knowledge,
+  an established contract, or optional validation to identify hint columns.
+  Offer Validate or Skip; always ask the user to review/approve selected keys,
+  even after successful validation. If verification is unavailable, report it
+  and ask the user to provide unique output column(s). Do not deploy a guessed
+  key or treat skipped checks as successful validation.
+- **Do not use CREATE as an incremental refresh trigger** — CREATE and CREATE OR
+  REPLACE perform Full materialization, with or without REFRESH_HINT. Subsequent
+  eligible refreshes can be incremental. A hint does not prevent schema-change
+  Full fallback. Do not silently switch to PySpark decorators when IR is required.
 
 ---
 
@@ -278,7 +289,9 @@ CREATE SCHEMA IF NOT EXISTS bronze;
 CREATE SCHEMA IF NOT EXISTS silver;
 CREATE SCHEMA IF NOT EXISTS gold;
 
--- A simple Silver MLV with data quality constraints
+-- A simple append-only Silver MLV with data quality constraints.
+-- For updates/deletes, read the IR resource for REFRESH_HINT syntax and
+-- optional validation plus mandatory user review of the unique output key.
 --
 -- Prerequisite for incremental refresh: enable Change Data Feed (CDF) on every
 -- source table the MLV reads from. Without CDF, optimal refresh can only choose
@@ -298,6 +311,8 @@ SELECT
   amount
 FROM bronze.orders_raw;
 
+-- CREATE and CREATE OR REPLACE perform Full materialization, with or without
+-- a refresh hint. Only subsequent refreshes of the existing MLV can be IR.
 -- Routine refresh is handled by the lakehouse Materialized lake views → Manage
 -- schedule/lineage view; don't orchestrate from notebooks. The SQL form below is
 -- documented only for forcing a one-time FULL recompute (troubleshooting / after
