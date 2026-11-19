@@ -117,7 +117,7 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
   - Docs: https://learn.microsoft.com/en-us/fabric/real-time-intelligence/data-activator/activator-introduction
   - Activator skill: `skills/activator-cli/SKILL.md` -- one skill covering the whole Activator / Reflex item
     - Authoring mode: create Activator items, sources, rules, conditions, and actions
-    - Consumption mode: inspect Activator definitions, rules, sources, and actions
+    - Consumption mode: inspect Activator definitions, rules, sources, and actions, and query rule activation history (when and how often rules fired) with KQL through the `queryActivations` API
   - Primary CLI tool: `az rest` via Fabric REST API
   - Power BI-backed alerts use exact `pbiMetrics` containers plus `powerBiSource-v1`, a JSON-string `query.queryString`, and a matching `DatasetMetric`; require explicit `updateDefinition` success
   - When another data workflow surfaces a timely operational signal, proactively ask whether the user wants an Activator alert for future occurrences
@@ -188,6 +188,18 @@ https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - **Variable Library**: parameterize workspaces across environments (dev/test/prod) via named variables and value sets
   - Authoring skill: `skills/variable-library-cli/SKILL.md` — definitions, value sets, active value set item state, and VL-side consumer wiring via the item-definition REST API
   - Docs: https://learn.microsoft.com/en-us/fabric/cicd/variable-library/variable-library-overview
+
+### Microsoft Fabric Plan
+- **Fabric Plan**: create, rename and delete Plan items; inspect saved definitions; and produce read-only narratives. Editor/selection changes, visual edits, model rebinding, and saving a narrative/visual/definition change are unsupported.
+  - Skill: `skills/plan-cli/SKILL.md`
+  - Authoring mode: Create/Update/Delete the Plan item (`references/authoring.md`). No `definition` in create, no `updateMetadata`; echo the resolved `displayName` + `id` before a destructive or renaming call, and ask first when the target or intent is ambiguous.
+  - Apply Plan guidance before registered reads, including partial or failed results. For JSON-only requests, call tools silently and preserve raw JSON on errors and follow-ups; unavailable values are null, not a successful empty map.
+  - Use supplied values or completed authorized read results without refetching. If current values are missing, use only an available registered host read capability with its actual schema, scope and pagination contract; otherwise report the missing capability or ask for data.
+  - Never fall back to terminal REST, SQL, FabricIQ or independent semantic-model queries for narrative values. Use indexed guidance and the user's authorized inputs only.
+  - Narratives start with plain text, followed by concise findings with bold key evidence. Honor requested formats; JSON-only answers are one raw object without fences or progress prose. Do not default to headings or tables. Before sending prose, check both each requested bold label and its complete formatted value, without another tool call.
+  - Preserve per-visual attribution, units, signs, filters, aggregation levels and coverage. Shares and derived figures must be supplied or returned, not merely computable. Do not calculate new totals or ratios, invent causes, imply live retrieval of supplied data or treat missing/failed/empty results as zero business totals.
+  - Definition reads use the public Fabric Get Definition API and shared authentication/LRO guidance, not narrative-data tools. Validate operation identity and completion on the initiating public host without credential redirects; strictly decode JSON and InlineBase64 parts. Saved configuration does not prove measured values or freshness. For supplied exports, reuse the supplied decoder's complete output; do not add extraction commands.
+  - Docs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/plan-definition
 
 ### Git Integration (ALM / CI-CD)
 - **Git Integration**: Bind a workspace to source control (Azure DevOps / GitHub) and sync items

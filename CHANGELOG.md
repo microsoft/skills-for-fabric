@@ -4,6 +4,25 @@ User-facing changes for the public Microsoft Fabric Skills release.
 
 ## [Unreleased]
 
+## [0.3.23] - 2026-11-19
+
+### Added
+- **`plan-cli`** -- Create, rename, update descriptions and delete Microsoft
+  Fabric Plan items, with explicit target selection and completion checks.
+  Read and validate saved Plan definitions, or summarize Plan visuals as prose
+  or JSON from supplied values or an authorized host reader. Summaries preserve
+  the supplied labels, units and coverage without calculating new figures.
+  Narratives, definitions, sheets, visuals and model bindings remain read-only.
+
+### Changed
+- **`activator-cli`** -- Answer "when did my alert fire?" through the public
+  Activator `queryActivations` API, using read-only KQL for activation history
+  and per-rule counts. Answers state the checked time window and claim a rule
+  never fired only after checking its full history.
+- **`fabriciq`** -- Read relevant model-authored topics before answering Power BI
+  questions, including topic bodies omitted from schema overviews, while
+  preserving verified-answer precedence.
+
 ## [0.3.22] - 2026-11-12
 
 ### Added
