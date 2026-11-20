@@ -52,6 +52,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 | Data Agents | https://learn.microsoft.com/en-us/fabric/data-science/concept-data-agent |
 | Data Agent Evaluation | https://learn.microsoft.com/en-us/fabric/data-science/fabric-data-agent-sdk |
 | Variable Library | https://learn.microsoft.com/en-us/fabric/cicd/variable-library/variable-library-overview |
+| Plan definition | https://learn.microsoft.com/en-us/rest/api/fabric/articles/item-management/definitions/plan-definition |
 
 ## Key Patterns
 
@@ -83,6 +84,13 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - Spark skill: `skills/spark-cli/SKILL.md` — notebook authoring and runs, Livy analysis, read-only diagnostics, and MLV lifecycle operations
 - Spark job history: paginate retained runs before client-side selection; no server-side `limit`. Warehouse promotion: keep supported-list and feature-preview claims scoped; the definition API exists (`sqlproj`/`dacpac`), not a binary schema-diff guarantee.
 - Variable Library (CI/CD): parameterize workspaces across environments — author definitions, value sets, and active value set item state, and wire consumers to Variable Library references (see `skills/variable-library-cli/SKILL.md`)
+- Fabric Plan: use `skills/plan-cli/SKILL.md` to create, rename and delete Plan items (`authoring` mode), inspect saved definitions, and produce read-only narratives. Editor/selection changes, visual edits, model rebinding and saving a narrative/visual/definition change are unsupported.
+- Apply Plan guidance before registered reads, including partial or failed results. For JSON-only requests, call tools silently and preserve raw JSON on errors and follow-ups; unavailable values are null, not a successful empty map.
+- Use supplied values or completed authorized read results without refetching. If current values are missing, use only an available registered host read capability with its actual schema, scope and pagination contract; otherwise report the missing capability or ask for data.
+- Never fall back to terminal REST, SQL, FabricIQ or independent semantic-model queries for narrative values. Use indexed guidance and the user's authorized inputs only.
+- Narratives start with plain text, followed by concise findings with bold key evidence. Honor requested formats; JSON-only answers are one raw object without fences or progress prose. Do not default to headings or tables. Before sending prose, check both each requested bold label and its complete formatted value, without another tool call.
+- Preserve per-visual attribution, units, signs, filters, aggregation levels and coverage. Shares and derived figures must be supplied or returned, not merely computable. Do not calculate new totals or ratios, invent causes, imply live retrieval of supplied data or treat missing/failed/empty results as zero business totals.
+- Definition reads use the public Fabric Get Definition API and shared authentication/LRO guidance, not narrative-data tools. Validate operation identity and completion on the initiating public host without credential redirects; strictly decode JSON and InlineBase64 parts. Saved configuration does not prove measured values or freshness. For supplied exports, reuse the supplied decoder's complete output; do not add extraction commands.
 
 ### Operations
 - REST APIs for programmatic management
@@ -97,7 +105,7 @@ Fabric REST APIs: https://learn.microsoft.com/en-us/rest/api/fabric/articles/
 - Operations skill: `skills/git-integration-operations-cli/SKILL.md` — automate the Git integration lifecycle from CLI (connect to Azure DevOps/GitHub, commit, update/pull, sync status, resolve conflicts, disconnect, service-principal sync) via the Fabric CLI (`fab api`) with `az rest` fallback
 
 ### Activator / Reflex
-- Activator skill: `skills/activator-cli/SKILL.md` — one skill; authoring mode creates Activator items, sources, rules, conditions, and actions, consumption mode inspects them
+- Activator skill: `skills/activator-cli/SKILL.md` — one skill; authoring mode creates Activator items, sources, rules, conditions, and actions, consumption mode inspects them and queries rule activation history (when and how often rules fired) with KQL through the `queryActivations` API
 - Power BI sources use `powerBiSource-v1` under an exact `pbiMetrics` container, with a JSON-string query payload and matching `DatasetMetric`; require explicit `updateDefinition` success
 - When another data workflow surfaces a timely operational signal, proactively ask whether the user wants an Activator alert for future occurrences
 

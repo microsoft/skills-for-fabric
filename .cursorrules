@@ -108,6 +108,7 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 ### Activator / Reflex (Real-Time Intelligence)
 - Use Fabric REST API to create Activator items and update Reflex definitions
 - Activator skill: `skills/activator-cli/SKILL.md` (authoring and consumption are modes)
+- Query rule activation history (when and how often rules fired) with KQL through the Reflex `queryActivations` API
 - Power BI sources require exact `pbiMetrics`, `powerBiSource-v1`, a JSON-string source query, and a matching `DatasetMetric`; never use `BasicFilter` in the metric definition
 - When another data workflow surfaces a timely operational signal, proactively ask whether the user wants an Activator alert for future occurrences
 
@@ -131,6 +132,16 @@ Developers use REST APIs to manage artifacts, then protocol-specific connections
 ### Power BI / FabricIQ
 - Consumption skill: `skills/fabriciq/SKILL.md` — multi-step Power BI analysis (discover, inspect, resolve, generate, execute)
 - ⚠️ **MANDATORY**: Before calling any FabricIQ MCP tool, read `skills/fabriciq/SKILL.md` in full (see [`agents/FabricIQ.agent.md` § Pre-Flight](../agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading)).
+
+### Microsoft Fabric Plan
+- Use `skills/plan-cli/SKILL.md` to create, rename and delete Plan items (`authoring` mode), inspect saved definitions, and produce read-only narratives. Editor/selection changes, visual edits, model rebinding and saving a narrative/visual/definition change are unsupported.
+- Apply Plan guidance before registered reads, including partial or failed results. For JSON-only requests, call tools silently and preserve raw JSON on errors and follow-ups; unavailable values are null, not a successful empty map.
+- Use supplied values or completed authorized read results without refetching. If current values are missing, use only an available registered host read capability with its actual schema, scope and pagination contract; otherwise report the missing capability or ask for data.
+- Never fall back to terminal REST, SQL, FabricIQ or independent semantic-model queries for narrative values. Use indexed guidance and the user's authorized inputs only.
+- Narratives start with plain text, followed by concise findings with bold key evidence. Honor requested formats; JSON-only answers are one raw object without fences or progress prose. Do not default to headings or tables. Before sending prose, check both each requested bold label and its complete formatted value, without another tool call.
+- Preserve per-visual attribution, units, signs, filters, aggregation levels and coverage. Shares and derived figures must be supplied or returned, not merely computable. Do not calculate new totals or ratios, invent causes, imply live retrieval of supplied data or treat missing/failed/empty results as zero business totals.
+- Definition reads use the public Fabric Get Definition API and shared authentication/LRO guidance, not narrative-data tools. Validate operation identity and completion on the initiating public host without credential redirects; strictly decode JSON and InlineBase64 parts. Saved configuration does not prove measured values or freshness. For supplied exports, reuse the supplied decoder's complete output; do not add extraction commands.
+- Treat `definition.parts` as saved instance configuration; schema URLs describe formats, not current values.
 
 ### Fabric IQ / Ontology (preview)
 - Windows authoring submits the confirmed request file once and decodes readback in the same PowerShell process.

@@ -24,6 +24,7 @@
 | Reading the Definition | [Consumption mode § Reading the Definition](#reading-the-definition) | |
 | Exploring Rules, Sources, and Actions | [Consumption mode § Exploring Rules, Sources, and Actions](#exploring-rules-sources-and-actions) | |
 | Inspecting Power BI Sources | [Consumption mode § Inspecting Power BI Sources](#inspecting-power-bi-sources) | `powerBiSource-v1`, stored query JSON, `metricDefinition`, report/model lineage |
+| Querying Activation History | [Consumption mode § Querying Activation History](#querying-activation-history) | Pointer — the `queryActivations` guidance is in its own reference |
 | Must / Prefer / Avoid | [Consumption mode § Must / Prefer / Avoid](#must--prefer--avoid) | |
 | Examples | [Consumption mode § Examples](#examples) | |
 
@@ -290,6 +291,7 @@ Call out any of these issues:
 - **Attempting to read definitions of items with encrypted sensitivity labels** — it will be blocked
 - **Modifying data** — this is a read-only skill; use [authoring mode](authoring.md) for write operations
 - **Treating Power BI source queries as semantic-model query text** — they are source payloads stored as JSON strings
+- **Querying the Eventhouse or the MCP endpoint for activation history** — use `queryActivations` as described in `references/consumption/activation-history.md`
 
 ---
 
@@ -334,59 +336,8 @@ az rest --method POST \
 
 ## Querying Activation History
 
-Activation history (when rules fired) is not available via the public REST API. It is accessible via the **Activator MCP server** using the `get_activations_for_rule` tool.
-
-### Prerequisites
-
-Use the shared authentication guidance in [COMMON-CLI.md § Authentication Recipes](../../../common/COMMON-CLI.md#authentication-recipes) before connecting to the Activator MCP endpoint.
-
-```bash
-pip install mcp httpx azure-identity aiohttp
-```
-
-### Workflow
-
-1. **List rules** using the public API (getDefinition → decode → filter for Rule entities) to get the rule's `uniqueIdentifier`
-2. **Connect to the Activator MCP server** and call `get_activations_for_rule` with the rule ID
-
-### MCP Server Connection
-
-The Activator MCP endpoint is at:
-```
-https://api.fabric.microsoft.com/v1/mcp/workspaces/{workspaceId}/reflexes/{activatorId}
-```
-
-Use the shared Fabric API authentication guidance from [COMMON-CORE.md § Authentication & Token Acquisition](../../../common/COMMON-CORE.md#authentication--token-acquisition). MCP clients should rely on standard Azure identity flows and must not hardcode tokens.
-
-### Calling `get_activations_for_rule`
-
-Connect using the MCP `streamable_http_client`, then call the tool:
-
-```python
-from mcp import ClientSession
-from mcp.client.streamable_http import streamable_http_client
-
-# After connecting and initializing the session:
-result = await session.call_tool(
-    "get_activations_for_rule",
-    {
-        "getActivationsParams": {
-            "workspaceId": "<workspace-id>",
-            "artifactId": "<activator-id>",
-            "ruleId": "<rule-uniqueIdentifier>",
-        }
-    },
-)
-```
-
-The response contains `totalCount` and an `activations` array with details of each time the rule fired.
-
-### Available MCP Tools
-
-| Tool | Purpose |
-|------|---------|
-| `list_rules` | List rules in an Activator (alternative to public API decode) |
-| `get_activations_for_rule` | Get activation history for a specific rule |
+Activation history — when each rule fired — lives in its own reference,
+`references/consumption/activation-history.md`, linked from `SKILL.md`. Read it end to end before calling `queryActivations`.
 
 ---
 
@@ -395,5 +346,5 @@ The response contains `totalCount` and an `activations` array with details of ea
 - This skill uses the Fabric Items API (`/reflexes`) for listing and `getDefinition` for inspection
 - No additional data-plane protocols are needed for item/rule inspection — all use `az rest` with the Fabric API audience
 - `getDefinition` requires **ReadWrite** scopes even for read-only access — this is a known API requirement
-- **Activation history** requires the MCP server connection (not available via public REST API)
+- **Activation history** uses the public `queryActivations` endpoint (`POST /v1/workspaces/{ws}/reflexes/{id}/queryActivations`) with the same `az rest` audience — no MCP connection or Eventhouse access is needed
 - For **creating or modifying** Activator items and rules, use the [authoring mode](authoring.md) skill

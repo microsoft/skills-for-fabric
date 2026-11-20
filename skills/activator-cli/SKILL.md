@@ -1,6 +1,6 @@
 ---
 name: activator-cli
-description: "Creates and inspects Fabric Activator (Reflex) alerts: rules, their data sources, conditions, and the Teams or email action they fire, plus decoding an existing ReflexEntities definition. Choose it whenever someone wants to be told, or something done, when values cross a threshold. The pipeline delivering those values is eventstream-cli."
+description: "Creates and inspects Fabric Activator (Reflex) alerts: rules, their data sources, conditions, and the Teams or email action they fire, plus decoding an existing ReflexEntities definition and reporting when rules fired (activation history). Choose it whenever someone wants to be told, or something done, when values cross a threshold. The pipeline delivering those values is eventstream-cli."
 ---
 
 > **Telemetry — MANDATORY.** Every `api.fabric.microsoft.com` call must carry
@@ -25,7 +25,7 @@ The reference is needed to *act*, not to *ask*. If the request is under-specifie
 | Mode | Use when the request ... | Example triggers | Read this first |
 |---|---|---|---|
 | `authoring` | creates, updates, configures or deletes an Activator item, rule, source or action | create an alert, create an activator, create a reflex, notify me when, let me know when, take action when, send me an email when, send a teams message when, run a pipeline when, update an alert, delete an alert | [references/authoring.md](references/authoring.md) |
-| `consumption` | lists, inspects, decodes or explains existing Activators, rules, sources or actions | show my alerts, what alerts do I have, list activators, inspect this alert, show me the rule, show me the source, get reflex definition, why does this alert fire | [references/consumption.md](references/consumption.md) |
+| `consumption` | lists, inspects, decodes or explains existing Activators, rules, sources or actions, or reports when rules fired | show my alerts, what alerts do I have, list activators, inspect this alert, show me the rule, show me the source, get reflex definition, why does this alert fire, when did my alert fire, activation history, how often did this rule fire | [references/consumption.md](references/consumption.md); for when rules fired, [references/consumption/activation-history.md](references/consumption/activation-history.md) instead |
 
 ### Mode boundary rule
 
@@ -102,7 +102,7 @@ Activator uses the `reflexes` collection, not the generic `items` collection: `/
 - Mutating anything while in the read-only `consumption` mode, including "just to check".
 - Hardcoded workspace or item ids in either mode — always resolve dynamically.
 - Globbing, listing or shell-searching the filesystem for the `common/` docs. They are optional background; if a link does not resolve, note it in one line and carry on.
-- Building the Eventstream topology that feeds an alert here; that is `eventstream-cli`. Querying the KQL data behind an alert is `eventhouse-cli`.
+- Building the Eventstream topology that feeds an alert here; that is `eventstream-cli`. Querying the KQL data behind an alert is `eventhouse-cli` — but an alert's own activation history stays here, via `queryActivations`.
 - Loading a different skill for work this skill already owns (see CRITICAL NOTES 3).
 
 ## Examples
@@ -115,3 +115,4 @@ Activator uses the `reflexes` collection, not the generic `items` collection: `/
 | "Show me all Activators in this workspace." | `consumption` | [references/consumption.md](references/consumption.md) |
 | "What rule and action are behind SkillsTestActivator?" | `consumption` | [references/consumption.md](references/consumption.md) |
 | "Decode this Reflex definition and explain the Power BI source." | `consumption` | [references/consumption.md](references/consumption.md) |
+| "When did my 'Too hot for medicine' alert fire this week?" | `consumption` | [references/consumption/activation-history.md](references/consumption/activation-history.md) |

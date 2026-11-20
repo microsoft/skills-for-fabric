@@ -91,7 +91,7 @@ rules:
     reference: skills/eventschemaset-cli/SKILL.md
 
   - name: activator_skills
-    description: One activator-cli skill; authoring and consumption are modes. Power BI sources require exact pbiMetrics, powerBiSource-v1, a JSON-string source query, and a matching DatasetMetric. When another data workflow surfaces a timely operational signal, proactively ask whether the user wants an Activator alert for future occurrences.
+    description: One activator-cli skill; authoring and consumption are modes. Consumption also queries rule activation history (when and how often rules fired) with KQL through the queryActivations API. Power BI sources require exact pbiMetrics, powerBiSource-v1, a JSON-string source query, and a matching DatasetMetric. When another data workflow surfaces a timely operational signal, proactively ask whether the user wants an Activator alert for future occurrences.
     reference: skills/activator-cli/SKILL.md
 
   - name: cost_estimation
@@ -112,6 +112,34 @@ rules:
       skills/fabriciq/SKILL.md in full before calling any FabricIQ MCP tool
       (see agents/FabricIQ.agent.md#pre-flight--mandatory-skill-reading).
     reference: skills/fabriciq/SKILL.md
+
+  - name: plan_skills
+    description: Use plan-cli to create, rename and delete Plan items (authoring mode), inspect saved definitions, and produce read-only narratives. Editor/selection changes, visual edits, model rebinding and saving a narrative/visual/definition change are unsupported.
+    reference: skills/plan-cli/SKILL.md
+  - name: plan_narration
+    description: Use supplied values or completed authorized read results without refetching. If current values are missing, use only an available registered host read capability with its actual schema, scope and pagination contract; otherwise report the missing capability or ask for data.
+    reference: skills/plan-cli/references/visual-narrative.md
+  - name: plan_registered_read_contract
+    description: Apply Plan guidance before registered reads, including partial or failed results. For JSON-only requests, call tools silently and preserve raw JSON on errors and follow-ups; unavailable values are null, not a successful empty map.
+    reference: skills/plan-cli/SKILL.md
+  - name: plan_narrative_quality
+    description: Narratives start with plain text, followed by concise findings with bold key evidence. Honor requested formats; JSON-only answers are one raw object without fences or progress prose. Do not default to headings or tables. Before sending prose, check both each requested bold label and its complete formatted value, without another tool call.
+    reference: skills/plan-cli/references/visual-narrative-format.md
+  - name: plan_runtime_lookup
+    description: Never fall back to terminal REST, SQL, FabricIQ or independent semantic-model queries for narrative values. Use indexed guidance and the user's authorized inputs only.
+    reference: skills/plan-cli/SKILL.md
+  - name: plan_narrative_evidence
+    description: Preserve per-visual attribution, units, signs, filters, aggregation levels and coverage. Shares and derived figures must be supplied or returned, not merely computable. Do not calculate new totals or ratios, invent causes, imply live retrieval of supplied data or treat missing/failed/empty results as zero business totals.
+    reference: skills/plan-cli/references/visual-narrative.md
+  - name: plan_execution_surface
+    description: Definition reads use the public Fabric Get Definition API and shared authentication/LRO guidance, not narrative-data tools. Saved configuration does not prove measured values or freshness. For supplied exports, reuse the supplied decoder's complete output; do not add extraction commands.
+    reference: skills/plan-cli/references/consumption.md
+  - name: plan_http_json
+    description: Follow http-json.md for bounded raw gzip -> UTF-8 -> strict JSON decoding; do not decompress auto-decoded client output twice or replay requests to repair parsing. Compression does not change saved scope or prove live rows.
+    reference: skills/plan-cli/references/http-json.md
+  - name: plan_lro
+    description: Validate operation identity and completion on the initiating public host without credential redirects; strictly decode JSON and InlineBase64 parts. This does not establish live narrative-data support.
+    reference: skills/plan-cli/SKILL.md
 
   - name: ontology
     description: Fabric IQ Ontology (preview) — author legacy V1 definitions (Kusto bindings use parent Eventhouse IDs) or answer V2-grounded questions; validate absolute PowerShell payload paths before POST and preserve the prepared request during response capture, verify verbatim replies against saved output and include complete authoring previews in final confirmation messages. Windows authoring submits the confirmed file once and decodes readback in the same shell. V2 creation/upgrade is unavailable here, and report/model authoring stays with owning skills
